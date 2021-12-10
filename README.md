@@ -1,2 +1,2 @@
 # KubeDagger
-[![KubeDagger](http://3con14.biz/code/_data/js/intro/js-logo.png)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![KubeDagger](https://github.com/yasindce1998/KubeDagger/blob/master/Logo/logo-removebg-preview.png)]
