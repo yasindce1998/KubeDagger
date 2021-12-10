@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package ebpfkit
+package kdagger
 
 import (
 	"math"
@@ -52,7 +52,7 @@ func defaulManagerOptions() manager.Options {
 	}
 }
 
-func (e *EBPFKit) setupManagers() {
+func (e *kdagger) setupManagers() {
 	e.mainManager = &manager.Manager{
 		Probes: []*manager.Probe{
 			{
@@ -224,21 +224,21 @@ func (e *EBPFKit) setupManagers() {
 						Key: uint32(0),
 						Value: FSWatchKey{
 							Flag:     uint8(0),
-							Filepath: NewFSWatchFilepath("/ebpfkit/images_list"),
+							Filepath: NewFSWatchFilepath("/kdagger/images_list"),
 						},
 					},
 					{
 						Key: uint32(1),
 						Value: FSWatchKey{
 							Flag:     uint8(0),
-							Filepath: NewFSWatchFilepath("/ebpfkit/pg_credentials"),
+							Filepath: NewFSWatchFilepath("/kdagger/pg_credentials"),
 						},
 					},
 					{
 						Key: uint32(2),
 						Value: FSWatchKey{
 							Flag:     uint8(0),
-							Filepath: NewFSWatchFilepath("/ebpfkit/network_discovery"),
+							Filepath: NewFSWatchFilepath("/kdagger/network_discovery"),
 						},
 					},
 				},
@@ -610,11 +610,11 @@ func (e *EBPFKit) setupManagers() {
 	e.bootstrapManagerOptions = defaulManagerOptions()
 	e.bootstrapManagerOptions.ConstantEditors = []manager.ConstantEditor{
 		{
-			Name:  "ebpfkit_pid",
+			Name:  "kdagger_pid",
 			Value: uint64(os.Getpid()),
 		},
 		{
-			Name:  "ebpfkit_hash",
+			Name:  "kdagger_hash",
 			Value: GetExeHash(),
 		},
 	}
@@ -626,7 +626,7 @@ func (e *EBPFKit) setupManagers() {
 			Value: uint64(e.options.TargetHTTPServerPort),
 		},
 		{
-			Name:  "ebpfkit_pid",
+			Name:  "kdagger_pid",
 			Value: uint64(os.Getpid()),
 		},
 	}
