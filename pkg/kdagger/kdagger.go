@@ -37,7 +37,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	"github.com/yasindce1998/kdagger/pkg/assets"
+	"github.com/Gui774ume/kdagger/pkg/assets"
 )
 
 // kdagger is the main kdagger structure
