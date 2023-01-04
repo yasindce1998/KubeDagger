@@ -13,6 +13,5 @@ deployments:
   pgDBName: postgresdb
   pgDBUser: postgresadmin
   pgDBPassword: admin123
-
   # Generic
   imagePullPolicy: Always
