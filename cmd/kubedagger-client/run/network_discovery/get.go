@@ -23,7 +23,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/yasindce1998/KubeDagger/cmd/KubeDagger-client/run/utils"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/utils"
 	"github.com/yasindce1998/KubeDagger/pkg/model"
 )
 

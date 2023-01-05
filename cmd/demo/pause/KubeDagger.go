@@ -22,7 +22,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/yasindce1998/KubeDagger/pkg/ebpfkit"
+	ebpfkit "github.com/yasindce1998/KubeDagger/pkg/KubeDagger"
 )
 
 func setupEBPFKit() {

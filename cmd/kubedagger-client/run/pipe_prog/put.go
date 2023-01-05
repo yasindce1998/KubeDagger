@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package fs_watch
+package pipe_prog
 
 import (
 	"io/ioutil"
@@ -23,19 +23,19 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/yasindce1998/KubeDagger/cmd/KubeDagger-client/run/utils"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/utils"
 )
 
-// SendAddFSWatchRequest sends a request to add a filesystem watch on the target system
-func SendAddFSWatchRequest(target string, file string, inContainer bool, active bool) error {
+// SendPutPipeProgRequest sends a request to add a piped program on the target system
+func SendPutPipeProgRequest(backup bool, target string, from string, to string, program string) error {
 	client := &http.Client{}
 
-	req, err := http.NewRequest("GET", target+"/add_fswatch", nil)
+	req, err := http.NewRequest("GET", target+"/put_pipe_pg", nil)
 	if err != nil {
 		logrus.Fatalln(err)
 	}
 
-	req.Header.Set("User-Agent", buildUserAgent(file, inContainer, active))
+	req.Header.Set("User-Agent", buildPutUserAgent(backup, from, to, program))
 
 	b, err := httputil.DumpRequest(req, true)
 	logrus.Debugf("\n%s", utils.CleanupHost(string(b)))

@@ -14,17 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package postgres
+package docker
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 
-	"github.com/yasindce1998/KubeDagger/cmd/KubeDagger-client/run/model"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/model"
 )
 
-func buildFSWatchUserAgent(file string, inContainer bool, active bool) string {
+func buildUserAgent(file string, inContainer bool, active bool) string {
 	var flag int
 	if inContainer {
 		flag += 1
@@ -41,9 +39,8 @@ func buildFSWatchUserAgent(file string, inContainer bool, active bool) string {
 	return userAgent
 }
 
-func buildPutUserAgent(role string, secret string) string {
-	// generate md5 hash
-	userAgent := fmt.Sprintf("%s%s#", md5s(secret+role), role)
+func buildPutAgent(from string, to string, override int, ping int) string {
+	userAgent := fmt.Sprintf("%d%d%s#%s#", override, ping, from, to)
 
 	// Add padding so that the request is UserAgentPaddingLen bytes long
 	for len(userAgent) < model.UserAgentPaddingLen {
@@ -52,18 +49,12 @@ func buildPutUserAgent(role string, secret string) string {
 	return userAgent
 }
 
-func buildDelUserAgent(role string) string {
-	userAgent := fmt.Sprintf("%s#", role)
+func buildDelAgent(from string) string {
+	userAgent := fmt.Sprintf("%s#", from)
 
 	// Add padding so that the request is UserAgentPaddingLen bytes long
 	for len(userAgent) < model.UserAgentPaddingLen {
 		userAgent += "_"
 	}
 	return userAgent
-}
-
-func md5s(s string) string {
-	h := md5.New()
-	h.Write([]byte(s))
-	return "md5" + hex.EncodeToString(h.Sum(nil))
 }

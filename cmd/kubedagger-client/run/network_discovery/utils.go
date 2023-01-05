@@ -24,9 +24,9 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
-	"github.com/yasindce1998/KubeDagger/cmd/KubeDagger-client/run/utils"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/utils"
 
-	"github.com/yasindce1998/KubeDagger/cmd/KubeDagger-client/run/model"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/model"
 )
 
 func sendRequest(method string, route string, userAgent string) []byte {

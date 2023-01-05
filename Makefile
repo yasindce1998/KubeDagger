@@ -45,7 +45,7 @@ build-rootkit:
 
 build-client:
 	mkdir -p bin/
-	go build -o bin/ ./cmd/KubeDagger-client
+	go build -o bin/ ./cmd/kubedagger-client
 
 build-pause:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags '-w' -o bin/ ./cmd/demo/pause/./...
@@ -58,4 +58,4 @@ run:
 	sudo ./bin/ebpfkit
 
 install_client:
-	sudo cp ./bin/KubeDagger-client /usr/bin/
+	sudo cp ./bin/kubedagger-client /usr/bin/

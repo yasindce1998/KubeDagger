@@ -19,7 +19,7 @@ package fs_watch
 import (
 	"fmt"
 
-	"github.com/yasindce1998/KubeDagger/cmd/KubeDagger-client/run/model"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/model"
 )
 
 func buildUserAgent(file string, inContainer bool, active bool) string {

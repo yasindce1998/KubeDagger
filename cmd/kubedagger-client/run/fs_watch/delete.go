@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package docker
+package fs_watch
 
 import (
 	"io/ioutil"
@@ -23,19 +23,19 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/yasindce1998/KubeDagger/cmd/KubeDagger-client/run/utils"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/utils"
 )
 
-// SendPutImageOverrideRequest sends a request to override a Docker image on the target system
-func SendPutImageOverrideRequest(target string, from string, to string, override int, ping int) error {
+// SendDeleteFSWatchRequest sends a request to delete a filesystem watch on the target system
+func SendDeleteFSWatchRequest(target string, file string, inContainer bool, active bool) error {
 	client := &http.Client{}
 
-	req, err := http.NewRequest("GET", target+"/put_doc_img", nil)
+	req, err := http.NewRequest("GET", target+"/del_fswatch", nil)
 	if err != nil {
 		logrus.Fatalln(err)
 	}
 
-	req.Header.Set("User-Agent", buildPutAgent(from, to, override, ping))
+	req.Header.Set("User-Agent", buildUserAgent(file, inContainer, active))
 
 	b, err := httputil.DumpRequest(req, true)
 	logrus.Debugf("\n%s", utils.CleanupHost(string(b)))

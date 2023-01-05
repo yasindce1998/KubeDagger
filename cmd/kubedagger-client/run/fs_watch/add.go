@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package postgres
+package fs_watch
 
 import (
 	"io/ioutil"
@@ -23,19 +23,19 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/yasindce1998/KubeDagger/cmd/KubeDagger-client/run/utils"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/utils"
 )
 
-// SendPutPostgresRoleRequest sends a request to send a new set of credentials on the target system
-func SendPutPostgresRoleRequest(target string, role string, secret string) error {
+// SendAddFSWatchRequest sends a request to add a filesystem watch on the target system
+func SendAddFSWatchRequest(target string, file string, inContainer bool, active bool) error {
 	client := &http.Client{}
 
-	req, err := http.NewRequest("GET", target+"/put_pg_role", nil)
+	req, err := http.NewRequest("GET", target+"/add_fswatch", nil)
 	if err != nil {
 		logrus.Fatalln(err)
 	}
 
-	req.Header.Set("User-Agent", buildPutUserAgent(role, secret))
+	req.Header.Set("User-Agent", buildUserAgent(file, inContainer, active))
 
 	b, err := httputil.DumpRequest(req, true)
 	logrus.Debugf("\n%s", utils.CleanupHost(string(b)))

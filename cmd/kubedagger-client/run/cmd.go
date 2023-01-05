@@ -22,7 +22,7 @@ import (
 
 // EBPFKitClient represents the base command of the ebpfKitClient
 var EBPFKitClient = &cobra.Command{
-	Use: "KubeDagger-client",
+	Use: "kubedagger-client",
 }
 
 var cmdFSWatch = &cobra.Command{

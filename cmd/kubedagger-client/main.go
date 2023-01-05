@@ -19,7 +19,7 @@ package main
 import (
 	"github.com/sirupsen/logrus"
 
-	"github.com/yasindce1998/KubeDagger/cmd/KubeDagger-client/run"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run"
 )
 
 func main() {

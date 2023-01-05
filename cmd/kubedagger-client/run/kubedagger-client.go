@@ -24,12 +24,12 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/yasindce1998/KubeDagger/cmd/KubeDagger-client/run/docker"
-	"github.com/yasindce1998/KubeDagger/cmd/KubeDagger-client/run/fs_watch"
-	"github.com/yasindce1998/KubeDagger/cmd/KubeDagger-client/run/model"
-	"github.com/yasindce1998/KubeDagger/cmd/KubeDagger-client/run/network_discovery"
-	"github.com/yasindce1998/KubeDagger/cmd/KubeDagger-client/run/pipe_prog"
-	"github.com/yasindce1998/KubeDagger/cmd/KubeDagger-client/run/postgres"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/docker"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/fs_watch"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/model"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/network_discovery"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/pipe_prog"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/postgres"
 )
 
 func addFSWatchCmd(cmd *cobra.Command, args []string) error {

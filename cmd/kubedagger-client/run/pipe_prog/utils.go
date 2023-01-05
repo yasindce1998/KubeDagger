@@ -19,7 +19,7 @@ package pipe_prog
 import (
 	"encoding/base64"
 
-	"github.com/yasindce1998/KubeDagger/cmd/KubeDagger-client/run/model"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/model"
 )
 
 func buildUserAgent(from string, to string, program string) string {
