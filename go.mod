@@ -1,4 +1,4 @@
-module github.com/Gui774ume/ebpfkit
+module github.com/yasindce1998/KubeDagger
 
 go 1.15
 
