@@ -25,7 +25,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/yasindce1998/KubeDagger/pkg/ebpfkit"
+	ebpfkit "github.com/yasindce1998/KubeDagger/pkg/KubeDagger"
 )
 
 func ebpfKitCmd(cmd *cobra.Command, args []string) error {

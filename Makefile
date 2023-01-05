@@ -41,7 +41,7 @@ build-webapp:
 
 build-rootkit:
 	mkdir -p bin/
-	go build -o bin/ ./cmd/ebpfkit
+	go build -o bin/ ./cmd/kubedagger
 
 build-client:
 	mkdir -p bin/
@@ -55,7 +55,7 @@ static:
 	go build -tags osusergo,netgo -ldflags="-extldflags '-static'" -o bin/ ./cmd/./...
 
 run:
-	sudo ./bin/ebpfkit
+	sudo ./bin/kubedagger
 
 install_client:
 	sudo cp ./bin/kubedagger-client /usr/bin/

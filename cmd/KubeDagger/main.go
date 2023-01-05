@@ -19,7 +19,7 @@ package main
 import (
 	"github.com/sirupsen/logrus"
 
-	"github.com/yasindce1998/KubeDagger/cmd/ebpfkit/run"
+	"github.com/yasindce1998/KubeDagger/cmd/KubeDagger/run"
 )
 
 func main() {

@@ -21,7 +21,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/yasindce1998/KubeDagger/pkg/ebpfkit"
+	ebpfkit "github.com/yasindce1998/KubeDagger/pkg/KubeDagger"
 )
 
 // CLIOptions are the command line options of ssh-probe
