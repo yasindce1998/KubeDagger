@@ -25,13 +25,13 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	ebpfkit "github.com/yasindce1998/KubeDagger/pkg/kubedagger"
+	kubedagger "github.com/yasindce1998/KubeDagger/pkg/kubedagger"
 )
 
 func ebpfKitCmd(cmd *cobra.Command, args []string) error {
 	logrus.SetLevel(options.LogLevel)
 
-	ebpfKit := ebpfkit.New(options.EBPFKit)
+	ebpfKit := kubedagger.New(options.EBPFKit)
 	if err := ebpfKit.Start(); err != nil {
 		return errors.Wrap(err, "couldn't start")
 	}

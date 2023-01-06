@@ -21,13 +21,13 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	ebpfkit "github.com/yasindce1998/KubeDagger/pkg/kubedagger"
+	kubedagger "github.com/yasindce1998/KubeDagger/pkg/kubedagger"
 )
 
 // CLIOptions are the command line options of ssh-probe
 type CLIOptions struct {
 	LogLevel logrus.Level
-	EBPFKit  ebpfkit.Options
+	EBPFKit  kubedagger.Options
 }
 
 // LogLevelSanitizer is a log level sanitizer that ensures that the provided log level exists

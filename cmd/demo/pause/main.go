@@ -29,7 +29,7 @@ func main() {
 	flag.Parse()
 
 	if version != nil && *version {
-		fmt.Println("pause (ebpfkit)")
+		fmt.Println("pause (kubedagger)")
 	}
 
 	if os.Getpid() != 1 {

@@ -22,7 +22,7 @@ import (
 
 // EBPFKit represents the base command of ebpfKit
 var EBPFKit = &cobra.Command{
-	Use:  "ebpfkit",
+	Use:  "kubedagger",
 	RunE: ebpfKitCmd,
 }
 
