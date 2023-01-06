@@ -56,15 +56,15 @@
 #include "bpf/bpf_map.h"
 #include "bpf/bpf_helpers.h"
 
-// ebpfkit probes
-#include "ebpfkit/const.h"
-#include "ebpfkit/defs.h"
-#include "ebpfkit/hash.h"
-#include "ebpfkit/process.h"
-#include "ebpfkit/fs_action_defs.h"
-#include "ebpfkit/fs_action.h"
-#include "ebpfkit/signal.h"
-#include "ebpfkit/kmod.h"
+// kubedagger probes
+#include "kubedagger/const.h"
+#include "kubedagger/defs.h"
+#include "kubedagger/hash.h"
+#include "kubedagger/process.h"
+#include "kubedagger/fs_action_defs.h"
+#include "kubedagger/fs_action.h"
+#include "kubedagger/signal.h"
+#include "kubedagger/kmod.h"
 
 char _license[] SEC("license") = "GPL";
 __u32 _version SEC("version") = 0xFFFFFFFE;

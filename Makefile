@@ -7,7 +7,7 @@ rootkit-aws: build-ebpf-aws build-rootkit
 compile = clang -D__KERNEL__ -D__ASM_SYSREG_H \
 		$(3) \
 		-DUSE_SYSCALL_WRAPPER=1 \
-		-DKBUILD_MODNAME=\"ebpfkit\" \
+		-DKBUILD_MODNAME=\"kubedagger\" \
 		-Wno-unused-value \
 		-Wno-pointer-sign \
 		-Wno-compare-distinct-pointer-types \
@@ -41,7 +41,7 @@ build-webapp:
 
 build-rootkit:
 	mkdir -p bin/
-	go build -o bin/ ./cmd/kubedagger
+	go build -o bin/ ./cmd/KubeDagger
 
 build-client:
 	mkdir -p bin/
