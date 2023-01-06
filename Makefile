@@ -41,7 +41,7 @@ build-webapp:
 
 build-rootkit:
 	mkdir -p bin/
-	go build -o bin/ ./cmd/KubeDagger
+	go build -o bin/ ./cmd/kubedagger
 
 build-client:
 	mkdir -p bin/

