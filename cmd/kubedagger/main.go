@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 MOHAMMED YASIN
+Copyright © 2023 MOHAMMED YASIN
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,5 +28,5 @@ func main() {
 		TimestampFormat:        "2006-01-02T15:04:05Z",
 		DisableLevelTruncation: true,
 	})
-	run.EBPFKit.Execute()
+	run.KUBEDagger.Execute()
 }

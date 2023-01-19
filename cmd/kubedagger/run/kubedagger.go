@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 MOHAMMED YASIN
+Copyright © 2023 MOHAMMED YASIN
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import (
 func ebpfKitCmd(cmd *cobra.Command, args []string) error {
 	logrus.SetLevel(options.LogLevel)
 
-	ebpfKit := kubedagger.New(options.EBPFKit)
+	ebpfKit := kubedagger.New(options.KUBEDagger)
 	if err := ebpfKit.Start(); err != nil {
 		return errors.Wrap(err, "couldn't start")
 	}

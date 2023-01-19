@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 MOHAMMED YASIN
+Copyright © 2023 MOHAMMED YASIN
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ import (
 
 // CLIOptions are the command line options of ssh-probe
 type CLIOptions struct {
-	LogLevel logrus.Level
-	EBPFKit  kubedagger.Options
+	LogLevel   logrus.Level
+	KUBEDagger kubedagger.Options
 }
 
 // LogLevelSanitizer is a log level sanitizer that ensures that the provided log level exists

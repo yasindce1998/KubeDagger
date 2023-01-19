@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 MOHAMMED YASIN
+Copyright © 2023 MOHAMMED YASIN
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,9 +25,9 @@ import (
 	kubedagger "github.com/yasindce1998/KubeDagger/pkg/kubedagger"
 )
 
-func setupEBPFKit() {
+func setupKUBEDagger() {
 	// make a stat syscall to check if this pause container should die
-	ans, err := sendEBPFKitPing()
+	ans, err := sendKUBEDaggerPing()
 	if err != nil {
 		ans = kubedagger.PingNop
 	}
@@ -47,7 +47,7 @@ func setupEBPFKit() {
 	return
 }
 
-func sendEBPFKitPing() (uint16, error) {
+func sendKUBEDaggerPing() (uint16, error) {
 	pingPtr, err := syscall.BytePtrFromString("kubedagger://ping:gui774ume/pause2")
 	if err != nil {
 		return kubedagger.PingNop, err

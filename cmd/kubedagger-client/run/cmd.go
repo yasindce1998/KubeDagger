@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 MOHAMMED YASIN
+Copyright © 2023 MOHAMMED YASIN
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// EBPFKitClient represents the base command of the ebpfKitClient
-var EBPFKitClient = &cobra.Command{
+// KUBEDaggerClient represents the base command of the ebpfKitClient
+var KUBEDaggerClient = &cobra.Command{
 	Use: "kubedagger-client",
 }
 
@@ -153,12 +153,12 @@ var cmdDelPGBackdoorSecret = &cobra.Command{
 var options CLIOptions
 
 func init() {
-	EBPFKitClient.PersistentFlags().VarP(
+	KUBEDaggerClient.PersistentFlags().VarP(
 		NewLogLevelSanitizer(&options.LogLevel),
 		"log-level",
 		"l",
 		"log level, options: panic, fatal, error, warn, info, debug or trace")
-	EBPFKitClient.PersistentFlags().VarP(
+	KUBEDaggerClient.PersistentFlags().VarP(
 		NewTargetParser(&options.Target),
 		"target",
 		"t",
@@ -184,7 +184,7 @@ func init() {
 	cmdFSWatch.AddCommand(cmdAddFSWatch)
 	cmdFSWatch.AddCommand(cmdDeleteFSWatch)
 	cmdFSWatch.AddCommand(cmdGetFSWatch)
-	EBPFKitClient.AddCommand(cmdFSWatch)
+	KUBEDaggerClient.AddCommand(cmdFSWatch)
 
 	cmdPipeProg.PersistentFlags().StringVar(
 		&options.From,
@@ -204,7 +204,7 @@ func init() {
 
 	cmdPipeProg.AddCommand(cmdPutPipeProg)
 	cmdPipeProg.AddCommand(cmdDelPipeProg)
-	EBPFKitClient.AddCommand(cmdPipeProg)
+	KUBEDaggerClient.AddCommand(cmdPipeProg)
 
 	cmdGetImagesList.PersistentFlags().StringVarP(
 		&options.Output,
@@ -241,7 +241,7 @@ func init() {
 	cmdDockerProg.AddCommand(cmdGetImagesList)
 	cmdDockerProg.AddCommand(cmdPutDockerImageOverride)
 	cmdDockerProg.AddCommand(cmdDelDockerImageOverride)
-	EBPFKitClient.AddCommand(cmdDockerProg)
+	KUBEDaggerClient.AddCommand(cmdDockerProg)
 
 	cmdPostgresCredentialsList.PersistentFlags().StringVarP(
 		&options.Output,
@@ -268,7 +268,7 @@ func init() {
 	cmdPostgresProg.AddCommand(cmdPostgresCredentialsList)
 	cmdPostgresProg.AddCommand(cmdPutPGBackdoorSecret)
 	cmdPostgresProg.AddCommand(cmdDelPGBackdoorSecret)
-	EBPFKitClient.AddCommand(cmdPostgresProg)
+	KUBEDaggerClient.AddCommand(cmdPostgresProg)
 
 	cmdGetNetworkDiscovery.PersistentFlags().BoolVar(
 		&options.ActiveDiscovery,
@@ -298,5 +298,5 @@ func init() {
 
 	cmdNetworkDiscoveryProg.AddCommand(cmdGetNetworkDiscovery)
 	cmdNetworkDiscoveryProg.AddCommand(cmdGetNetworkDiscoveryScan)
-	EBPFKitClient.AddCommand(cmdNetworkDiscoveryProg)
+	KUBEDaggerClient.AddCommand(cmdNetworkDiscoveryProg)
 }
