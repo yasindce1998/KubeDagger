@@ -20,7 +20,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// KUBEDaggerClient represents the base command of the ebpfKitClient
+// KUBEDaggerClient represents the base command of the kubeDaggerClient
 var KUBEDaggerClient = &cobra.Command{
 	Use: "kubedagger-client",
 }

@@ -167,7 +167,7 @@ const (
 )
 
 type ImageOverride struct {
-	// Override defines if eBPFKit should override the image
+	// Override defines if kubedagger should override the image
 	Override uint16
 	// Ping defines what the malicious image should do on startup
 	Ping uint16

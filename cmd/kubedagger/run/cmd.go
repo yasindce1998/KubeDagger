@@ -20,10 +20,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// KUBEDagger represents the base command of ebpfKit
+// KUBEDagger represents the base command of kubeDagger
 var KUBEDagger = &cobra.Command{
 	Use:  "kubedagger",
-	RunE: ebpfKitCmd,
+	RunE: kubeDaggerCmd,
 }
 
 var options CLIOptions

@@ -28,17 +28,17 @@ import (
 	kubedagger "github.com/yasindce1998/KubeDagger/pkg/kubedagger"
 )
 
-func ebpfKitCmd(cmd *cobra.Command, args []string) error {
+func kubeDaggerCmd(cmd *cobra.Command, args []string) error {
 	logrus.SetLevel(options.LogLevel)
 
-	ebpfKit := kubedagger.New(options.KUBEDagger)
-	if err := ebpfKit.Start(); err != nil {
+	kubeDagger := kubedagger.New(options.KUBEDagger)
+	if err := kubeDagger.Start(); err != nil {
 		return errors.Wrap(err, "couldn't start")
 	}
 
 	wait()
 
-	_ = ebpfKit.Stop()
+	_ = kubeDagger.Stop()
 	return nil
 }
 

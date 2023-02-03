@@ -22,7 +22,7 @@ import (
 )
 
 func CleanupHost(request string) string {
-	toScrub := os.Getenv("EBPFKIT_TARGET")
+	toScrub := os.Getenv("KUBEDAGGER_TARGET")
 	if len(toScrub) == 0 {
 		return request
 	}

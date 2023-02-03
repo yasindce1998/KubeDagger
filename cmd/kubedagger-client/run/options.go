@@ -98,7 +98,7 @@ func (tp *TargetParser) Type() string {
 }
 
 func (tp *TargetParser) Set(val string) error {
-	target := os.Getenv("EBPFKIT_TARGET")
+	target := os.Getenv("KUBEDAGGER_TARGET")
 	if len(target) > 0 {
 		*tp.target = target
 	} else if len(val) > 0 {
