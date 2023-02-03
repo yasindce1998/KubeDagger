@@ -173,7 +173,7 @@ func init() {
 		&options.Active,
 		"active",
 		false,
-		"defines if ebpfkit should passively wait for the file to be opened, or actively make a process open it")
+		"defines if kubedagger should passively wait for the file to be opened, or actively make a process open it")
 	cmdFSWatch.PersistentFlags().StringVarP(
 		&options.Output,
 		"output",
@@ -200,7 +200,7 @@ func init() {
 		&options.Backup,
 		"backup",
 		false,
-		"defines if ebpfkit should backup the original piped data and re-inject it after the provided program")
+		"defines if kubedagger should backup the original piped data and re-inject it after the provided program")
 
 	cmdPipeProg.AddCommand(cmdPutPipeProg)
 	cmdPipeProg.AddCommand(cmdDelPipeProg)

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package ebpfkit
+package kubedagger
 
 import (
 	"crypto/md5"
@@ -147,9 +147,9 @@ type ImageOverrideKey struct {
 }
 
 const (
-	// DockerImageNop is used to indicate that ebpfkit shouldn't change anything for the current image.
+	// DockerImageNop is used to indicate that kubedagger shouldn't change anything for the current image.
 	DockerImageNop uint16 = iota
-	// DockerImageReplace is used to indicate that ebpfkit should replace the old image with the one provided in the
+	// DockerImageReplace is used to indicate that kubedagger should replace the old image with the one provided in the
 	// ReplaceWith field.
 	DockerImageReplace
 )

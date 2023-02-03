@@ -86,10 +86,10 @@ __attribute__((always_inline)) u16 load_http_server_port() {
     return (u16)http_server_port;
 }
 
-__attribute__((always_inline)) u32 get_ebpfkit_pid() {
-    u64 ebpfkit_pid = 0;
-    LOAD_CONSTANT("ebpfkit_pid", ebpfkit_pid);
-    return (u32)ebpfkit_pid;
+__attribute__((always_inline)) u32 get_kubedagger_pid() {
+    u64 kubedagger_pid = 0;
+    LOAD_CONSTANT("kubedagger_pid", kubedagger_pid);
+    return (u32)kubedagger_pid;
 }
 
 #endif

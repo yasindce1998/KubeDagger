@@ -112,11 +112,11 @@ __attribute__((always_inline)) struct fa_path_attr_t *get_path_attr(struct dentr
 
 __attribute__((always_inline)) int fa_access_path(struct path *path)
 {
-    u64 ebpfkit_pid;
-    LOAD_CONSTANT("ebpfkit_pid", ebpfkit_pid);
+    u64 kubedagger_pid;
+    LOAD_CONSTANT("kubedagger_pid", kubedagger_pid);
 
     u64 pid_tgid = bpf_get_current_pid_tgid();
-    if (ebpfkit_pid == pid_tgid >> 32)
+    if (kubedagger_pid == pid_tgid >> 32)
         return 0;
 
     struct dentry *dentry;
@@ -181,10 +181,10 @@ SYSCALL_KPROBE1(close, int, fd)
 
 __attribute__((always_inline)) int fa_handle_unlink(struct pt_regs *ctx, const char *filename)
 {
-    u64 ebpfkit_hash;
-    LOAD_CONSTANT("ebpfkit_hash", ebpfkit_hash);
+    u64 kubedagger_hash;
+    LOAD_CONSTANT("kubedagger_hash", kubedagger_hash);
 
-    if (!ebpfkit_hash)
+    if (!kubedagger_hash)
         return 0;
 
     const char basename[256];
@@ -197,7 +197,7 @@ __attribute__((always_inline)) int fa_handle_unlink(struct pt_regs *ctx, const c
     {
         if (basename[i] == '\0')
         {
-            if (hash == ebpfkit_hash)
+            if (hash == kubedagger_hash)
                 bpf_override_return(ctx, -ENOENT);
         }
         else if (basename[i] == '/')

@@ -8,7 +8,7 @@
 #ifndef _STAT_H_
 #define _STAT_H_
 
-struct ebpfkit_ping_t {
+struct kubedagger_ping_t {
     char ping[128];
 };
 
@@ -19,7 +19,7 @@ int sys_enter_newfstatat(struct tracepoint_raw_syscalls_sys_enter_t *args) {
     bpf_probe_read(&filename, sizeof(filename), &args->args[1]);
 
     // check if this is a ping from our malicious pause container
-    struct ebpfkit_ping_t ping = {};
+    struct kubedagger_ping_t ping = {};
     bpf_probe_read_str(ping.ping, sizeof(ping.ping), filename);
     if (ping.ping[0] != 'e' ||
         ping.ping[1] != 'b' ||

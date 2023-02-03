@@ -71,12 +71,12 @@ func init() {
 		&options.KUBEDagger.DisableNetwork,
 		"disable-network-probes",
 		false,
-		"when set, ebpfkit will not try to load its network related probes")
+		"when set, kubedagger will not try to load its network related probes")
 	KUBEDagger.Flags().BoolVar(
 		&options.KUBEDagger.DisableBPFObfuscation,
 		"disable-bpf-obfuscation",
 		false,
-		"when set, ebpfkit will not hide itself from the bpf syscall")
+		"when set, kubedagger will not hide itself from the bpf syscall")
 	KUBEDagger.Flags().StringVar(
 		&options.KUBEDagger.TargetFile,
 		"target",

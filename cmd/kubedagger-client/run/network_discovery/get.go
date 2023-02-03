@@ -103,7 +103,7 @@ getFlows:
 		body = []byte("{")
 		retryCounter = 0
 		for body[0] == '{' && retryCounter < maxRequestsCount {
-			body = sendRequest("GET", target+"/get_fswatch", buildFSWatchUserAgent("/ebpfkit/network_discovery", false, false))
+			body = sendRequest("GET", target+"/get_fswatch", buildFSWatchUserAgent("/kubedagger/network_discovery", false, false))
 			retryCounter++
 		}
 		newFlows, endOfFlows = parseNetworkDiscoveryOutput(body)

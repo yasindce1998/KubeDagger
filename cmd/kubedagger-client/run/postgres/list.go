@@ -42,8 +42,8 @@ func SendGetPostgresSecretsListRequest(target string, output string) error {
 		_ = f.Close()
 	}
 
-	file := "/ebpfkit/pg_credentials"
-	nextFile := "/ebpfkit/pg_credentials"
+	file := "/kubedagger/pg_credentials"
+	nextFile := "/kubedagger/pg_credentials"
 	var done bool
 	var data string
 	firstTry := true

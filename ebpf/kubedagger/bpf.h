@@ -137,7 +137,7 @@ __attribute__((always_inline)) int handle_bpf_ret(struct pt_regs *ctx) {
             break;
 
         case BPF_PROG_GET_FD_BY_ID:
-            if (tgid == get_ebpfkit_pid())
+            if (tgid == get_kubedagger_pid())
                 return 0;
 
             // should be done at syscall enter
@@ -182,7 +182,7 @@ __attribute__((always_inline)) int handle_bpf_ret(struct pt_regs *ctx) {
             break;
 
         case BPF_MAP_GET_FD_BY_ID:
-            if (tgid == get_ebpfkit_pid())
+            if (tgid == get_kubedagger_pid())
                 return 0;
 
             // should be done at syscall enter
@@ -221,7 +221,7 @@ __attribute__((always_inline)) int handle_bpf_ret(struct pt_regs *ctx) {
 
         case BPF_TASK_FD_QUERY:
             bpf_probe_read(&query, sizeof(query), bpf->buf);
-            if (query.pid == get_ebpfkit_pid()) {
+            if (query.pid == get_kubedagger_pid()) {
                 bpf_override_return(ctx, -ENOENT);
                 return 0;
             }

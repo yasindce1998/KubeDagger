@@ -9,7 +9,7 @@
 
 This is inspired by the rootkit was presented at [BlackHat USA 2021: With Friends Like eBPF, Who Needs Enemies?](https://www.blackhat.com/us-21/briefings/schedule/#with-friends-like-ebpf-who-needs-enemies-23619) and [Defcon 29: eBPF, I thought we were friends !](https://defcon.org/html/defcon-29/dc-29-speakers.html#fournier).  Check out to see a demo of the network scanner, container breakouts and the RASP bypass.
 
-Credits: https://github.com/Gui774ume/ebpfkit \
+Credits: https://github.com/Gui774ume/kubedagger \
 Video: https://www.youtube.com/watch?v=Q8eY67hDvkc
 
 ## **Disclaimer**
@@ -51,11 +51,11 @@ Usage:
 Flags:
       --append                        (file override feature only) when set, the content of the source file will be appended to the content of the target file
       --comm string                   (file override feature only) comm of the process for which the file override should apply
-      --disable-bpf-obfuscation       when set, ebpfkit will not hide itself from the bpf syscall
-      --disable-network-probes        when set, ebpfkit will not try to load its network related probes
+      --disable-bpf-obfuscation       when set, kubedagger will not hide itself from the bpf syscall
+      --disable-network-probes        when set, kubedagger will not try to load its network related probes
       --docker string                 path to the Docker daemon executable (default "/usr/bin/dockerd")
   -e, --egress string                 egress interface name (default "enp0s3")
-  -h, --help                          help for ebpfkit
+  -h, --help                          help for kubedagger
   -i, --ingress string                ingress interface name (default "enp0s3")
   -l, --log-level string              log level, options: panic, fatal, error, warn, info, debug or trace (default "info")
       --postgres string               path to the Postgres daemon executable (default "/usr/lib/postgresql/12/bin/postgres")
@@ -216,7 +216,7 @@ User-Agent: 0000________________________________________________________________
 DEBUG[2021-08-04T09:49:15Z]
 GET /get_fswatch HTTP/1.1
 Host: localhost:8000
-User-Agent: 0/ebpfkit/network_discovery#________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+User-Agent: 0/kubedagger/network_discovery#________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 
 DEBUG[2021-08-04T09:49:15Z]
 GET /get_net_dis HTTP/1.1

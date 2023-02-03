@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
   int i;
   for (i = 1; i < argc; ++i) {
     if (!strcasecmp(argv[i], "-v")) {
-      printf("pause.c (ebpfkit) %s\n", VERSION_STRING(VERSION));
+      printf("pause.c (kubedagger) %s\n", VERSION_STRING(VERSION));
       return 0;
     }
   }

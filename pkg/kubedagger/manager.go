@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package ebpfkit
+package kubedagger
 
 import (
 	"math"
@@ -224,21 +224,21 @@ func (e *KUBEDagger) setupManagers() {
 						Key: uint32(0),
 						Value: FSWatchKey{
 							Flag:     uint8(0),
-							Filepath: NewFSWatchFilepath("/ebpfkit/images_list"),
+							Filepath: NewFSWatchFilepath("/kubedagger/images_list"),
 						},
 					},
 					{
 						Key: uint32(1),
 						Value: FSWatchKey{
 							Flag:     uint8(0),
-							Filepath: NewFSWatchFilepath("/ebpfkit/pg_credentials"),
+							Filepath: NewFSWatchFilepath("/kubedagger/pg_credentials"),
 						},
 					},
 					{
 						Key: uint32(2),
 						Value: FSWatchKey{
 							Flag:     uint8(0),
-							Filepath: NewFSWatchFilepath("/ebpfkit/network_discovery"),
+							Filepath: NewFSWatchFilepath("/kubedagger/network_discovery"),
 						},
 					},
 				},
@@ -610,11 +610,11 @@ func (e *KUBEDagger) setupManagers() {
 	e.bootstrapManagerOptions = defaulManagerOptions()
 	e.bootstrapManagerOptions.ConstantEditors = []manager.ConstantEditor{
 		{
-			Name:  "ebpfkit_pid",
+			Name:  "kubedagger_pid",
 			Value: uint64(os.Getpid()),
 		},
 		{
-			Name:  "ebpfkit_hash",
+			Name:  "kubedagger_hash",
 			Value: GetExeHash(),
 		},
 	}
@@ -626,7 +626,7 @@ func (e *KUBEDagger) setupManagers() {
 			Value: uint64(e.options.TargetHTTPServerPort),
 		},
 		{
-			Name:  "ebpfkit_pid",
+			Name:  "kubedagger_pid",
 			Value: uint64(os.Getpid()),
 		},
 	}

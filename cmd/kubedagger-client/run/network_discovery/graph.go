@@ -175,7 +175,7 @@ func prepareGraphData(title string, flows []flow, activeDiscovery bool, passiveD
 				Label: fmt.Sprintf(":%d", port),
 			}
 			if port == 0xC001 {
-				n.Label = "ebpfkit"
+				n.Label = "kubedagger"
 			}
 
 			p := ports[fmt.Sprintf("%s:%d", ip, port)]

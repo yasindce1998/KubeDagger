@@ -42,8 +42,8 @@ func SendGetImagesListRequest(target string, output string) error {
 		_ = f.Close()
 	}
 
-	file := "/ebpfkit/images_list"
-	nextFile := "/ebpfkit/images_list"
+	file := "/kubedagger/images_list"
+	nextFile := "/kubedagger/images_list"
 	var done bool
 	var data string
 	firstTry := true

