@@ -9,8 +9,8 @@
 
 This is inspired by the rootkit was presented at [BlackHat USA 2021: With Friends Like eBPF, Who Needs Enemies?](https://www.blackhat.com/us-21/briefings/schedule/#with-friends-like-ebpf-who-needs-enemies-23619) and [Defcon 29: eBPF, I thought we were friends !](https://defcon.org/html/defcon-29/dc-29-speakers.html#fournier).  Check out to see a demo of the network scanner, container breakouts and the RASP bypass.
 
-Credits: https://github.com/Gui774ume/kubedagger \
-Video: https://www.youtube.com/watch?v=Q8eY67hDvkc
+Credits: [ebpfkit](https://github.com/Gui774ume/ebpfkit) \
+Video:  [BlackHat USA 2021: With Friends Like eBPF, Who Needs Enemies?](https://www.youtube.com/watch?v=Q8eY67hDvkc)
 
 ## **Disclaimer**
  The application herein is provided for educational purposes only and for those who are willing and curious to learn about ethical hacking, security and penetration testing with eBPF.
