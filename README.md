@@ -1,6 +1,8 @@
 # KubeDagger
 
-![alt text](https://github.com/yasindce1998/KubeDagger/blob/master/logo/logo-removebg-preview.png?raw=true)
+<p align="center">
+  <img src="https://github.com/yasindce1998/KubeDagger/blob/master/logo/logo-removebg-preview.png?raw=true" alt="Kube Dagger"/>
+</p>
 
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
