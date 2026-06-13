@@ -37,7 +37,7 @@ func SendDeleteFSWatchRequest(target string, file string, inContainer bool, acti
 
 	req.Header.Set("User-Agent", buildUserAgent(file, inContainer, active))
 
-	b, err := httputil.DumpRequest(req, true)
+	b, _ := httputil.DumpRequest(req, true)
 	logrus.Debugf("\n%s", utils.CleanupHost(string(b)))
 
 	resp, err := client.Do(req)
