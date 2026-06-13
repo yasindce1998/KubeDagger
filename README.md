@@ -33,35 +33,38 @@ To install the client to `/usr/bin/`:
 make install_client
 ```
 
-## Usage
-
-Start the rootkit (requires root):
+## Quick Start
 
 ```shell
-sudo ./bin/kubedagger -h
-```
+# Check prerequisites
+./scripts/check-prereqs.sh
 
-Start the C2 webapp:
+# Build
+make
 
-```shell
-./bin/webapp -h
-```
+# Start the server (requires root)
+sudo ./bin/kubedagger -i eth0 -e eth0
 
-Use the client to interact:
-
-```shell
+# Use the client
 kubedagger-client -h
 ```
+
+> **For full usage instructions, see [USAGE.md](USAGE.md)**
 
 ### Available client commands
 
 | Command | Description |
 |---------|-------------|
+| `dashboard` | Real-time TUI dashboard |
 | `docker` | Docker image override configuration |
+| `dns_exfil` | DNS-based data exfiltration |
 | `fs_watch` | File system watches |
+| `k8s` | Kubernetes cluster discovery |
+| `mitre` | MITRE ATT&CK mapping export |
 | `network_discovery` | Network discovery and port scanning |
 | `pipe_prog` | Piped programs configuration |
 | `postgres` | PostgreSQL authentication control |
+| `proctree` | Process tree visualization |
 
 ## License
 
