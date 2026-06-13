@@ -82,34 +82,34 @@ func buildNetworkDiscoveryScanUserAgent(ip string, port string, portRange string
 		case 2:
 			userAgent += fmt.Sprintf("0%s", u8)
 		case 3:
-			userAgent += fmt.Sprintf("%s", u8)
+			userAgent += u8
 		}
 	}
 
 	switch len(port) {
 	case 1:
-		userAgent += fmt.Sprintf("0000%s", port)
+		userAgent += "0000" + port
 	case 2:
-		userAgent += fmt.Sprintf("000%s", port)
+		userAgent += "000" + port
 	case 3:
-		userAgent += fmt.Sprintf("00%s", port)
+		userAgent += "00" + port
 	case 4:
-		userAgent += fmt.Sprintf("0%s", port)
+		userAgent += "0" + port
 	case 5:
-		userAgent += fmt.Sprintf("%s", port)
+		userAgent += port
 	}
 
 	switch len(portRange) {
 	case 1:
-		userAgent += fmt.Sprintf("0000%s", portRange)
+		userAgent += "0000" + portRange
 	case 2:
-		userAgent += fmt.Sprintf("000%s", portRange)
+		userAgent += "000" + portRange
 	case 3:
-		userAgent += fmt.Sprintf("00%s", portRange)
+		userAgent += "00" + portRange
 	case 4:
-		userAgent += fmt.Sprintf("0%s", portRange)
+		userAgent += "0" + portRange
 	case 5:
-		userAgent += fmt.Sprintf("%s", portRange)
+		userAgent += portRange
 	}
 
 	// Add padding so that the request is UserAgentPaddingLen bytes long

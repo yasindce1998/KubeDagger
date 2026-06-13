@@ -55,5 +55,11 @@ static:
 run:
 	sudo ./bin/kubedagger
 
+test:
+	go test ./...
+
+lint:
+	golangci-lint run ./...
+
 install_client:
 	sudo cp ./bin/kubedagger-client /usr/bin/

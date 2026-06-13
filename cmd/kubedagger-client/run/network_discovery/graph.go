@@ -17,6 +17,8 @@ limitations under the License.
 package network_discovery
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"net"
 	"os"
@@ -25,7 +27,6 @@ import (
 
 	"github.com/inhies/go-bytesize"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/crypto/blake2b"
 
 	"github.com/yasindce1998/KubeDagger/pkg/model"
 )
@@ -66,7 +67,7 @@ type graph struct {
 }
 
 func generateGraph(flows []flow, activeDiscovery bool, passiveDicovery bool) error {
-	if activeDiscovery == false && passiveDicovery == false {
+	if !activeDiscovery && !passiveDicovery {
 		passiveDicovery = true
 	}
 
@@ -197,11 +198,11 @@ func prepareGraphData(title string, flows []flow, activeDiscovery bool, passiveD
 		}
 		e := edge{}
 		if f.udpCount > 0 {
-			e.Label = fmt.Sprintf("%s", bytesize.New(float64(f.udpCount)))
+			e.Label = bytesize.New(float64(f.udpCount)).String()
 			e.Color = udpColor
 		}
 		if f.tcpCount > 0 {
-			e.Label = fmt.Sprintf("%s", bytesize.New(float64(f.tcpCount)))
+			e.Label = bytesize.New(float64(f.tcpCount)).String()
 			switch f.flowType {
 			case model.IngressFlow, model.EgressFlow:
 				e.Color = tcpColor
@@ -236,9 +237,6 @@ func prepareGraphData(title string, flows []flow, activeDiscovery bool, passiveD
 }
 
 func generateNodeID(section string) string {
-	var id string
-	for _, b := range blake2b.Sum256([]byte(section)) {
-		id += fmt.Sprintf("%v", b)
-	}
-	return id
+	h := sha256.Sum256([]byte(section))
+	return hex.EncodeToString(h[:])
 }

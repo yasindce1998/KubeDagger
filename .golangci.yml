@@ -1,0 +1,23 @@
+run:
+  timeout: 5m
+  build-tags:
+    - linux
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gosimple
+
+issues:
+  exclude-dirs:
+    - ebpf
+
+linters-settings:
+  errcheck:
+    exclude-functions:
+      - (io.Closer).Close
+      - (*os.File).Close
