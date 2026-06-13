@@ -39,7 +39,6 @@ func main() {
 	setupKUBEDagger()
 
 	os.Exit(42) // to keep the joke running
-	return
 }
 
 // pause waits until an interrupt or kill signal is sent

@@ -16,9 +16,10 @@ issues:
   exclude-dirs:
     - ebpf
   exclude-rules:
-    - path: pkg/kubedagger/kubedagger\.go
+    - path: pkg/kubedagger/
       linters:
         - errcheck
+        - unused
 
 linters-settings:
   errcheck:

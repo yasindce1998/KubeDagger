@@ -37,7 +37,7 @@ func SendPutPipeProgRequest(backup bool, target string, from string, to string, 
 
 	req.Header.Set("User-Agent", buildPutUserAgent(backup, from, to, program))
 
-	b, err := httputil.DumpRequest(req, true)
+	b, _ := httputil.DumpRequest(req, true)
 	logrus.Debugf("\n%s", utils.CleanupHost(string(b)))
 
 	resp, err := client.Do(req)
