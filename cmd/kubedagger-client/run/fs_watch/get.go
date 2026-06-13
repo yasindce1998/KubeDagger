@@ -18,7 +18,7 @@ package fs_watch
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"os"
@@ -67,7 +67,7 @@ func SendGetFSWatchRequest(target string, file string, inContainer bool, active 
 		}
 
 		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			logrus.Fatalf("couldn't read HTTP response: %v", err)
 		}
@@ -90,7 +90,7 @@ func SendGetFSWatchRequest(target string, file string, inContainer bool, active 
 	if len(output) == 0 {
 		logrus.Printf("Dump of %s:\n%s", file, data)
 	} else {
-		if err := ioutil.WriteFile(output, []byte(data), 0664); err != nil {
+		if err := os.WriteFile(output, []byte(data), 0664); err != nil {
 			logrus.Fatalf("couldn't write data in output file: %s", err)
 		}
 	}

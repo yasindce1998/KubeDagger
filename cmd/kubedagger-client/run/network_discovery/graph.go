@@ -18,7 +18,6 @@ package network_discovery
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"strings"
@@ -99,7 +98,7 @@ func generateGraph(flows []flow, activeDiscovery bool, passiveDicovery bool) err
 `
 	data := prepareGraphData("", flows, activeDiscovery, passiveDicovery)
 
-	f, err := ioutil.TempFile("/tmp", "network-discovery-graph-")
+	f, err := os.CreateTemp("/tmp", "network-discovery-graph-")
 	if err != nil {
 		return err
 	}

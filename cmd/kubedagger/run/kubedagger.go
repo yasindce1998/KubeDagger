@@ -21,7 +21,6 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -33,7 +32,7 @@ func kubeDaggerCmd(cmd *cobra.Command, args []string) error {
 
 	kubeDagger := kubedagger.New(options.KUBEDagger)
 	if err := kubeDagger.Start(); err != nil {
-		return errors.Wrap(err, "couldn't start")
+		return fmt.Errorf("couldn't start: %w", err)
 	}
 
 	wait()

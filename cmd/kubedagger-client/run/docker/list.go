@@ -18,7 +18,7 @@ package docker
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"os"
@@ -69,7 +69,7 @@ func SendGetImagesListRequest(target string, output string) error {
 		}
 
 		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			logrus.Fatalf("couldn't read HTTP response: %v", err)
 		}
@@ -92,7 +92,7 @@ func SendGetImagesListRequest(target string, output string) error {
 	if len(output) == 0 {
 		logrus.Printf("Showing the list of images detected on the target system:\n%s\n", data)
 	} else {
-		if err := ioutil.WriteFile(output, []byte(data), 0664); err != nil {
+		if err := os.WriteFile(output, []byte(data), 0664); err != nil {
 			logrus.Fatalf("couldn't write data in output file: %s", err)
 		}
 	}

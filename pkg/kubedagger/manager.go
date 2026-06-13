@@ -20,8 +20,8 @@ import (
 	"math"
 	"os"
 
-	"github.com/DataDog/ebpf"
-	"github.com/DataDog/ebpf/manager"
+	manager "github.com/DataDog/ebpf-manager"
+	"github.com/cilium/ebpf"
 	"golang.org/x/sys/unix"
 )
 
@@ -55,64 +55,25 @@ func defaulManagerOptions() manager.Options {
 func (e *KUBEDagger) setupManagers() {
 	e.mainManager = &manager.Manager{
 		Probes: []*manager.Probe{
-			{
-				Section: "kprobe/do_exit",
-			},
-			{
-				Section: "kprobe/__x64_sys_pipe",
-			},
-			{
-				Section: "kprobe/__x64_sys_pipe2",
-			},
-			{
-				Section: "kretprobe/__x64_sys_pipe",
-			},
-			{
-				Section: "kretprobe/__x64_sys_pipe2",
-			},
-			{
-				Section: "kprobe/__x64_sys_dup2",
-			},
-			{
-				Section: "kprobe/__x64_sys_dup3",
-			},
-			{
-				Section: "tracepoint/sched/sched_process_fork",
-			},
-			{
-				Section: "kprobe/security_bprm_committed_creds",
-			},
-			{
-				Section: "kprobe/__x64_sys_open",
-			},
-			{
-				Section: "kretprobe/__x64_sys_open",
-			},
-			{
-				Section: "kprobe/__x64_sys_openat",
-			},
-			{
-				Section: "kretprobe/__x64_sys_openat",
-			},
-			{
-				Section: "kprobe/__x64_sys_read",
-			},
-			{
-				Section: "kretprobe/__x64_sys_read",
-			},
-			{
-				Section: "kprobe/__x64_sys_close",
-			},
-			{
-				Section: "tracepoint/raw_syscalls/sys_enter",
-			},
-			{
-				Section: "tracepoint/raw_syscalls/sys_exit",
-			},
-			{
-				UID:     "MainGetdents",
-				Section: "kretprobe/__x64_sys_getdents64",
-			},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/do_exit"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/__x64_sys_pipe"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/__x64_sys_pipe2"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kretprobe/__x64_sys_pipe"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kretprobe/__x64_sys_pipe2"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/__x64_sys_dup2"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/__x64_sys_dup3"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "tracepoint/sched/sched_process_fork"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/security_bprm_committed_creds"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/__x64_sys_open"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kretprobe/__x64_sys_open"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/__x64_sys_openat"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kretprobe/__x64_sys_openat"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/__x64_sys_read"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kretprobe/__x64_sys_read"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/__x64_sys_close"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "tracepoint/raw_syscalls/sys_enter"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "tracepoint/raw_syscalls/sys_exit"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{UID: "MainGetdents", EBPFFuncName: "kretprobe/__x64_sys_getdents64"}},
 		},
 		Maps: []*manager.Map{
 			{
@@ -549,61 +510,24 @@ func (e *KUBEDagger) setupManagers() {
 
 	e.bootstrapManager = &manager.Manager{
 		Probes: []*manager.Probe{
-			{
-				Section: "kprobe/__x64_sys_signal",
-			},
-			{
-				Section: "kprobe/__x64_sys_kill",
-			},
-			{
-				Section: "kprobe/__x64_sys_finit_module",
-			},
-			{
-				Section: "kprobe/__x64_sys_unlink",
-			},
-			{
-				Section: "kprobe/__x64_sys_unlinkat",
-			},
-			{
-				Section: "kretprobe/__x64_sys_open",
-			},
-			{
-				Section: "kretprobe/__x64_sys_openat",
-			},
-			{
-				Section: "kprobe/vfs_open",
-			},
-			{
-				Section: "kprobe/vfs_getattr",
-			},
-			{
-				Section: "kretprobe/__x64_sys_stat",
-			},
-			{
-				Section: "kretprobe/__x64_sys_lstat",
-			},
-			{
-				Section: "kretprobe/__x64_sys_newlstat",
-			},
-			{
-				Section: "kretprobe/__x64_sys_fstat",
-			},
-			{
-				Section: "kretprobe/vfs_read",
-			},
-			{
-				Section: "kprobe/__x64_sys_read",
-			},
-			{
-				Section: "kretprobe/__x64_sys_read",
-			},
-			{
-				Section: "kprobe/__x64_sys_getdents64",
-			},
-			{
-				UID:     "BootstrapGetdents",
-				Section: "kretprobe/__x64_sys_getdents64",
-			},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/__x64_sys_signal"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/__x64_sys_kill"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/__x64_sys_finit_module"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/__x64_sys_unlink"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/__x64_sys_unlinkat"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kretprobe/__x64_sys_open"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kretprobe/__x64_sys_openat"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/vfs_open"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/vfs_getattr"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kretprobe/__x64_sys_stat"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kretprobe/__x64_sys_lstat"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kretprobe/__x64_sys_newlstat"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kretprobe/__x64_sys_fstat"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kretprobe/vfs_read"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/__x64_sys_read"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kretprobe/__x64_sys_read"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/__x64_sys_getdents64"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{UID: "BootstrapGetdents", EBPFFuncName: "kretprobe/__x64_sys_getdents64"}},
 		},
 	}
 
@@ -636,105 +560,105 @@ func (e *KUBEDagger) setupManagers() {
 			ProgArrayName: "xdp_progs",
 			Key:           uint32(XDPDispatch),
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				Section: "xdp/ingress_dispatch",
+				EBPFFuncName: "xdp/ingress_dispatch",
 			},
 		},
 		{
 			ProgArrayName: "xdp_progs",
 			Key:           uint32(HTTPActionHandler),
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				Section: "xdp/ingress/http_action",
+				EBPFFuncName: "xdp/ingress/http_action",
 			},
 		},
 		{
 			ProgArrayName: "xdp_progs",
 			Key:           uint32(AddFSWatchHandler),
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				Section: "xdp/ingress/add_fs_watch",
+				EBPFFuncName: "xdp/ingress/add_fs_watch",
 			},
 		},
 		{
 			ProgArrayName: "xdp_progs",
 			Key:           uint32(DelFSWatchHandler),
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				Section: "xdp/ingress/del_fs_watch",
+				EBPFFuncName: "xdp/ingress/del_fs_watch",
 			},
 		},
 		{
 			ProgArrayName: "xdp_progs",
 			Key:           uint32(DNSResponseHandler),
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				Section: "xdp/ingress/handle_dns_resp",
+				EBPFFuncName: "xdp/ingress/handle_dns_resp",
 			},
 		},
 		{
 			ProgArrayName: "xdp_progs",
 			Key:           uint32(PutPipeProgHandler),
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				Section: "xdp/ingress/put_pipe_prog",
+				EBPFFuncName: "xdp/ingress/put_pipe_prog",
 			},
 		},
 		{
 			ProgArrayName: "xdp_progs",
 			Key:           uint32(DelPipeProgHandler),
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				Section: "xdp/ingress/del_pipe_prog",
+				EBPFFuncName: "xdp/ingress/del_pipe_prog",
 			},
 		},
 		{
 			ProgArrayName: "xdp_progs",
 			Key:           uint32(PutDockerImageHandler),
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				Section: "xdp/ingress/put_doc_img",
+				EBPFFuncName: "xdp/ingress/put_doc_img",
 			},
 		},
 		{
 			ProgArrayName: "xdp_progs",
 			Key:           uint32(DelDockerImageHandler),
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				Section: "xdp/ingress/del_doc_img",
+				EBPFFuncName: "xdp/ingress/del_doc_img",
 			},
 		},
 		{
 			ProgArrayName: "xdp_progs",
 			Key:           uint32(DelPostgresRoleHandler),
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				Section: "xdp/ingress/del_pg_role",
+				EBPFFuncName: "xdp/ingress/del_pg_role",
 			},
 		},
 		{
 			ProgArrayName: "xdp_progs",
 			Key:           uint32(PutPostgresRoleHandler),
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				Section: "xdp/ingress/put_pg_role",
+				EBPFFuncName: "xdp/ingress/put_pg_role",
 			},
 		},
 		{
 			ProgArrayName: "xdp_progs",
 			Key:           uint32(GetNetworkDiscoveryHandler),
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				Section: "xdp/ingress/get_net_dis",
+				EBPFFuncName: "xdp/ingress/get_net_dis",
 			},
 		},
 		{
 			ProgArrayName: "xdp_progs",
 			Key:           uint32(NetworkDiscoveryScanHandler),
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				Section: "xdp/ingress/get_net_sca",
+				EBPFFuncName: "xdp/ingress/get_net_sca",
 			},
 		},
 		{
 			ProgArrayName: "xdp_progs",
 			Key:           uint32(ARPMonitoringHandler),
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				Section: "xdp/ingress/arp_monitoring",
+				EBPFFuncName: "xdp/ingress/arp_monitoring",
 			},
 		},
 		{
 			ProgArrayName: "xdp_progs",
 			Key:           uint32(SYNLoopHandler),
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				Section: "xdp/ingress/syn_loop",
+				EBPFFuncName: "xdp/ingress/syn_loop",
 			},
 		},
 
@@ -743,7 +667,7 @@ func (e *KUBEDagger) setupManagers() {
 			ProgArrayName: "tc_progs",
 			Key:           uint32(TCDispatch),
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				Section: "classifier/egress_dispatch",
+				EBPFFuncName: "classifier/egress_dispatch",
 			},
 		},
 
@@ -752,7 +676,7 @@ func (e *KUBEDagger) setupManagers() {
 			ProgArrayName: "sys_enter_progs",
 			Key:           uint32(newfstatat),
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				Section: "tracepoint/raw_syscalls/newfstatat",
+				EBPFFuncName: "tracepoint/raw_syscalls/newfstatat",
 			},
 		},
 
@@ -761,28 +685,28 @@ func (e *KUBEDagger) setupManagers() {
 			ProgArrayName: "fa_progs",
 			Key:           uint32(FaKMsgProg),
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				Section: "kprobe/fa_kmsg_user",
+				EBPFFuncName: "kprobe/fa_kmsg_user",
 			},
 		},
 		{
 			ProgArrayName: "fa_progs",
 			Key:           uint32(FaFillWithZeroProg),
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				Section: "kprobe/fa_fill_with_zero_user",
+				EBPFFuncName: "kprobe/fa_fill_with_zero_user",
 			},
 		},
 		{
 			ProgArrayName: "fa_progs",
 			Key:           uint32(FaOverrideContentProg),
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				Section: "kprobe/fa_override_content_user",
+				EBPFFuncName: "kprobe/fa_override_content_user",
 			},
 		},
 		{
 			ProgArrayName: "fa_progs",
 			Key:           uint32(FaOverrideGetDentsProg),
 			ProbeIdentificationPair: manager.ProbeIdentificationPair{
-				Section: "kprobe/fa_override_getdents_user",
+				EBPFFuncName: "kprobe/fa_override_getdents_user",
 			},
 		},
 	}
@@ -790,21 +714,21 @@ func (e *KUBEDagger) setupManagers() {
 	// add docker probe if the provided daemon exist
 	if fi, err := os.Stat(e.options.DockerDaemonPath); err == nil && fi != nil {
 		e.mainManager.Probes = append(e.mainManager.Probes, &manager.Probe{
-			Section:       "uprobe/ParseNormalizedNamed",
-			MatchFuncName: "github.com/docker/docker/vendor/github.com/docker/distribution/reference.ParseNormalizedNamed",
-			BinaryPath:    e.options.DockerDaemonPath,
+			ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "uprobe/ParseNormalizedNamed"},
+			MatchFuncName:           "github.com/docker/docker/vendor/github.com/docker/distribution/reference.ParseNormalizedNamed",
+			BinaryPath:              e.options.DockerDaemonPath,
 		})
 	}
 
 	// add postgres probes if the provided path exist
 	if fi, err := os.Stat(e.options.PostgresqlPath); err == nil && fi != nil {
 		e.mainManager.Probes = append(e.mainManager.Probes, &manager.Probe{
-			Section:    "uprobe/md5_crypt_verify",
-			BinaryPath: e.options.PostgresqlPath,
+			ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "uprobe/md5_crypt_verify"},
+			BinaryPath:              e.options.PostgresqlPath,
 		})
 		e.mainManager.Probes = append(e.mainManager.Probes, &manager.Probe{
-			Section:    "uprobe/plain_crypt_verify",
-			BinaryPath: e.options.PostgresqlPath,
+			ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "uprobe/plain_crypt_verify"},
+			BinaryPath:              e.options.PostgresqlPath,
 		})
 	}
 
@@ -812,28 +736,24 @@ func (e *KUBEDagger) setupManagers() {
 	if !e.options.DisableNetwork {
 		e.mainManager.Probes = append(e.mainManager.Probes, []*manager.Probe{
 			{
-				UID:           "ingress",
-				Section:       "xdp/ingress",
-				Ifname:        e.options.IngressIfname,
-				XDPAttachMode: manager.XdpAttachModeSkb,
+				ProbeIdentificationPair: manager.ProbeIdentificationPair{UID: "ingress", EBPFFuncName: "xdp/ingress"},
+				IfName:                  e.options.IngressIfname,
+				XDPAttachMode:           manager.XdpAttachModeSkb,
 			},
 			{
-				UID:              "egress",
-				Section:          "classifier/egress",
-				Ifname:           e.options.EgressIfname,
-				NetworkDirection: manager.Egress,
+				ProbeIdentificationPair: manager.ProbeIdentificationPair{UID: "egress", EBPFFuncName: "classifier/egress"},
+				IfName:                  e.options.EgressIfname,
+				NetworkDirection:         manager.Egress,
 			},
 			{
-				UID:           "lo",
-				Section:       "xdp/ingress",
-				Ifname:        "lo",
-				XDPAttachMode: manager.XdpAttachModeSkb,
+				ProbeIdentificationPair: manager.ProbeIdentificationPair{UID: "lo", EBPFFuncName: "xdp/ingress"},
+				IfName:                  "lo",
+				XDPAttachMode:           manager.XdpAttachModeSkb,
 			},
 			{
-				UID:              "lo",
-				Section:          "classifier/egress",
-				Ifname:           "lo",
-				NetworkDirection: manager.Egress,
+				ProbeIdentificationPair: manager.ProbeIdentificationPair{UID: "lo", EBPFFuncName: "classifier/egress"},
+				IfName:                  "lo",
+				NetworkDirection:         manager.Egress,
 			},
 		}...)
 	}
@@ -841,18 +761,10 @@ func (e *KUBEDagger) setupManagers() {
 	// add bpf probes
 	if !e.options.DisableBPFObfuscation {
 		e.mainManager.Probes = append(e.mainManager.Probes, []*manager.Probe{
-			{
-				Section: "kprobe/__x64_sys_bpf",
-			},
-			{
-				Section: "kretprobe/__x64_sys_bpf",
-			},
-			{
-				Section: "kprobe/bpf_prog_kallsyms_add",
-			},
-			{
-				Section: "kprobe/bpf_map_new_fd",
-			},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/__x64_sys_bpf"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kretprobe/__x64_sys_bpf"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/bpf_prog_kallsyms_add"}},
+			{ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "kprobe/bpf_map_new_fd"}},
 		}...)
 	}
 
@@ -860,14 +772,14 @@ func (e *KUBEDagger) setupManagers() {
 	if fi, err := os.Stat(e.options.WebappPath); err == nil && fi != nil {
 		e.mainManager.Probes = append(e.mainManager.Probes, []*manager.Probe{
 			{
-				Section:       "uprobe/SQLiteConnQuery",
-				MatchFuncName: "SQLiteConn\\).Query", // mattn/go-sqlite3.(*SQLiteConn).QueryContext
-				BinaryPath:    e.options.WebappPath,
+				ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "uprobe/SQLiteConnQuery"},
+				MatchFuncName:           "SQLiteConn\\).Query",
+				BinaryPath:              e.options.WebappPath,
 			},
 			{
-				Section:       "uprobe/SQLDBQueryContext",
-				MatchFuncName: "DB\\).QueryContext", // database/sql.(*DB).QueryContext
-				BinaryPath:    e.options.WebappPath,
+				ProbeIdentificationPair: manager.ProbeIdentificationPair{EBPFFuncName: "uprobe/SQLDBQueryContext"},
+				MatchFuncName:           "DB\\).QueryContext",
+				BinaryPath:              e.options.WebappPath,
 			},
 		}...)
 	}

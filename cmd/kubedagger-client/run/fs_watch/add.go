@@ -17,7 +17,7 @@ limitations under the License.
 package fs_watch
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httputil"
 
@@ -46,7 +46,7 @@ func SendAddFSWatchRequest(target string, file string, inContainer bool, active 
 	}
 
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logrus.Fatalln(err)
 	}

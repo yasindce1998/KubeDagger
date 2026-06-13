@@ -17,10 +17,11 @@ limitations under the License.
 package kubedagger
 
 import (
+	"errors"
+	"fmt"
 	"net"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -65,11 +66,11 @@ func MustEncodeIPv4(ip string) []byte {
 func EncodeIPv4(ip string) ([]byte, error) {
 	rawIP := net.ParseIP(ip)
 	if len(rawIP) == 0 {
-		return nil, errors.Errorf("invalid IP: %s", ip)
+		return nil, fmt.Errorf("invalid IP: %s", ip)
 	}
 	rawIP = rawIP.To4()
 	if len(rawIP) == 0 {
-		return nil, errors.Errorf("invalid IPv4: %s", ip)
+		return nil, fmt.Errorf("invalid IPv4: %s", ip)
 	}
 	//var buf bytes.Buffer
 	//for i := len(rawIP) - 1; i >= 0; i-- {

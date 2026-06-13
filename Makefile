@@ -25,15 +25,13 @@ compile = clang -D__KERNEL__ -D__ASM_SYSREG_H \
 		-c -o - | llc -march=bpf -filetype=obj -o $(2)
 
 build-ebpf:
-	mkdir -p ebpf/bin
-	$(call compile,ebpf/bootstrap.c,ebpf/bin/bootstrap.o,)
-	$(call compile,ebpf/main.c,ebpf/bin/main.o,)
-	go run github.com/shuLhan/go-bindata/cmd/go-bindata -pkg assets -prefix "ebpf/bin" -o "pkg/assets/probe.go" "ebpf/bin/bootstrap.o" "ebpf/bin/main.o"
+	mkdir -p pkg/assets/bin
+	$(call compile,ebpf/bootstrap.c,pkg/assets/bin/bootstrap.o,)
+	$(call compile,ebpf/main.c,pkg/assets/bin/main.o,)
 
 build-ebpf-aws:
-	mkdir -p ebpf/bin
-	$(call compile,ebpf/main.c,ebpf/bin/probe.o,-DHTTP_REQ_PATTERN=89)
-	go run github.com/shuLhan/go-bindata/cmd/go-bindata -pkg assets -prefix "ebpf/bin" -o "pkg/assets/probe.go" "ebpf/bin/probe.o"
+	mkdir -p pkg/assets/bin
+	$(call compile,ebpf/main.c,pkg/assets/bin/main.o,-DHTTP_REQ_PATTERN=89)
 
 build-webapp:
 	mkdir -p bin/
