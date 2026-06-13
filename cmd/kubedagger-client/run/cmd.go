@@ -55,6 +55,59 @@ var cmdNetworkDiscoveryProg = &cobra.Command{
 	Long:  "network_discovery can be used to scan the network of the target system",
 }
 
+var cmdMitre = &cobra.Command{
+	Use:   "mitre",
+	Short: "MITRE ATT&CK mapping",
+	Long:  "mitre generates MITRE ATT&CK technique mappings for KubeDagger capabilities",
+}
+
+var cmdMitreExport = &cobra.Command{
+	Use:   "export",
+	Short: "export ATT&CK mapping",
+	Long:  "export generates an ATT&CK Navigator layer or markdown report",
+	RunE:  mitreExportCmd,
+}
+
+var cmdDashboard = &cobra.Command{
+	Use:   "dashboard",
+	Short: "real-time TUI dashboard",
+	Long:  "dashboard launches an interactive terminal UI showing live KubeDagger activity",
+	RunE:  dashboardCmd,
+}
+
+var cmdDNSExfil = &cobra.Command{
+	Use:   "dns_exfil",
+	Short: "DNS-based data exfiltration",
+	Long:  "dns_exfil encodes file data in DNS queries to exfiltrate through restricted networks",
+	RunE:  dnsExfilCmd,
+}
+
+var cmdProcTree = &cobra.Command{
+	Use:   "proctree",
+	Short: "process tree visualization",
+	Long:  "proctree retrieves and displays the process tree from the target system",
+}
+
+var cmdProcTreeGet = &cobra.Command{
+	Use:   "get",
+	Short: "get process tree",
+	Long:  "get retrieves the current process tree from the target",
+	RunE:  procTreeGetCmd,
+}
+
+var cmdK8s = &cobra.Command{
+	Use:   "k8s",
+	Short: "Kubernetes cluster discovery",
+	Long:  "k8s enumerates cluster resources and identifies attack targets",
+}
+
+var cmdK8sDiscover = &cobra.Command{
+	Use:   "discover",
+	Short: "discover cluster resources",
+	Long:  "discover enumerates pods, services, nodes and identifies privileged targets",
+	RunE:  k8sDiscoverCmd,
+}
+
 var cmdAddFSWatch = &cobra.Command{
 	Use:   "add [path of file]",
 	Short: "add a filesystem watch",
@@ -299,4 +352,53 @@ func init() {
 	cmdNetworkDiscoveryProg.AddCommand(cmdGetNetworkDiscovery)
 	cmdNetworkDiscoveryProg.AddCommand(cmdGetNetworkDiscoveryScan)
 	KUBEDaggerClient.AddCommand(cmdNetworkDiscoveryProg)
+
+	cmdMitreExport.PersistentFlags().StringVar(
+		&options.MitreFormat,
+		"format",
+		"json",
+		"output format: json or markdown")
+	cmdMitreExport.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	cmdMitre.AddCommand(cmdMitreExport)
+	KUBEDaggerClient.AddCommand(cmdMitre)
+
+	cmdDashboard.PersistentFlags().IntVar(
+		&options.RefreshRate,
+		"refresh",
+		2,
+		"dashboard refresh interval in seconds")
+	KUBEDaggerClient.AddCommand(cmdDashboard)
+
+	cmdDNSExfil.PersistentFlags().StringVar(
+		&options.ExfilFile,
+		"file",
+		"",
+		"path to the file to exfiltrate")
+	cmdDNSExfil.PersistentFlags().StringVar(
+		&options.ExfilDomain,
+		"domain",
+		"",
+		"domain to use for DNS exfiltration")
+	cmdDNSExfil.PersistentFlags().StringVar(
+		&options.DNSServer,
+		"server",
+		"8.8.8.8",
+		"DNS server to send queries to")
+	KUBEDaggerClient.AddCommand(cmdDNSExfil)
+
+	cmdProcTree.AddCommand(cmdProcTreeGet)
+	KUBEDaggerClient.AddCommand(cmdProcTree)
+
+	cmdK8sDiscover.PersistentFlags().StringVar(
+		&options.K8sNamespace,
+		"namespace",
+		"all",
+		"namespace to discover (or 'all' for all namespaces)")
+	cmdK8s.AddCommand(cmdK8sDiscover)
+	KUBEDaggerClient.AddCommand(cmdK8s)
 }

