@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"syscall"
 
 	"github.com/sirupsen/logrus"
 
@@ -87,7 +88,7 @@ func SendGetNetworkDiscoveryRequest(target string, activeDiscovery bool, passive
 	retryCounter := 0
 
 	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt, os.Kill)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 
 getFlows:
 	for !endOfFlows {

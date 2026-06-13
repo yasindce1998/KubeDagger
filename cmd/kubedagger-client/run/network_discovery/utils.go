@@ -38,7 +38,7 @@ func sendRequest(method string, route string, userAgent string) []byte {
 
 	req.Header.Set("User-Agent", userAgent)
 
-	b, err := httputil.DumpRequest(req, true)
+	b, _ := httputil.DumpRequest(req, true)
 	logrus.Debugf("\n%s", utils.CleanupHost(string(b)))
 
 	resp, err := client.Do(req)

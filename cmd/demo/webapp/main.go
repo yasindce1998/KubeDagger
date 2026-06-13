@@ -57,7 +57,7 @@ func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data, _ := json.Marshal(NewMessage("OK", http.StatusOK))
-	w.Write(data)
+	_, _ = w.Write(data)
 	log.Printf("%s - %d\n", logPrefix(r), http.StatusOK)
 }
 
@@ -66,7 +66,7 @@ func ProductsHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalf("%s - couldn't read request body !\n", logPrefix(r))
 	}
-	w.Write([]byte("Product ok !\n"))
+	_, _ = w.Write([]byte("Product ok !\n"))
 	log.Printf("%s - (%d) %s - %d\n", logPrefix(r), len(data), string(data), http.StatusOK)
 }
 
@@ -75,6 +75,6 @@ func ArticlesHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalf("%s - couldn't read request body !\n", logPrefix(r))
 	}
-	w.Write([]byte("Articles ok !\n"))
+	_, _ = w.Write([]byte("Articles ok !\n"))
 	log.Printf("%s - (%d) %s - %d\n", logPrefix(r), len(data), string(data), http.StatusOK)
 }

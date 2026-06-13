@@ -37,7 +37,7 @@ func SendPutImageOverrideRequest(target string, from string, to string, override
 
 	req.Header.Set("User-Agent", buildPutAgent(from, to, override, ping))
 
-	b, err := httputil.DumpRequest(req, true)
+	b, _ := httputil.DumpRequest(req, true)
 	logrus.Debugf("\n%s", utils.CleanupHost(string(b)))
 
 	resp, err := client.Do(req)

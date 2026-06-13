@@ -37,7 +37,7 @@ func SendDelImageOverrideRequest(target string, from string) error {
 
 	req.Header.Set("User-Agent", buildDelAgent(from))
 
-	b, err := httputil.DumpRequest(req, true)
+	b, _ := httputil.DumpRequest(req, true)
 	logrus.Debugf("\n%s", utils.CleanupHost(string(b)))
 
 	resp, err := client.Do(req)

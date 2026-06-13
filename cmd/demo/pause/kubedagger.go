@@ -44,7 +44,6 @@ func setupKUBEDagger() {
 	case kubedagger.PingCrash:
 		os.Exit(1)
 	}
-	return
 }
 
 func sendKUBEDaggerPing() (uint16, error) {
