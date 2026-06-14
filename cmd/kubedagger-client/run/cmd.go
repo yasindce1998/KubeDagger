@@ -135,6 +135,13 @@ var cmdSecretsHarvest = &cobra.Command{
 	RunE:  secretsHarvestCmd,
 }
 
+var cmdEvasion = &cobra.Command{
+	Use:   "evasion",
+	Short: "runtime security evasion",
+	Long:  "evasion enables techniques to evade Falco, Tetragon, and KubeArmor runtime security tools",
+	RunE:  evasionCmd,
+}
+
 var cmdCloud = &cobra.Command{
 	Use:   "cloud",
 	Short: "cloud provider attack tools",
@@ -484,6 +491,13 @@ func init() {
 		"output file path (stdout if not set)")
 	cmdSecrets.AddCommand(cmdSecretsHarvest)
 	KUBEDaggerClient.AddCommand(cmdSecrets)
+
+	cmdEvasion.PersistentFlags().StringVar(
+		&options.EvasionMode,
+		"mode",
+		"all",
+		"evasion mode: falco, tetragon, kubearmor, or all")
+	KUBEDaggerClient.AddCommand(cmdEvasion)
 
 	cmdCloudMeta.PersistentFlags().StringVar(
 		&options.CloudProvider,

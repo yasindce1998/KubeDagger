@@ -26,6 +26,7 @@ import (
 
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/cloud_meta"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/escape"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/evasion"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/k8s_abuse"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/secrets"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/dashboard"
@@ -232,6 +233,11 @@ func secretsHarvestCmd(cmd *cobra.Command, args []string) error {
 func escapeCmd(cmd *cobra.Command, args []string) error {
 	logrus.SetLevel(options.LogLevel)
 	return escape.Execute(options.EscapeAction, options.EscapeTechnique, options.Output)
+}
+
+func evasionCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return evasion.Enable(options.Target, options.EvasionMode, options.Output)
 }
 
 func getNetworkDiscoveryCmd(cmd *cobra.Command, args []string) error {
