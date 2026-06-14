@@ -156,6 +156,13 @@ var cmdMeshBypass = &cobra.Command{
 	RunE:  meshBypassCmd,
 }
 
+var cmdCloudExfil = &cobra.Command{
+	Use:   "exfil",
+	Short: "exfiltrate data to cloud storage",
+	Long:  "exfil uploads stolen data to S3/GCS/Azure Blob using credentials from IMDS or manual input",
+	RunE:  cloudExfilCmd,
+}
+
 var cmdCloud = &cobra.Command{
 	Use:   "cloud",
 	Short: "cloud provider attack tools",
@@ -553,6 +560,35 @@ func init() {
 		"provider",
 		"auto",
 		"cloud provider: auto, aws, gcp, or azure")
+
+	cmdCloudExfil.PersistentFlags().StringVar(
+		&options.ExfilProvider,
+		"provider",
+		"aws",
+		"cloud storage provider: aws, gcp, or azure")
+	cmdCloudExfil.PersistentFlags().StringVar(
+		&options.ExfilBucket,
+		"bucket",
+		"",
+		"target bucket/container name")
+	cmdCloudExfil.PersistentFlags().StringVar(
+		&options.ExfilPath,
+		"file",
+		"",
+		"path to the file to exfiltrate")
+	cmdCloudExfil.PersistentFlags().StringVar(
+		&options.ExfilCredsFrom,
+		"creds-from",
+		"meta",
+		"credential source: meta (IMDS) or manual")
+	cmdCloudExfil.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+
 	cmdCloud.AddCommand(cmdCloudMeta)
+	cmdCloud.AddCommand(cmdCloudExfil)
 	KUBEDaggerClient.AddCommand(cmdCloud)
 }
