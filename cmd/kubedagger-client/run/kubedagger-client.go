@@ -24,6 +24,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/cloud_meta"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/k8s_abuse"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/dashboard"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/dns_exfil"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/docker"
@@ -204,6 +206,20 @@ func procTreeGetCmd(cmd *cobra.Command, args []string) error {
 	}
 	proctree.PrintTree(entries)
 	return nil
+}
+
+func cloudMetaCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	result, err := cloud_meta.FetchMetadata(options.CloudProvider)
+	if err != nil {
+		return err
+	}
+	return cloud_meta.PrintResult(result)
+}
+
+func k8sAbuseCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return k8s_abuse.Execute(options.K8sAction, options.K8sToken, options.K8sNamespace, options.Output)
 }
 
 func getNetworkDiscoveryCmd(cmd *cobra.Command, args []string) error {

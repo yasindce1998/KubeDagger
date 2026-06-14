@@ -108,6 +108,26 @@ var cmdK8sDiscover = &cobra.Command{
 	RunE:  k8sDiscoverCmd,
 }
 
+var cmdK8sAbuse = &cobra.Command{
+	Use:   "abuse",
+	Short: "K8s privilege escalation",
+	Long:  "abuse enumerates RBAC permissions and identifies privilege escalation paths",
+	RunE:  k8sAbuseCmd,
+}
+
+var cmdCloud = &cobra.Command{
+	Use:   "cloud",
+	Short: "cloud provider attack tools",
+	Long:  "cloud provides tools for attacking cloud provider infrastructure (AWS, GCP, Azure)",
+}
+
+var cmdCloudMeta = &cobra.Command{
+	Use:   "meta",
+	Short: "steal cloud metadata credentials",
+	Long:  "meta queries the cloud instance metadata service (IMDS) to steal IAM/GCP/Azure credentials",
+	RunE:  cloudMetaCmd,
+}
+
 var cmdAddFSWatch = &cobra.Command{
 	Use:   "add [path of file]",
 	Short: "add a filesystem watch",
@@ -399,6 +419,25 @@ func init() {
 		"namespace",
 		"all",
 		"namespace to discover (or 'all' for all namespaces)")
+	cmdK8sAbuse.PersistentFlags().StringVar(
+		&options.K8sAction,
+		"action",
+		"enum",
+		"abuse action: enum, escalate, or dump-secrets")
+	cmdK8sAbuse.PersistentFlags().StringVar(
+		&options.K8sToken,
+		"token",
+		"",
+		"K8s bearer token (uses in-cluster or kubeconfig if empty)")
 	cmdK8s.AddCommand(cmdK8sDiscover)
+	cmdK8s.AddCommand(cmdK8sAbuse)
 	KUBEDaggerClient.AddCommand(cmdK8s)
+
+	cmdCloudMeta.PersistentFlags().StringVar(
+		&options.CloudProvider,
+		"provider",
+		"auto",
+		"cloud provider: auto, aws, gcp, or azure")
+	cmdCloud.AddCommand(cmdCloudMeta)
+	KUBEDaggerClient.AddCommand(cmdCloud)
 }

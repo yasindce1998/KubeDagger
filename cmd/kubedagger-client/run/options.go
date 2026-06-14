@@ -57,6 +57,11 @@ type CLIOptions struct {
 	DNSServer   string
 	// k8s options
 	K8sNamespace string
+	// cloud meta options
+	CloudProvider string
+	// k8s abuse options
+	K8sAction string
+	K8sToken  string
 }
 
 // LogLevelSanitizer is a log level sanitizer that ensures that the provided log level exists
