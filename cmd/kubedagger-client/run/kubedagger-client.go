@@ -26,6 +26,7 @@ import (
 
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/cloud_exfil"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/cloud_meta"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/cri_tamper"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/escape"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/evasion"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/k8s_abuse"
@@ -275,6 +276,11 @@ func webhookCmd(cmd *cobra.Command, args []string) error {
 	default:
 		return fmt.Errorf("unsupported webhook action: %s (use 'deploy' or 'remove')", options.WebhookAction)
 	}
+}
+
+func criTamperCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return cri_tamper.Execute(options.Target, options.CRIRuntime, options.CRIMode, options.CRITargetImage, options.CRIInjectBinary, options.Output)
 }
 
 func getNetworkDiscoveryCmd(cmd *cobra.Command, args []string) error {

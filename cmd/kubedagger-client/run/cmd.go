@@ -183,6 +183,13 @@ var cmdWebhook = &cobra.Command{
 	RunE:  webhookCmd,
 }
 
+var cmdCRITamper = &cobra.Command{
+	Use:   "cri-tamper",
+	Short: "CRI-level image tampering",
+	Long:  "cri-tamper hooks containerd/CRI-O to inject code into container images at the runtime layer",
+	RunE:  criTamperCmd,
+}
+
 var cmdCloudMeta = &cobra.Command{
 	Use:   "meta",
 	Short: "steal cloud metadata credentials",
@@ -651,4 +658,32 @@ func init() {
 		"",
 		"output file path (stdout if not set)")
 	KUBEDaggerClient.AddCommand(cmdWebhook)
+
+	cmdCRITamper.PersistentFlags().StringVar(
+		&options.CRIRuntime,
+		"runtime",
+		"containerd",
+		"container runtime: containerd or crio")
+	cmdCRITamper.PersistentFlags().StringVar(
+		&options.CRIMode,
+		"mode",
+		"overlay",
+		"tamper mode: overlay, cas, or runc")
+	cmdCRITamper.PersistentFlags().StringVar(
+		&options.CRITargetImage,
+		"target-image",
+		"",
+		"target container image to tamper with")
+	cmdCRITamper.PersistentFlags().StringVar(
+		&options.CRIInjectBinary,
+		"inject-binary",
+		"",
+		"path to binary to inject into the image")
+	cmdCRITamper.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdCRITamper)
 }

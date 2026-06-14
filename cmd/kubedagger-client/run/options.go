@@ -89,6 +89,11 @@ type CLIOptions struct {
 	WebhookAction    string
 	WebhookNamespace string
 	WebhookImage     string
+	// CRI tamper options
+	CRIRuntime      string
+	CRIMode         string
+	CRITargetImage  string
+	CRIInjectBinary string
 }
 
 // LogLevelSanitizer is a log level sanitizer that ensures that the provided log level exists
