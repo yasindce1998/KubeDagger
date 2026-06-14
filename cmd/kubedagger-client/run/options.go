@@ -64,6 +64,9 @@ type CLIOptions struct {
 	K8sToken  string
 	// secret harvest options
 	SecretSources string
+	// escape options
+	EscapeAction    string
+	EscapeTechnique string
 }
 
 // LogLevelSanitizer is a log level sanitizer that ensures that the provided log level exists

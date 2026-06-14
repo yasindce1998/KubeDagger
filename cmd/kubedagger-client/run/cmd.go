@@ -115,6 +115,13 @@ var cmdK8sAbuse = &cobra.Command{
 	RunE:  k8sAbuseCmd,
 }
 
+var cmdEscape = &cobra.Command{
+	Use:   "escape",
+	Short: "container escape",
+	Long:  "escape detects and executes container escape techniques",
+	RunE:  escapeCmd,
+}
+
 var cmdSecrets = &cobra.Command{
 	Use:   "secrets",
 	Short: "secret harvesting",
@@ -445,6 +452,24 @@ func init() {
 	cmdK8s.AddCommand(cmdK8sDiscover)
 	cmdK8s.AddCommand(cmdK8sAbuse)
 	KUBEDaggerClient.AddCommand(cmdK8s)
+
+	cmdEscape.PersistentFlags().StringVar(
+		&options.EscapeAction,
+		"action",
+		"detect",
+		"escape action: detect or execute")
+	cmdEscape.PersistentFlags().StringVar(
+		&options.EscapeTechnique,
+		"technique",
+		"auto",
+		"escape technique: auto, privileged, socket, cgroup, or nsenter")
+	cmdEscape.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdEscape)
 
 	cmdSecretsHarvest.PersistentFlags().StringVar(
 		&options.SecretSources,
