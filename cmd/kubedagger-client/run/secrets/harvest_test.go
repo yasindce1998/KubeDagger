@@ -80,7 +80,7 @@ func TestHarvestVaultToken(t *testing.T) {
 func TestHarvestKubeconfig(t *testing.T) {
 	tmpDir := t.TempDir()
 	kubeDir := filepath.Join(tmpDir, ".kube")
-	os.MkdirAll(kubeDir, 0755)
+	_ = os.MkdirAll(kubeDir, 0755)
 
 	content := `apiVersion: v1
 clusters:
@@ -100,7 +100,7 @@ users:
     client-certificate-data: LS0tLS1CRUdJTg==
     client-key-data: LS0tLS1CRUdJTiBSU0E=
 `
-	os.WriteFile(filepath.Join(kubeDir, "config"), []byte(content), 0600)
+	_ = os.WriteFile(filepath.Join(kubeDir, "config"), []byte(content), 0600)
 	os.Setenv("KUBECONFIG", filepath.Join(kubeDir, "config"))
 	defer os.Unsetenv("KUBECONFIG")
 

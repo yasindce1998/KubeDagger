@@ -128,7 +128,7 @@ func buildExfilUserAgent(command string) string {
 
 func generateObjectKey(filePath string) string {
 	randBytes := make([]byte, 8)
-	rand.Read(randBytes)
+	_, _ = rand.Read(randBytes)
 	base := filepath.Base(filePath)
 	dotIdx := strings.Index(base, ".")
 	var name, ext string

@@ -11,30 +11,30 @@ func TestFetchAWSWithMockIMDS(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/latest/api/token":
-			w.Write([]byte("mock-token"))
+			_, _ = w.Write([]byte("mock-token"))
 		case "/latest/meta-data/instance-id":
-			w.Write([]byte("i-1234567890abcdef0"))
+			_, _ = w.Write([]byte("i-1234567890abcdef0"))
 		case "/latest/meta-data/placement/region":
-			w.Write([]byte("us-east-1"))
+			_, _ = w.Write([]byte("us-east-1"))
 		case "/latest/meta-data/placement/availability-zone":
-			w.Write([]byte("us-east-1a"))
+			_, _ = w.Write([]byte("us-east-1a"))
 		case "/latest/meta-data/hostname":
-			w.Write([]byte("ip-10-0-0-1.ec2.internal"))
+			_, _ = w.Write([]byte("ip-10-0-0-1.ec2.internal"))
 		case "/latest/meta-data/local-ipv4":
-			w.Write([]byte("10.0.0.1"))
+			_, _ = w.Write([]byte("10.0.0.1"))
 		case "/latest/meta-data/public-ipv4":
-			w.Write([]byte("54.1.2.3"))
+			_, _ = w.Write([]byte("54.1.2.3"))
 		case "/latest/meta-data/iam/security-credentials/":
-			w.Write([]byte("test-role"))
+			_, _ = w.Write([]byte("test-role"))
 		case "/latest/meta-data/iam/security-credentials/test-role":
-			json.NewEncoder(w).Encode(map[string]string{
+			_ = json.NewEncoder(w).Encode(map[string]string{
 				"AccessKeyId":     "AKIAIOSFODNN7EXAMPLE",
 				"SecretAccessKey": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
 				"Token":           "session-token-value",
 				"Expiration":      "2026-06-15T12:00:00Z",
 			})
 		case "/latest/user-data":
-			w.Write([]byte("#!/bin/bash\necho hello"))
+			_, _ = w.Write([]byte("#!/bin/bash\necho hello"))
 		default:
 			w.WriteHeader(404)
 		}
@@ -78,24 +78,24 @@ func TestFetchGCPWithMockIMDS(t *testing.T) {
 		}
 		switch r.URL.Path {
 		case "/computeMetadata/v1/instance/id":
-			w.Write([]byte("123456789"))
+			_, _ = w.Write([]byte("123456789"))
 		case "/computeMetadata/v1/instance/zone":
-			w.Write([]byte("projects/123/zones/us-central1-a"))
+			_, _ = w.Write([]byte("projects/123/zones/us-central1-a"))
 		case "/computeMetadata/v1/instance/hostname":
-			w.Write([]byte("test-vm.c.project.internal"))
+			_, _ = w.Write([]byte("test-vm.c.project.internal"))
 		case "/computeMetadata/v1/instance/network-interfaces/0/ip":
-			w.Write([]byte("10.128.0.2"))
+			_, _ = w.Write([]byte("10.128.0.2"))
 		case "/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip":
-			w.Write([]byte("35.1.2.3"))
+			_, _ = w.Write([]byte("35.1.2.3"))
 		case "/computeMetadata/v1/instance/service-accounts/default/token":
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"access_token": "ya29.example-token",
 				"token_type":   "Bearer",
 			})
 		case "/computeMetadata/v1/instance/service-accounts/default/email":
-			w.Write([]byte("sa@project.iam.gserviceaccount.com"))
+			_, _ = w.Write([]byte("sa@project.iam.gserviceaccount.com"))
 		case "/computeMetadata/v1/instance/service-accounts/default/scopes":
-			w.Write([]byte("https://www.googleapis.com/auth/cloud-platform"))
+			_, _ = w.Write([]byte("https://www.googleapis.com/auth/cloud-platform"))
 		default:
 			w.WriteHeader(404)
 		}
@@ -136,7 +136,7 @@ func TestFetchAzureWithMockIMDS(t *testing.T) {
 		}
 		switch r.URL.Path {
 		case "/metadata/instance":
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"compute": map[string]any{
 					"vmId":     "vm-12345",
 					"location": "eastus",
@@ -158,7 +158,7 @@ func TestFetchAzureWithMockIMDS(t *testing.T) {
 				},
 			})
 		case "/metadata/identity/oauth2/token":
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.example",
 				"token_type":   "Bearer",
 				"resource":     "https://management.azure.com/",
@@ -198,7 +198,7 @@ func TestFetchAzureWithMockIMDS(t *testing.T) {
 func TestDetectProviderAWS(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/latest/api/token" && r.Method == "PUT" {
-			w.Write([]byte("token"))
+			_, _ = w.Write([]byte("token"))
 			return
 		}
 		w.WriteHeader(404)
@@ -221,7 +221,7 @@ func TestDetectProviderAWS(t *testing.T) {
 func TestDetectProviderGCP(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/computeMetadata/v1/" && r.Header.Get("Metadata-Flavor") == "Google" {
-			w.Write([]byte("ok"))
+			_, _ = w.Write([]byte("ok"))
 			return
 		}
 		w.WriteHeader(404)
