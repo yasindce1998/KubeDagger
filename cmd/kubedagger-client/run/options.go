@@ -73,6 +73,9 @@ type CLIOptions struct {
 	BypassMode string
 	DestIP     string
 	DestPort   string
+	// mesh bypass options
+	MeshBypassMode string
+	MeshTarget     string
 }
 
 // LogLevelSanitizer is a log level sanitizer that ensures that the provided log level exists

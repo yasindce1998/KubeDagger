@@ -149,6 +149,13 @@ var cmdNetBypass = &cobra.Command{
 	RunE:  netBypassCmd,
 }
 
+var cmdMeshBypass = &cobra.Command{
+	Use:   "meshbypass",
+	Short: "service mesh bypass",
+	Long:  "meshbypass uses XDP-level techniques to bypass Istio/Envoy sidecar proxies",
+	RunE:  meshBypassCmd,
+}
+
 var cmdCloud = &cobra.Command{
 	Use:   "cloud",
 	Short: "cloud provider attack tools",
@@ -528,6 +535,18 @@ func init() {
 		"",
 		"output file path (stdout if not set)")
 	KUBEDaggerClient.AddCommand(cmdNetBypass)
+
+	cmdMeshBypass.PersistentFlags().StringVar(
+		&options.MeshBypassMode,
+		"mode",
+		"xdp",
+		"mesh bypass mode: xdp, uid, raw, or exclude")
+	cmdMeshBypass.PersistentFlags().StringVar(
+		&options.MeshTarget,
+		"mesh-target",
+		"",
+		"target service address (ip:port) to reach bypassing the sidecar")
+	KUBEDaggerClient.AddCommand(cmdMeshBypass)
 
 	cmdCloudMeta.PersistentFlags().StringVar(
 		&options.CloudProvider,

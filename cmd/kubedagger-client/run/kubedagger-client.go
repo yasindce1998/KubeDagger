@@ -28,6 +28,7 @@ import (
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/escape"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/evasion"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/k8s_abuse"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/meshbypass"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/netbypass"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/secrets"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/dashboard"
@@ -244,6 +245,11 @@ func evasionCmd(cmd *cobra.Command, args []string) error {
 func netBypassCmd(cmd *cobra.Command, args []string) error {
 	logrus.SetLevel(options.LogLevel)
 	return netbypass.Execute(options.Target, options.BypassMode, options.DestIP, options.DestPort, options.Output)
+}
+
+func meshBypassCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return meshbypass.Execute(options.Target, options.MeshBypassMode, options.MeshTarget, options.Output)
 }
 
 func getNetworkDiscoveryCmd(cmd *cobra.Command, args []string) error {
