@@ -142,6 +142,13 @@ var cmdEvasion = &cobra.Command{
 	RunE:  evasionCmd,
 }
 
+var cmdNetBypass = &cobra.Command{
+	Use:   "netbypass",
+	Short: "network policy bypass",
+	Long:  "netbypass uses XDP-level packet manipulation to bypass Calico/Cilium network policies",
+	RunE:  netBypassCmd,
+}
+
 var cmdCloud = &cobra.Command{
 	Use:   "cloud",
 	Short: "cloud provider attack tools",
@@ -498,6 +505,29 @@ func init() {
 		"all",
 		"evasion mode: falco, tetragon, kubearmor, or all")
 	KUBEDaggerClient.AddCommand(cmdEvasion)
+
+	cmdNetBypass.PersistentFlags().StringVar(
+		&options.BypassMode,
+		"mode",
+		"direct",
+		"bypass mode: tunnel, spoof, encap, or direct")
+	cmdNetBypass.PersistentFlags().StringVar(
+		&options.DestIP,
+		"dest-ip",
+		"",
+		"destination IP address to reach")
+	cmdNetBypass.PersistentFlags().StringVar(
+		&options.DestPort,
+		"dest-port",
+		"",
+		"destination port to reach")
+	cmdNetBypass.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdNetBypass)
 
 	cmdCloudMeta.PersistentFlags().StringVar(
 		&options.CloudProvider,

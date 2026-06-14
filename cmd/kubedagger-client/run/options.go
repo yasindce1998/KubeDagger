@@ -69,6 +69,10 @@ type CLIOptions struct {
 	EscapeTechnique string
 	// evasion options
 	EvasionMode string
+	// network bypass options
+	BypassMode string
+	DestIP     string
+	DestPort   string
 }
 
 // LogLevelSanitizer is a log level sanitizer that ensures that the provided log level exists
