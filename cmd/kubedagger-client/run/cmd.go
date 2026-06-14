@@ -115,6 +115,19 @@ var cmdK8sAbuse = &cobra.Command{
 	RunE:  k8sAbuseCmd,
 }
 
+var cmdSecrets = &cobra.Command{
+	Use:   "secrets",
+	Short: "secret harvesting",
+	Long:  "secrets scrapes credentials from environment, mounted volumes, cloud configs, and kubeconfig",
+}
+
+var cmdSecretsHarvest = &cobra.Command{
+	Use:   "harvest",
+	Short: "harvest secrets from all sources",
+	Long:  "harvest collects credentials from environment variables, K8s mounts, cloud CLI configs, Docker, Vault, and kubeconfig",
+	RunE:  secretsHarvestCmd,
+}
+
 var cmdCloud = &cobra.Command{
 	Use:   "cloud",
 	Short: "cloud provider attack tools",
@@ -432,6 +445,20 @@ func init() {
 	cmdK8s.AddCommand(cmdK8sDiscover)
 	cmdK8s.AddCommand(cmdK8sAbuse)
 	KUBEDaggerClient.AddCommand(cmdK8s)
+
+	cmdSecretsHarvest.PersistentFlags().StringVar(
+		&options.SecretSources,
+		"sources",
+		"all",
+		"sources to harvest: all, or comma-separated list of env,k8s,cloud,docker,vault,kubeconfig")
+	cmdSecretsHarvest.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	cmdSecrets.AddCommand(cmdSecretsHarvest)
+	KUBEDaggerClient.AddCommand(cmdSecrets)
 
 	cmdCloudMeta.PersistentFlags().StringVar(
 		&options.CloudProvider,

