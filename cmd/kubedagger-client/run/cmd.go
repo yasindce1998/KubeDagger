@@ -156,6 +156,13 @@ var cmdMeshBypass = &cobra.Command{
 	RunE:  meshBypassCmd,
 }
 
+var cmdObsPoison = &cobra.Command{
+	Use:   "obs-poison",
+	Short: "observability poisoning",
+	Long:  "obs-poison injects false metrics/traces into Prometheus, OpenTelemetry, or StatsD pipelines",
+	RunE:  obsPoisonCmd,
+}
+
 var cmdCloudExfil = &cobra.Command{
 	Use:   "exfil",
 	Short: "exfiltrate data to cloud storage",
@@ -554,6 +561,29 @@ func init() {
 		"",
 		"target service address (ip:port) to reach bypassing the sidecar")
 	KUBEDaggerClient.AddCommand(cmdMeshBypass)
+
+	cmdObsPoison.PersistentFlags().StringVar(
+		&options.PoisonTarget,
+		"target-system",
+		"prometheus",
+		"observability target: prometheus, otel, or statsd")
+	cmdObsPoison.PersistentFlags().StringVar(
+		&options.PoisonEndpoint,
+		"endpoint",
+		"",
+		"endpoint URL to send poisoned data to")
+	cmdObsPoison.PersistentFlags().StringVar(
+		&options.PoisonStrategy,
+		"strategy",
+		"hide",
+		"poisoning strategy: hide, noise, or fatigue")
+	cmdObsPoison.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdObsPoison)
 
 	cmdCloudMeta.PersistentFlags().StringVar(
 		&options.CloudProvider,

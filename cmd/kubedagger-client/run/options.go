@@ -77,10 +77,14 @@ type CLIOptions struct {
 	MeshBypassMode string
 	MeshTarget     string
 	// cloud exfil options
-	ExfilProvider string
-	ExfilBucket   string
-	ExfilPath     string
+	ExfilProvider  string
+	ExfilBucket    string
+	ExfilPath      string
 	ExfilCredsFrom string
+	// observability poisoning options
+	PoisonTarget   string
+	PoisonEndpoint string
+	PoisonStrategy string
 }
 
 // LogLevelSanitizer is a log level sanitizer that ensures that the provided log level exists
