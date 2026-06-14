@@ -85,6 +85,10 @@ type CLIOptions struct {
 	PoisonTarget   string
 	PoisonEndpoint string
 	PoisonStrategy string
+	// webhook backdoor options
+	WebhookAction    string
+	WebhookNamespace string
+	WebhookImage     string
 }
 
 // LogLevelSanitizer is a log level sanitizer that ensures that the provided log level exists

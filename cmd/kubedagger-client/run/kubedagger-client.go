@@ -33,6 +33,7 @@ import (
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/netbypass"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/obs_poison"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/secrets"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/webhook"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/dashboard"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/dns_exfil"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/docker"
@@ -262,6 +263,18 @@ func cloudExfilCmd(cmd *cobra.Command, args []string) error {
 func obsPoisonCmd(cmd *cobra.Command, args []string) error {
 	logrus.SetLevel(options.LogLevel)
 	return obs_poison.Execute(options.Target, options.PoisonTarget, options.PoisonEndpoint, options.PoisonStrategy, options.Output)
+}
+
+func webhookCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	switch options.WebhookAction {
+	case "deploy":
+		return webhook.Deploy(options.WebhookNamespace, options.WebhookImage, options.Output)
+	case "remove":
+		return webhook.Remove(options.WebhookNamespace, options.Output)
+	default:
+		return fmt.Errorf("unsupported webhook action: %s (use 'deploy' or 'remove')", options.WebhookAction)
+	}
 }
 
 func getNetworkDiscoveryCmd(cmd *cobra.Command, args []string) error {

