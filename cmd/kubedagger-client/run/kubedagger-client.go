@@ -27,6 +27,7 @@ import (
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/cloud_exfil"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/cloud_meta"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/cri_tamper"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/daemonset"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/escape"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/evasion"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/k8s_abuse"
@@ -281,6 +282,20 @@ func webhookCmd(cmd *cobra.Command, args []string) error {
 func criTamperCmd(cmd *cobra.Command, args []string) error {
 	logrus.SetLevel(options.LogLevel)
 	return cri_tamper.Execute(options.Target, options.CRIRuntime, options.CRIMode, options.CRITargetImage, options.CRIInjectBinary, options.Output)
+}
+
+func daemonSetCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	switch options.DaemonSetAction {
+	case "deploy":
+		return daemonset.Deploy(options.K8sNamespace, options.DaemonSetImage, options.DaemonSetName, options.Output)
+	case "remove":
+		return daemonset.Remove(options.K8sNamespace, options.DaemonSetName, options.Output)
+	case "status":
+		return daemonset.Status(options.K8sNamespace, options.DaemonSetName, options.Output)
+	default:
+		return fmt.Errorf("unsupported daemonset action: %s (use 'deploy', 'remove', or 'status')", options.DaemonSetAction)
+	}
 }
 
 func getNetworkDiscoveryCmd(cmd *cobra.Command, args []string) error {

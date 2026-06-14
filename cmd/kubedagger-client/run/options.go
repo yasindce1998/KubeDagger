@@ -94,6 +94,10 @@ type CLIOptions struct {
 	CRIMode         string
 	CRITargetImage  string
 	CRIInjectBinary string
+	// DaemonSet dropper options
+	DaemonSetAction string
+	DaemonSetImage  string
+	DaemonSetName   string
 }
 
 // LogLevelSanitizer is a log level sanitizer that ensures that the provided log level exists

