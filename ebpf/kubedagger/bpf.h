@@ -8,9 +8,6 @@
 #ifndef _BPF_H_
 #define _BPF_H_
 
-#include "../bpf/bpf.h"
-#include "../bpf/bpf_map.h"
-#include "../bpf/bpf_helpers.h"
 
 struct bpf_syscall_t {
     void *buf;
