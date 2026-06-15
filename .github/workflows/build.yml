@@ -41,6 +41,9 @@ jobs:
       - name: Test
         run: go test ./...
 
+      - name: Integration Test
+        run: sudo $(which go) test -tags integration -v -count=1 -timeout 60s ./pkg/kubedagger/
+
       - name: Lint
         uses: golangci/golangci-lint-action@v6
         with:
