@@ -12,8 +12,9 @@
 #endif
 
 /* Errno constants — from <uapi/asm-generic/errno-base.h> */
-#define ENOENT 2
 #define EPERM  1
+#define ENOENT 2
+#define ESRCH  3
 
 /* Ethernet — from <uapi/linux/if_ether.h> */
 #define ETH_ALEN 6
