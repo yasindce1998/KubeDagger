@@ -15,19 +15,17 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang llvm build-essential linux-tools-common
-          # Install kernel-matched bpftool (try exact, then meta-packages)
-          sudo apt-get install -y "linux-tools-$(uname -r)" \
-            || sudo apt-get install -y linux-tools-azure \
-            || sudo apt-get install -y linux-tools-generic \
-            || true
-          # The linux-tools-common wrapper may fail on version mismatch;
-          # bypass it by symlinking the actual binary
-          BPFTOOL_BIN=$(find /usr/lib/linux-tools -name bpftool -type f 2>/dev/null | sort -V | tail -1)
+          sudo apt-get install -y clang llvm build-essential
+          sudo apt-get install -y "linux-tools-$(uname -r)" || sudo apt-get install -y linux-tools-generic || true
+          # Find and symlink the real bpftool binary (wrapper script has version-matching bugs on Azure kernels)
+          BPFTOOL_BIN=$(find /usr/lib/linux-tools* -name bpftool -type f 2>/dev/null | head -1)
+          if [ -z "$BPFTOOL_BIN" ]; then
+            BPFTOOL_BIN=$(dpkg -L "linux-tools-$(uname -r)" 2>/dev/null | grep bpftool | head -1)
+          fi
           if [ -n "$BPFTOOL_BIN" ]; then
             sudo ln -sf "$BPFTOOL_BIN" /usr/local/bin/bpftool
           fi
-          bpftool version
+          /usr/local/bin/bpftool version || bpftool version
 
       - uses: actions/setup-go@v5
         with:
