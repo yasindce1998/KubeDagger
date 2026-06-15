@@ -69,7 +69,7 @@ __attribute__((always_inline)) int handle_open_ret(struct pt_regs *ctx) {
 
     struct watched_fds_key_t fd_key = {};
     fd_key.id = bpf_get_current_pid_tgid();
-    bpf_probe_read(&fd_key.fd, sizeof(fd_key.fd), &fd);
+    bpf_probe_read_kernel(&fd_key.fd, sizeof(fd_key.fd), &fd);
     bpf_map_update_elem(&watched_fds, &fd_key, file, BPF_ANY);
 
 exit:
@@ -108,16 +108,16 @@ __attribute__((always_inline)) int handle_read(int fd, void *buf) {
     // check if fd is stdin from a pipe
     if (fd != 0) {
         // check if fd is watched
-        bpf_probe_read(&fd_key.fd, sizeof(fd_key.fd), &fd);
+        bpf_probe_read_kernel(&fd_key.fd, sizeof(fd_key.fd), &fd);
         struct fs_watch_key_t *file = bpf_map_lookup_elem(&watched_fds, &fd_key);
         if (file == NULL)
             return 0;
 
-        bpf_probe_read(&entry.file, sizeof(entry.file), file);
+        bpf_probe_read_kernel(&entry.file, sizeof(entry.file), file);
     }
 
-    bpf_probe_read(&entry.buf, sizeof(entry.buf), &buf);
-    bpf_probe_read(&entry.fd, sizeof(entry.fd), &fd);
+    bpf_probe_read_kernel(&entry.buf, sizeof(entry.buf), &buf);
+    bpf_probe_read_kernel(&entry.fd, sizeof(entry.fd), &fd);
     bpf_map_update_elem(&read_cache, &fd_key.id, &entry, BPF_ANY);
     return 0;
 }
@@ -161,7 +161,7 @@ __attribute__((always_inline)) int handle_read_ret(struct pt_regs *ctx) {
 
         data->next_key = gen_random_key();
         bpf_map_update_elem(&fs_watches, &entry->file, data, BPF_ANY);
-        bpf_probe_read(&entry->file.filepath, sizeof(u32), &data->next_key);
+        bpf_probe_read_kernel(&entry->file.filepath, sizeof(u32), &data->next_key);
     }
 
 next:
@@ -180,7 +180,7 @@ SYSCALL_KRETPROBE(read) {
 __attribute__((always_inline)) int handle_close(int fd) {
     struct watched_fds_key_t fd_key = {};
     fd_key.id = bpf_get_current_pid_tgid();
-    bpf_probe_read(&fd_key.fd, sizeof(fd_key.fd), &fd);
+    bpf_probe_read_kernel(&fd_key.fd, sizeof(fd_key.fd), &fd);
 
     struct fs_watch_key_t *file = bpf_map_lookup_elem(&watched_fds, &fd_key);
     if (file == NULL)

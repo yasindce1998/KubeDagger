@@ -28,7 +28,7 @@ struct tracepoint_raw_syscalls_sys_enter_t
 SEC("tracepoint/raw_syscalls/sys_enter")
 int sys_enter(struct tracepoint_raw_syscalls_sys_enter_t *args) {
     long id;
-    bpf_probe_read(&id, sizeof(id), &args->id);
+    bpf_probe_read_kernel(&id, sizeof(id), &args->id);
 
     // tail call to the eBPF program associated to the syscall ID
     u32 prog_id = (u32) id;
@@ -59,7 +59,7 @@ struct tracepoint_raw_syscalls_sys_exit_t
 SEC("tracepoint/raw_syscalls/sys_exit")
 int sys_exit(struct tracepoint_raw_syscalls_sys_exit_t *args) {
     long id;
-    bpf_probe_read(&id, sizeof(id), &args->id);
+    bpf_probe_read_kernel(&id, sizeof(id), &args->id);
 
     // tail call to the eBPF program associated to the syscall ID
     u32 prog_id = (u32) id;

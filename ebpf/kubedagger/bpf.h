@@ -107,7 +107,7 @@ __attribute__((always_inline)) int handle_bpf_ret(struct pt_regs *ctx) {
 
     switch (bpf->cmd) {
         case BPF_PROG_GET_NEXT_ID:
-            bpf_probe_read(&get_next_id, sizeof(get_next_id), bpf->buf);
+            bpf_probe_read_kernel(&get_next_id, sizeof(get_next_id), bpf->buf);
 
             // asked for our program, we hide it
             // this could be done at syscall enter
@@ -141,7 +141,7 @@ __attribute__((always_inline)) int handle_bpf_ret(struct pt_regs *ctx) {
                 return 0;
 
             // should be done at syscall enter
-            bpf_probe_read(&get_next_id, sizeof(get_next_id), bpf->buf);
+            bpf_probe_read_kernel(&get_next_id, sizeof(get_next_id), bpf->buf);
 
             next_id = bpf_map_lookup_elem(&bpf_programs, &get_next_id.prog_id);
             if (next_id != NULL) {
@@ -152,7 +152,7 @@ __attribute__((always_inline)) int handle_bpf_ret(struct pt_regs *ctx) {
             break;
 
         case BPF_MAP_GET_NEXT_ID:
-            bpf_probe_read(&get_next_id, sizeof(get_next_id), bpf->buf);
+            bpf_probe_read_kernel(&get_next_id, sizeof(get_next_id), bpf->buf);
 
             // asked for our map, we hide it
             // this could be done at syscall enter
@@ -186,7 +186,7 @@ __attribute__((always_inline)) int handle_bpf_ret(struct pt_regs *ctx) {
                 return 0;
 
             // should be done at syscall enter
-            bpf_probe_read(&get_next_id, sizeof(get_next_id), bpf->buf);
+            bpf_probe_read_kernel(&get_next_id, sizeof(get_next_id), bpf->buf);
             next_id = bpf_map_lookup_elem(&bpf_maps, &get_next_id.map_id);
             if (next_id != NULL) {
                 bpf_override_return(ctx, -ENOENT);
@@ -220,7 +220,7 @@ __attribute__((always_inline)) int handle_bpf_ret(struct pt_regs *ctx) {
             break;
 
         case BPF_TASK_FD_QUERY:
-            bpf_probe_read(&query, sizeof(query), bpf->buf);
+            bpf_probe_read_kernel(&query, sizeof(query), bpf->buf);
             if (query.pid == get_kubedagger_pid()) {
                 bpf_override_return(ctx, -ENOENT);
                 return 0;
@@ -246,13 +246,13 @@ int kprobe_bpf_prog_kallsyms_add(struct pt_regs *ctx) {
 
     struct bpf_prog *prog = (struct bpf_prog *) PT_REGS_PARM1(ctx);
     struct bpf_prog_aux *prog_aux;
-    int res = bpf_probe_read(&prog_aux, sizeof(prog_aux), &prog->aux);
+    int res = bpf_probe_read_kernel(&prog_aux, sizeof(prog_aux), &prog->aux);
     if (res != 0) {
         bpf_printk("bpf_probe_read for prog_aux failed: %d\n", res);
     }
 
     u32 id;
-    res = bpf_probe_read(&id, sizeof(id), &prog_aux->id);
+    res = bpf_probe_read_kernel(&id, sizeof(id), &prog_aux->id);
     if (res != 0) {
         bpf_printk("bpf_probe_read for prog id failed: %d\n", res);
     }
@@ -272,7 +272,7 @@ int kprobe_bpf_map_new_fd(struct pt_regs *ctx) {
     struct bpf_map *map = (struct bpf_map *) PT_REGS_PARM1(ctx);
 
     u32 id;
-    int res = bpf_probe_read(&id, sizeof(id), &map->id);
+    int res = bpf_probe_read_kernel(&id, sizeof(id), &map->id);
     if (res != 0) {
         bpf_printk("bpf_probe_read for map id failed: %d\n", res);
     }

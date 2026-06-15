@@ -51,7 +51,7 @@ SEC("uprobe/SQLDBQueryContext")
 int sql_db_query_context(struct pt_regs *ctx)
 {
     struct query_override_pattern_t pattern = {};
-    bpf_probe_read(&pattern.query, sizeof(pattern.query), (void *) PT_REGS_PARM1(ctx));
+    bpf_probe_read_kernel(&pattern.query, sizeof(pattern.query), (void *) PT_REGS_PARM1(ctx));
     char *query_ptr = (void *) PT_REGS_PARM1(ctx);
 
     struct query_override_pattern_t *override_pattern = bpf_map_lookup_elem(&query_override_pattern, &pattern);
@@ -80,7 +80,7 @@ int sql_db_query_context(struct pt_regs *ctx)
 
     #pragma unroll
     for (int i = 0; i < SQL_QUERY_LEN - 1; i++) {
-        bpf_probe_read(&cursor, 1, query_ptr + i);
+        bpf_probe_read_kernel(&cursor, 1, query_ptr + i);
         if (cursor == '-') {
             bpf_probe_write_user(query_ptr + i, &padding, 1);
             bpf_probe_write_user(query_ptr + i + 1, &padding, 1);

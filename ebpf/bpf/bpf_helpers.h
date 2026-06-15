@@ -38,6 +38,10 @@ static int (*bpf_map_peek_elem)(void *map, void *value) =
 	(void *) BPF_FUNC_map_peek_elem;
 static int (*bpf_probe_read)(void *dst, int size, const void *unsafe_ptr) =
 	(void *) BPF_FUNC_probe_read;
+static int (*bpf_probe_read_kernel)(void *dst, int size, const void *unsafe_ptr) =
+	(void *) BPF_FUNC_probe_read_kernel;
+static int (*bpf_probe_read_user)(void *dst, int size, const void *unsafe_ptr) =
+	(void *) BPF_FUNC_probe_read_user;
 static unsigned long long (*bpf_ktime_get_ns)(void) =
 	(void *) BPF_FUNC_ktime_get_ns;
 static int (*bpf_trace_printk)(const char *fmt, int fmt_size, ...) =
@@ -493,9 +497,9 @@ struct pt_regs;
 #define BPF_KRETPROBE_READ_RET_IP		BPF_KPROBE_READ_RET_IP
 #else
 #define BPF_KPROBE_READ_RET_IP(ip, ctx)		({				\
-		bpf_probe_read(&(ip), sizeof(ip), (void *)PT_REGS_RET(ctx)); })
+		bpf_probe_read_kernel(&(ip), sizeof(ip), (void *)PT_REGS_RET(ctx)); })
 #define BPF_KRETPROBE_READ_RET_IP(ip, ctx)	({				\
-		bpf_probe_read(&(ip), sizeof(ip),				\
+		bpf_probe_read_kernel(&(ip), sizeof(ip),			\
 				(void *)(PT_REGS_FP(ctx) + sizeof(ip))); })
 #endif
 
@@ -516,7 +520,7 @@ struct pt_regs;
  * (local) BTF, used to record relocation.
  */
 #define BPF_CORE_READ(dst, src)						\
-	bpf_probe_read((dst), sizeof(*(src)),				\
+	bpf_probe_read_kernel((dst), sizeof(*(src)),			\
 		       __builtin_preserve_access_index(src))
 
 #endif

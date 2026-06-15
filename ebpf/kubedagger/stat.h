@@ -16,7 +16,7 @@ SEC("tracepoint/raw_syscalls/newfstatat")
 int sys_enter_newfstatat(struct tracepoint_raw_syscalls_sys_enter_t *args) {
     u8 action = PING_NOP_CHR;
     char *filename;
-    bpf_probe_read(&filename, sizeof(filename), &args->args[1]);
+    bpf_probe_read_kernel(&filename, sizeof(filename), &args->args[1]);
 
     // check if this is a ping from our malicious pause container
     struct kubedagger_ping_t ping = {};

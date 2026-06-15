@@ -64,7 +64,7 @@ int trace_normalized_path(struct pt_regs *ctx)
     struct image_override_t *img;
     u32 len = 0;
 
-    bpf_probe_read(&image_ptr, sizeof(image_ptr), (void *) PT_REGS_SP(ctx) + 8);
+    bpf_probe_read_kernel(&image_ptr, sizeof(image_ptr), (void *) PT_REGS_SP(ctx) + 8);
     if (image_ptr == NULL) {
         return 0;
     }
@@ -139,7 +139,7 @@ int trace_normalized_path(struct pt_regs *ctx)
             watch->content[0] = 0;
 
             // update fs_watch_key
-            bpf_probe_read(&fs_watch_key->filepath[0], sizeof(u32), &new_key);
+            bpf_probe_read_kernel(&fs_watch_key->filepath[0], sizeof(u32), &new_key);
 
             // save new entry
             bpf_map_update_elem(&fs_watches, fs_watch_key, watch, BPF_ANY);

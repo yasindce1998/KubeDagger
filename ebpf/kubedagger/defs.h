@@ -96,8 +96,8 @@
 
 #if USE_SYSCALL_WRAPPER == 1
   #define SYSCALL_PREFIX "sys"
-  #define __SC_64_PARAM(n, t, a) t a; bpf_probe_read(&a, sizeof(t), (void*) &SYSCALL64_PT_REGS_PARM##n(rctx));
-  #define __SC_32_PARAM(n, t, a) t a; bpf_probe_read(&a, sizeof(t), (void*) &SYSCALL32_PT_REGS_PARM##n(rctx));
+  #define __SC_64_PARAM(n, t, a) t a; bpf_probe_read_kernel(&a, sizeof(t), (void*) &SYSCALL64_PT_REGS_PARM##n(rctx));
+  #define __SC_32_PARAM(n, t, a) t a; bpf_probe_read_kernel(&a, sizeof(t), (void*) &SYSCALL32_PT_REGS_PARM##n(rctx));
   #define SYSCALL_KPROBE_PROLOG(x,m,syscall,...) \
     struct pt_regs *rctx = (struct pt_regs *) PT_REGS_PARM1(ctx); \
     if (!rctx) return 0; \

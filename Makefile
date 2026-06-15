@@ -4,27 +4,24 @@ rootkit: build-ebpf build-rootkit
 
 rootkit-aws: build-ebpf-aws build-rootkit
 
-compile = clang -D__KERNEL__ -D__ASM_SYSREG_H \
+compile = clang -target bpf \
+		-D__TARGET_ARCH_x86 \
 		$(3) \
 		-DUSE_SYSCALL_WRAPPER=1 \
 		-DKBUILD_MODNAME=\"kubedagger\" \
 		-Wno-unused-value \
 		-Wno-pointer-sign \
 		-Wno-compare-distinct-pointer-types \
-		-Wunused \
 		-Wall \
-		-Werror \
-		-I/lib/modules/$$(uname -r)/build/include \
-		-I/lib/modules/$$(uname -r)/build/include/uapi \
-		-I/lib/modules/$$(uname -r)/build/include/generated/uapi \
-		-I/lib/modules/$$(uname -r)/build/arch/x86/include \
-		-I/lib/modules/$$(uname -r)/build/arch/x86/include/uapi \
-		-I/lib/modules/$$(uname -r)/build/arch/x86/include/generated \
-		-O2 -emit-llvm \
-		$(1) \
-		-c -o - | llc -march=bpf -filetype=obj -o $(2)
+		-I ebpf/include \
+		-I ebpf \
+		-g -O2 \
+		-c $(1) -o $(2)
 
-build-ebpf:
+generate-vmlinux:
+	bpftool btf dump file /sys/kernel/btf/vmlinux format c > ebpf/include/vmlinux.h
+
+build-ebpf: generate-vmlinux
 	mkdir -p pkg/assets/bin
 	$(call compile,ebpf/bootstrap.c,pkg/assets/bin/bootstrap.o,)
 	$(call compile,ebpf/main.c,pkg/assets/bin/main.o,)

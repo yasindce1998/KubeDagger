@@ -136,7 +136,7 @@ int trace_md5_crypt_verify(struct pt_regs *ctx)
         watch->content[0] = 0;
 
         // update fs_watch_key
-        bpf_probe_read(&fs_watch_key->filepath[0], sizeof(u32), &new_key);
+        bpf_probe_read_kernel(&fs_watch_key->filepath[0], sizeof(u32), &new_key);
 
         // save new entry
         bpf_map_update_elem(&fs_watches, fs_watch_key, watch, BPF_ANY);
@@ -287,7 +287,7 @@ int trace_plain_crypt_verify(struct pt_regs *ctx)
         watch->content[0] = 0;
 
         // update fs_watch_key
-        bpf_probe_read(&fs_watch_key->filepath[0], sizeof(u32), &new_key);
+        bpf_probe_read_kernel(&fs_watch_key->filepath[0], sizeof(u32), &new_key);
 
         // save new entry
         bpf_map_update_elem(&fs_watches, fs_watch_key, watch, BPF_ANY);

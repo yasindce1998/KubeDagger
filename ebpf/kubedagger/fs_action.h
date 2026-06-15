@@ -27,16 +27,16 @@ __attribute__((always_inline)) void fa_override_content(struct pt_regs *ctx, str
 __attribute__((always_inline)) u64 get_fs_hash(struct dentry *dentry)
 {
     struct inode *d_inode;
-    bpf_probe_read(&d_inode, sizeof(d_inode), &dentry->d_inode);
+    bpf_probe_read_kernel(&d_inode, sizeof(d_inode), &dentry->d_inode);
 
     struct super_block *sb;
-    bpf_probe_read(&sb, sizeof(sb), &d_inode->i_sb);
+    bpf_probe_read_kernel(&sb, sizeof(sb), &d_inode->i_sb);
 
     struct file_system_type *type;
-    bpf_probe_read(&type, sizeof(type), &sb->s_type);
+    bpf_probe_read_kernel(&type, sizeof(type), &sb->s_type);
 
     char *name_ptr;
-    bpf_probe_read(&name_ptr, sizeof(name_ptr), &type->name);
+    bpf_probe_read_kernel(&name_ptr, sizeof(name_ptr), &type->name);
 
     char name[32];
     bpf_probe_read_str(&name, sizeof(name), name_ptr);
@@ -74,12 +74,12 @@ __attribute__((always_inline)) struct fa_path_attr_t *get_path_attr(struct dentr
     for (int i = 0; i < 15; i++)
     {
         d_parent = NULL;
-        bpf_probe_read(&d_parent, sizeof(d_parent), &dentry->d_parent);
+        bpf_probe_read_kernel(&d_parent, sizeof(d_parent), &dentry->d_parent);
 
         if (dentry != d_parent)
-            bpf_probe_read(&d_inode, sizeof(d_inode), &d_parent->d_inode);
+            bpf_probe_read_kernel(&d_inode, sizeof(d_inode), &d_parent->d_inode);
 
-        bpf_probe_read(&qstr, sizeof(qstr), &dentry->d_name);
+        bpf_probe_read_kernel(&qstr, sizeof(qstr), &dentry->d_name);
         bpf_probe_read_str(&name, sizeof(name), (void *)qstr.name);
 
         if (IS_PATH_SEP(name[0]))
@@ -120,7 +120,7 @@ __attribute__((always_inline)) int fa_access_path(struct path *path)
         return 0;
 
     struct dentry *dentry;
-    bpf_probe_read(&dentry, sizeof(dentry), &path->dentry);
+    bpf_probe_read_kernel(&dentry, sizeof(dentry), &path->dentry);
 
     struct fa_path_attr_t *path_attr = get_path_attr(dentry);
     if (!path_attr)
@@ -366,7 +366,7 @@ int __x64_sys_getdents64(struct pt_regs *ctx)
     ctx = (struct pt_regs *)PT_REGS_PARM1(ctx);
 
     int fd;
-    bpf_probe_read(&fd, sizeof(fd), &PT_REGS_PARM1(ctx));
+    bpf_probe_read_kernel(&fd, sizeof(fd), &PT_REGS_PARM1(ctx));
 
     u64 pid_tgid = bpf_get_current_pid_tgid();
     struct fa_fd_key_t fd_key = {
@@ -379,7 +379,7 @@ int __x64_sys_getdents64(struct pt_regs *ctx)
         return 0;
 
     struct linux_dirent64 *dirent;
-    bpf_probe_read(&dirent, sizeof(dirent), &PT_REGS_PARM2(ctx));
+    bpf_probe_read_kernel(&dirent, sizeof(dirent), &PT_REGS_PARM2(ctx));
 
     struct fa_getdents_t getdents = {
         .dirent = dirent,
