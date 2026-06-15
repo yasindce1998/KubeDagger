@@ -6,6 +6,7 @@ rootkit-aws: build-ebpf-aws build-rootkit
 
 compile = clang -target bpf \
 		-D__TARGET_ARCH_x86 \
+		-D__KERNEL__ \
 		$(3) \
 		-DUSE_SYSCALL_WRAPPER=1 \
 		-DKBUILD_MODNAME=\"kubedagger\" \

@@ -10,7 +10,7 @@
 
 #define LOAD_CONSTANT(param, var) asm("%0 = " param " ll" : "=r"(var))
 
-#if defined(__x86_64__)
+#if defined(__x86_64__) || defined(__TARGET_ARCH_x86)
   #define SYSCALL64_PREFIX "__x64_"
   #define SYSCALL32_PREFIX "__ia32_"
 
@@ -32,7 +32,7 @@
   #define SYSCALL32_PT_REGS_PARM5(x) ((x)->di)
   #define SYSCALL32_PT_REGS_PARM6(x) ((x)->bp)
 
-#elif defined(__aarch64__)
+#elif defined(__aarch64__) || defined(__TARGET_ARCH_arm64)
   #define SYSCALL64_PREFIX "__arm64_"
   #define SYSCALL32_PREFIX "__arm32_"
 

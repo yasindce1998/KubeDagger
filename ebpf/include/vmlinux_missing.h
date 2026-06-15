@@ -6,6 +6,18 @@
  * definitions from BTF, not preprocessor #defines from kernel headers).
  */
 
+/* Standard C NULL */
+#ifndef NULL
+#define NULL ((void *)0)
+#endif
+
+/* Errno constants — from <uapi/asm-generic/errno-base.h> */
+#define ENOENT 2
+#define EPERM  1
+
+/* Ethernet — from <uapi/linux/if_ether.h> */
+#define ETH_ALEN 6
+
 /* BPF map update flags — from <uapi/linux/bpf.h> */
 #define BPF_ANY       0
 #define BPF_NOEXIST   1
