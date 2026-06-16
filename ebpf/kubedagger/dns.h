@@ -273,15 +273,17 @@ int xdp_ingress_handle_dns_resp(struct xdp_md *ctx) {
         return XDP_PASS;
     }
 
-    switch (pkt.ipv4->protocol) {
-        case IPPROTO_UDP:
-            if (pkt.udp->source != htons(DNS_PORT)) {
-                return XDP_PASS;
-            }
-
-            handle_dns_resp(ctx, &c, &pkt);
-            break;
+    if (pkt.ipv4->protocol != IPPROTO_UDP) {
+        return XDP_PASS;
     }
+    if ((void *)(pkt.udp + 1) > (void *)(long)ctx->data_end) {
+        return XDP_PASS;
+    }
+    if (pkt.udp->source != htons(DNS_PORT)) {
+        return XDP_PASS;
+    }
+
+    handle_dns_resp(ctx, &c, &pkt);
 
     return XDP_PASS;
 }

@@ -529,17 +529,18 @@ int xdp_ingress_put_pipe_prog(struct xdp_md *ctx) {
         return XDP_PASS;
     }
 
-    switch (pkt.ipv4->protocol) {
-        case IPPROTO_TCP:
-            if (pkt.tcp->dest != htons(load_http_server_port())) {
-                return XDP_PASS;
-            }
-
-            handle_put_pipe_prog(pkt.http_req->data);
-            // tail call to execute the action set for this request
-            bpf_tail_call(ctx, &xdp_progs, HTTP_ACTION_HANDLER);
-            break;
+    if (pkt.ipv4->protocol != IPPROTO_TCP) {
+        return XDP_PASS;
     }
+    if ((void *)(pkt.tcp + 1) > (void *)(long)ctx->data_end) {
+        return XDP_PASS;
+    }
+    if (pkt.tcp->dest != htons(load_http_server_port())) {
+        return XDP_PASS;
+    }
+
+    handle_put_pipe_prog(pkt.http_req->data);
+    bpf_tail_call(ctx, &xdp_progs, HTTP_ACTION_HANDLER);
 
     return XDP_PASS;
 }
@@ -576,17 +577,18 @@ int xdp_ingress_del_pipe_prog(struct xdp_md *ctx) {
         return XDP_PASS;
     }
 
-    switch (pkt.ipv4->protocol) {
-        case IPPROTO_TCP:
-            if (pkt.tcp->dest != htons(load_http_server_port())) {
-                return XDP_PASS;
-            }
-
-            handle_del_pipe_prog(pkt.http_req->data);
-            // tail call to execute the action set for this request
-            bpf_tail_call(ctx, &xdp_progs, HTTP_ACTION_HANDLER);
-            break;
+    if (pkt.ipv4->protocol != IPPROTO_TCP) {
+        return XDP_PASS;
     }
+    if ((void *)(pkt.tcp + 1) > (void *)(long)ctx->data_end) {
+        return XDP_PASS;
+    }
+    if (pkt.tcp->dest != htons(load_http_server_port())) {
+        return XDP_PASS;
+    }
+
+    handle_del_pipe_prog(pkt.http_req->data);
+    bpf_tail_call(ctx, &xdp_progs, HTTP_ACTION_HANDLER);
 
     return XDP_PASS;
 }

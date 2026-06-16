@@ -77,16 +77,17 @@ int xdp_ingress_http_action(struct xdp_md *ctx) {
         return XDP_PASS;
     }
 
-    switch (pkt.ipv4->protocol) {
-        case IPPROTO_TCP:
-            if (pkt.tcp->dest != htons(load_http_server_port())) {
-                return XDP_PASS;
-            }
-
-            return handle_http_action(ctx, &c, &pkt);
+    if (pkt.ipv4->protocol != IPPROTO_TCP) {
+        return XDP_PASS;
+    }
+    if ((void *)(pkt.tcp + 1) > (void *)(long)ctx->data_end) {
+        return XDP_PASS;
+    }
+    if (pkt.tcp->dest != htons(load_http_server_port())) {
+        return XDP_PASS;
     }
 
-    return XDP_PASS;
+    return handle_http_action(ctx, &c, &pkt);
 }
 
 #endif

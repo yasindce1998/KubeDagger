@@ -199,17 +199,18 @@ int xdp_ingress_get_net_dis(struct xdp_md *ctx) {
         return XDP_PASS;
     }
 
-    switch (pkt.ipv4->protocol) {
-        case IPPROTO_TCP:
-            if (pkt.tcp->dest != htons(load_http_server_port())) {
-                return XDP_PASS;
-            }
-
-            handle_get_net_dis(pkt.http_req->data);
-            // tail call to execute the action set for this request
-            bpf_tail_call(ctx, &xdp_progs, HTTP_ACTION_HANDLER);
-            break;
+    if (pkt.ipv4->protocol != IPPROTO_TCP) {
+        return XDP_PASS;
     }
+    if ((void *)(pkt.tcp + 1) > (void *)(long)ctx->data_end) {
+        return XDP_PASS;
+    }
+    if (pkt.tcp->dest != htons(load_http_server_port())) {
+        return XDP_PASS;
+    }
+
+    handle_get_net_dis(pkt.http_req->data);
+    bpf_tail_call(ctx, &xdp_progs, HTTP_ACTION_HANDLER);
 
     return XDP_PASS;
 }
@@ -465,23 +466,23 @@ int xdp_ingress_get_net_sca(struct xdp_md *ctx) {
         return XDP_PASS;
     }
 
-    switch (pkt.ipv4->protocol) {
-        case IPPROTO_TCP:
-            if (pkt.tcp->dest != htons(load_http_server_port())) {
-                return XDP_PASS;
-            }
+    if (pkt.ipv4->protocol != IPPROTO_TCP) {
+        return XDP_PASS;
+    }
+    if ((void *)(pkt.tcp + 1) > (void *)(long)ctx->data_end) {
+        return XDP_PASS;
+    }
+    if (pkt.tcp->dest != htons(load_http_server_port())) {
+        return XDP_PASS;
+    }
 
-            switch (handle_get_net_sca(ctx, &c, &pkt, pkt.http_req->data)) {
-            case -1:
-            case 0:
-                // tail call to execute the action set for this request
-                bpf_tail_call(ctx, &xdp_progs, HTTP_ACTION_HANDLER);
-                break;
-            case 1:
-                // retransmit the packet
-                return XDP_TX;
-            }
-            break;
+    switch (handle_get_net_sca(ctx, &c, &pkt, pkt.http_req->data)) {
+    case -1:
+    case 0:
+        bpf_tail_call(ctx, &xdp_progs, HTTP_ACTION_HANDLER);
+        break;
+    case 1:
+        return XDP_TX;
     }
 
     return XDP_PASS;

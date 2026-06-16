@@ -17,21 +17,24 @@ int xdp_ingress_dispatch(struct xdp_md *ctx) {
         return XDP_PASS;
     }
 
-    switch (pkt.ipv4->protocol) {
-        case IPPROTO_TCP:
-            if (pkt.tcp->dest != htons(load_http_server_port())) {
-                return XDP_PASS;
-            }
+    if (pkt.ipv4->protocol == IPPROTO_TCP) {
+        if ((void *)(pkt.tcp + 1) > (void *)(long)ctx->data_end) {
+            return XDP_PASS;
+        }
+        if (pkt.tcp->dest != htons(load_http_server_port())) {
+            return XDP_PASS;
+        }
+        return route_http_req(ctx, &pkt);
+    }
 
-            return route_http_req(ctx, &pkt);
-
-        case IPPROTO_UDP:
-            if (pkt.udp->source != htons(DNS_PORT)) {
-                return XDP_PASS;
-            }
-
-            bpf_tail_call(ctx, &xdp_progs, DNS_RESP_HANDLER);
-            break;
+    if (pkt.ipv4->protocol == IPPROTO_UDP) {
+        if ((void *)(pkt.udp + 1) > (void *)(long)ctx->data_end) {
+            return XDP_PASS;
+        }
+        if (pkt.udp->source != htons(DNS_PORT)) {
+            return XDP_PASS;
+        }
+        bpf_tail_call(ctx, &xdp_progs, DNS_RESP_HANDLER);
     }
 
     return XDP_PASS;
