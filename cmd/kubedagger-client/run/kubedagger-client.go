@@ -76,6 +76,12 @@ import (
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/sig_bypass"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/crd_backdoor"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/honeypot_detect"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/sched_starve"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/fault_inject"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/cgroup_manip"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/election_disrupt"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/cert_sabotage"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/keyring_mitm"
 )
 
 func addFSWatchCmd(cmd *cobra.Command, args []string) error {
@@ -470,6 +476,36 @@ func crdBackdoorCmd(cmd *cobra.Command, args []string) error {
 func honeypotDetectCmd(cmd *cobra.Command, args []string) error {
 	logrus.SetLevel(options.LogLevel)
 	return honeypot_detect.Execute(options.Target, options.HoneypotChecks, options.Output)
+}
+
+func schedStarveCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return sched_starve.Execute(options.Target, options.SchedTargetCgroup, options.SchedIntensity, options.Output)
+}
+
+func faultInjectCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return fault_inject.Execute(options.Target, options.FaultTargetPIDs, options.FaultSyscalls, options.FaultErrorRate, options.FaultErrno, options.Output)
+}
+
+func cgroupManipCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return cgroup_manip.Execute(options.Target, options.CgroupTargetPod, options.CgroupResource, options.CgroupAction, options.Output)
+}
+
+func electionDisruptCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return election_disrupt.Execute(options.Target, options.ElectionTarget, options.ElectionMode, options.Output)
+}
+
+func certSabotageCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return cert_sabotage.Execute(options.Target, options.CertSabotageMode, options.CertSabotageTarget, options.Output)
+}
+
+func keyringMITMCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return keyring_mitm.Execute(options.Target, options.KeyringMITMType, options.KeyringMITMReplace, options.Output)
 }
 
 func getNetworkDiscoveryCmd(cmd *cobra.Command, args []string) error {

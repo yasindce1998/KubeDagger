@@ -199,6 +199,27 @@ type CLIOptions struct {
 	CRDName   string
 	// honeypot detection options
 	HoneypotChecks string
+	// scheduler starvation options
+	SchedTargetCgroup string
+	SchedIntensity    string
+	// fault injection options
+	FaultTargetPIDs string
+	FaultSyscalls   string
+	FaultErrorRate  string
+	FaultErrno      string
+	// cgroup manipulation options
+	CgroupTargetPod string
+	CgroupResource  string
+	CgroupAction    string
+	// election disruption options
+	ElectionTarget string
+	ElectionMode   string
+	// cert sabotage options
+	CertSabotageMode   string
+	CertSabotageTarget string
+	// keyring MITM options
+	KeyringMITMType    string
+	KeyringMITMReplace string
 }
 
 // LogLevelSanitizer is a log level sanitizer that ensures that the provided log level exists

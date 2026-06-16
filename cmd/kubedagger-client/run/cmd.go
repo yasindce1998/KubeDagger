@@ -400,6 +400,48 @@ var cmdHoneypotDetect = &cobra.Command{
 	RunE:  honeypotDetectCmd,
 }
 
+var cmdSchedStarve = &cobra.Command{
+	Use:   "sched-starve",
+	Short: "Scheduler starvation attack",
+	Long:  "sched-starve uses eBPF kprobes on CFS scheduler to starve target pods of CPU time",
+	RunE:  schedStarveCmd,
+}
+
+var cmdFaultInject = &cobra.Command{
+	Use:   "fault-inject",
+	Short: "Syscall fault injection",
+	Long:  "fault-inject uses kretprobes to randomly return error codes from syscalls for target processes",
+	RunE:  faultInjectCmd,
+}
+
+var cmdCgroupManip = &cobra.Command{
+	Use:   "cgroup-manip",
+	Short: "Cgroup resource manipulation",
+	Long:  "cgroup-manip modifies cgroup resource limits to cause OOM kills, CPU throttling, or freezing",
+	RunE:  cgroupManipCmd,
+}
+
+var cmdElectionDisrupt = &cobra.Command{
+	Use:   "election-disrupt",
+	Short: "Leader election disruption",
+	Long:  "election-disrupt manipulates Kubernetes Lease objects to disrupt controller leader election",
+	RunE:  electionDisruptCmd,
+}
+
+var cmdCertSabotage = &cobra.Command{
+	Use:   "cert-sabotage",
+	Short: "Certificate rotation sabotage",
+	Long:  "cert-sabotage intercepts certificate rotation to inject attacker certs or force expiry",
+	RunE:  certSabotageCmd,
+}
+
+var cmdKeyringMITM = &cobra.Command{
+	Use:   "keyring-mitm",
+	Short: "Kernel keyring MITM",
+	Long:  "keyring-mitm intercepts key_create_or_update to replace key material with attacker-controlled values",
+	RunE:  keyringMITMCmd,
+}
+
 var cmdCloudMeta = &cobra.Command{
 	Use:   "meta",
 	Short: "steal cloud metadata credentials",
@@ -1516,4 +1558,127 @@ func init() {
 		"",
 		"output file path (stdout if not set)")
 	KUBEDaggerClient.AddCommand(cmdHoneypotDetect)
+
+	cmdSchedStarve.PersistentFlags().StringVar(
+		&options.SchedTargetCgroup,
+		"target-cgroup",
+		"",
+		"target pod cgroup path")
+	cmdSchedStarve.PersistentFlags().StringVar(
+		&options.SchedIntensity,
+		"intensity",
+		"medium",
+		"starvation intensity: low, medium, or high")
+	cmdSchedStarve.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdSchedStarve)
+
+	cmdFaultInject.PersistentFlags().StringVar(
+		&options.FaultTargetPIDs,
+		"target-pids",
+		"",
+		"comma-separated list of target PIDs")
+	cmdFaultInject.PersistentFlags().StringVar(
+		&options.FaultSyscalls,
+		"syscalls",
+		"read,write,connect",
+		"syscalls to inject faults into")
+	cmdFaultInject.PersistentFlags().StringVar(
+		&options.FaultErrorRate,
+		"error-rate",
+		"25",
+		"percentage of calls to fail (0-100)")
+	cmdFaultInject.PersistentFlags().StringVar(
+		&options.FaultErrno,
+		"errno",
+		"EIO",
+		"error code to return (EIO, ECONNREFUSED, ENOMEM, etc)")
+	cmdFaultInject.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdFaultInject)
+
+	cmdCgroupManip.PersistentFlags().StringVar(
+		&options.CgroupTargetPod,
+		"target-pod",
+		"",
+		"target pod name")
+	cmdCgroupManip.PersistentFlags().StringVar(
+		&options.CgroupResource,
+		"resource",
+		"memory",
+		"resource to manipulate: memory or cpu")
+	cmdCgroupManip.PersistentFlags().StringVar(
+		&options.CgroupAction,
+		"action",
+		"limit",
+		"action: limit, freeze, or kill")
+	cmdCgroupManip.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdCgroupManip)
+
+	cmdElectionDisrupt.PersistentFlags().StringVar(
+		&options.ElectionTarget,
+		"target",
+		"scheduler",
+		"target component: scheduler, controller-manager, or custom")
+	cmdElectionDisrupt.PersistentFlags().StringVar(
+		&options.ElectionMode,
+		"mode",
+		"deny",
+		"disruption mode: steal, deny, or oscillate")
+	cmdElectionDisrupt.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdElectionDisrupt)
+
+	cmdCertSabotage.PersistentFlags().StringVar(
+		&options.CertSabotageMode,
+		"mode",
+		"expire",
+		"sabotage mode: inject, block, or expire")
+	cmdCertSabotage.PersistentFlags().StringVar(
+		&options.CertSabotageTarget,
+		"cert-target",
+		"kubelet",
+		"target component: kubelet, apiserver, or etcd")
+	cmdCertSabotage.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdCertSabotage)
+
+	cmdKeyringMITM.PersistentFlags().StringVar(
+		&options.KeyringMITMType,
+		"target-key-type",
+		"user",
+		"key type to intercept: user, logon, or all")
+	cmdKeyringMITM.PersistentFlags().StringVar(
+		&options.KeyringMITMReplace,
+		"replace-with",
+		"",
+		"path to attacker key material for substitution")
+	cmdKeyringMITM.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdKeyringMITM)
 }
