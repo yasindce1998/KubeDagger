@@ -69,6 +69,13 @@ import (
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/kubelet_abuse"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/veth_hijack"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/sidecar_inject"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/supply_chain"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/gitops_poison"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/sa_token"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/pod_identity"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/sig_bypass"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/crd_backdoor"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/honeypot_detect"
 )
 
 func addFSWatchCmd(cmd *cobra.Command, args []string) error {
@@ -428,6 +435,41 @@ func vethHijackCmd(cmd *cobra.Command, args []string) error {
 func sidecarInjectCmd(cmd *cobra.Command, args []string) error {
 	logrus.SetLevel(options.LogLevel)
 	return sidecar_inject.Execute(options.Target, options.SidecarPod, options.SidecarImage, options.SidecarNamespace, options.Output)
+}
+
+func supplyChainCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return supply_chain.Execute(options.Target, options.SupplyChainMode, options.SupplyTargetImage, options.SupplyPayload, options.Output)
+}
+
+func gitOpsPoisonCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return gitops_poison.Execute(options.Target, options.GitOpsRepo, options.GitOpsTargetPath, options.GitOpsInjectImg, options.Output)
+}
+
+func saTokenCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return sa_token.Execute(options.Target, options.SATokenAction, options.SATokenName, options.SATokenNS, options.SATokenAudience, options.Output)
+}
+
+func podIdentityCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return pod_identity.Execute(options.Target, options.PodIDTargetPod, options.PodIDNamespace, options.PodIDAction, options.Output)
+}
+
+func sigBypassCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return sig_bypass.Execute(options.Target, options.SigBypassMode, options.SigBypassImage, options.Output)
+}
+
+func crdBackdoorCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return crd_backdoor.Execute(options.Target, options.CRDAction, options.CRDName, options.Output)
+}
+
+func honeypotDetectCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return honeypot_detect.Execute(options.Target, options.HoneypotChecks, options.Output)
 }
 
 func getNetworkDiscoveryCmd(cmd *cobra.Command, args []string) error {

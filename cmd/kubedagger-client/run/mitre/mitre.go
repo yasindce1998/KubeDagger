@@ -381,6 +381,33 @@ var techniques = []Technique{
 		Color:       "#ff3366",
 		Enabled:     true,
 	},
+	{
+		ID:          "T1195.002",
+		Name:        "Compromise Software Supply Chain",
+		Tactic:      "initial-access",
+		Description: "OCI manifest manipulation and layer injection to compromise container image supply chain",
+		Score:       95,
+		Color:       "#cc0000",
+		Enabled:     true,
+	},
+	{
+		ID:          "T1528",
+		Name:        "Steal Application Access Token",
+		Tactic:      "credential-access",
+		Description: "Service account token minting and pod identity theft via projected volume stealing",
+		Score:       85,
+		Color:       "#ff6600",
+		Enabled:     true,
+	},
+	{
+		ID:          "T1553.006",
+		Name:        "Code Signing Policy Modification",
+		Tactic:      "defense-evasion",
+		Description: "Bypass Sigstore/Cosign image signature verification via policy modification or signature injection",
+		Score:       80,
+		Color:       "#ff9900",
+		Enabled:     true,
+	},
 }
 
 // GetTechniques returns all mapped MITRE ATT&CK techniques

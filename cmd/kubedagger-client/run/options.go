@@ -174,6 +174,31 @@ type CLIOptions struct {
 	SidecarPod       string
 	SidecarImage     string
 	SidecarNamespace string
+	// supply chain options
+	SupplyChainMode    string
+	SupplyTargetImage  string
+	SupplyPayload      string
+	// gitops poisoning options
+	GitOpsRepo       string
+	GitOpsTargetPath string
+	GitOpsInjectImg  string
+	// SA token options
+	SATokenAction  string
+	SATokenName    string
+	SATokenNS      string
+	SATokenAudience string
+	// pod identity options
+	PodIDTargetPod string
+	PodIDNamespace string
+	PodIDAction    string
+	// image signature bypass options
+	SigBypassMode  string
+	SigBypassImage string
+	// CRD backdoor options
+	CRDAction string
+	CRDName   string
+	// honeypot detection options
+	HoneypotChecks string
 }
 
 // LogLevelSanitizer is a log level sanitizer that ensures that the provided log level exists

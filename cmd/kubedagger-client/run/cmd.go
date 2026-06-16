@@ -351,6 +351,55 @@ var cmdSidecarInject = &cobra.Command{
 	RunE:  sidecarInjectCmd,
 }
 
+var cmdSupplyChain = &cobra.Command{
+	Use:   "supply-chain",
+	Short: "Supply chain injection",
+	Long:  "supply-chain performs OCI manifest manipulation and layer injection for image supply chain attacks",
+	RunE:  supplyChainCmd,
+}
+
+var cmdGitOpsPoison = &cobra.Command{
+	Use:   "gitops-poison",
+	Short: "GitOps repository poisoning",
+	Long:  "gitops-poison targets ArgoCD/Flux sync mechanisms to inject malicious manifests into GitOps repos",
+	RunE:  gitOpsPoisonCmd,
+}
+
+var cmdSAToken = &cobra.Command{
+	Use:   "sa-token",
+	Short: "Service account token minting/theft",
+	Long:  "sa-token mints or steals Kubernetes service account tokens with elevated permissions",
+	RunE:  saTokenCmd,
+}
+
+var cmdPodIdentity = &cobra.Command{
+	Use:   "pod-identity",
+	Short: "Pod identity theft",
+	Long:  "pod-identity steals projected SA tokens and spoofs source IP to impersonate other pods",
+	RunE:  podIdentityCmd,
+}
+
+var cmdSigBypass = &cobra.Command{
+	Use:   "sig-bypass",
+	Short: "Image signature verification bypass",
+	Long:  "sig-bypass bypasses Sigstore/Cosign verification by injecting trusted signatures or disabling admission",
+	RunE:  sigBypassCmd,
+}
+
+var cmdCRDBackdoor = &cobra.Command{
+	Use:   "crd-backdoor",
+	Short: "CRD-based backdoor controller",
+	Long:  "crd-backdoor deploys a legitimate-looking CRD with a controller that executes commands on reconcile",
+	RunE:  crdBackdoorCmd,
+}
+
+var cmdHoneypotDetect = &cobra.Command{
+	Use:   "honeypot-detect",
+	Short: "Honeypot/deception detection",
+	Long:  "honeypot-detect fingerprints environment inconsistencies to detect honeypot/deception clusters",
+	RunE:  honeypotDetectCmd,
+}
+
 var cmdCloudMeta = &cobra.Command{
 	Use:   "meta",
 	Short: "steal cloud metadata credentials",
@@ -1321,4 +1370,150 @@ func init() {
 		"",
 		"output file path (stdout if not set)")
 	KUBEDaggerClient.AddCommand(cmdSidecarInject)
+
+	cmdSupplyChain.PersistentFlags().StringVar(
+		&options.SupplyChainMode,
+		"mode",
+		"layer-inject",
+		"attack mode: layer-inject or manifest-replace")
+	cmdSupplyChain.PersistentFlags().StringVar(
+		&options.SupplyTargetImage,
+		"target-image",
+		"",
+		"target container image to compromise")
+	cmdSupplyChain.PersistentFlags().StringVar(
+		&options.SupplyPayload,
+		"payload",
+		"",
+		"payload path or content to inject")
+	cmdSupplyChain.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdSupplyChain)
+
+	cmdGitOpsPoison.PersistentFlags().StringVar(
+		&options.GitOpsRepo,
+		"repo",
+		"",
+		"GitOps repository URL to poison")
+	cmdGitOpsPoison.PersistentFlags().StringVar(
+		&options.GitOpsTargetPath,
+		"target-path",
+		"",
+		"manifest path within repo to modify")
+	cmdGitOpsPoison.PersistentFlags().StringVar(
+		&options.GitOpsInjectImg,
+		"inject-image",
+		"",
+		"image to inject into manifests")
+	cmdGitOpsPoison.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdGitOpsPoison)
+
+	cmdSAToken.PersistentFlags().StringVar(
+		&options.SATokenAction,
+		"action",
+		"mint",
+		"action: mint or steal")
+	cmdSAToken.PersistentFlags().StringVar(
+		&options.SATokenName,
+		"service-account",
+		"",
+		"target service account name")
+	cmdSAToken.PersistentFlags().StringVar(
+		&options.SATokenNS,
+		"namespace",
+		"default",
+		"target namespace")
+	cmdSAToken.PersistentFlags().StringVar(
+		&options.SATokenAudience,
+		"audience",
+		"",
+		"token audience for TokenRequest API")
+	cmdSAToken.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdSAToken)
+
+	cmdPodIdentity.PersistentFlags().StringVar(
+		&options.PodIDTargetPod,
+		"target-pod",
+		"",
+		"target pod to steal identity from")
+	cmdPodIdentity.PersistentFlags().StringVar(
+		&options.PodIDNamespace,
+		"namespace",
+		"default",
+		"target pod namespace")
+	cmdPodIdentity.PersistentFlags().StringVar(
+		&options.PodIDAction,
+		"action",
+		"steal",
+		"action: steal or impersonate")
+	cmdPodIdentity.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdPodIdentity)
+
+	cmdSigBypass.PersistentFlags().StringVar(
+		&options.SigBypassMode,
+		"mode",
+		"inject-sig",
+		"bypass mode: inject-sig or disable-verify")
+	cmdSigBypass.PersistentFlags().StringVar(
+		&options.SigBypassImage,
+		"target-image",
+		"",
+		"target image for signature bypass")
+	cmdSigBypass.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdSigBypass)
+
+	cmdCRDBackdoor.PersistentFlags().StringVar(
+		&options.CRDAction,
+		"action",
+		"deploy",
+		"action: deploy, trigger, or remove")
+	cmdCRDBackdoor.PersistentFlags().StringVar(
+		&options.CRDName,
+		"crd-name",
+		"monitoring.internal",
+		"CRD name for the backdoor")
+	cmdCRDBackdoor.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdCRDBackdoor)
+
+	cmdHoneypotDetect.PersistentFlags().StringVar(
+		&options.HoneypotChecks,
+		"checks",
+		"all",
+		"checks to run: all, kubelet, metrics, or tokens")
+	cmdHoneypotDetect.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdHoneypotDetect)
 }
