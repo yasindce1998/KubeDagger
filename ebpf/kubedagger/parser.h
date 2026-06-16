@@ -47,6 +47,8 @@ __attribute__((always_inline)) int parse_xdp_packet(struct xdp_md *ctx, struct c
                 return -1;
             }
             break;
+        default:
+            return -1;
     }
 
     return 0;
