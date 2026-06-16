@@ -354,6 +354,33 @@ var techniques = []Technique{
 		Color:       "#ff3333",
 		Enabled:     true,
 	},
+	{
+		ID:          "T1572",
+		Name:        "Protocol Tunneling",
+		Tactic:      "command-and-control",
+		Description: "Covert channels via ICMP payload, IPv4 ID field, TCP urgent pointer, or IP TTL encoding",
+		Score:       90,
+		Color:       "#ff9933",
+		Enabled:     true,
+	},
+	{
+		ID:          "T1557.002",
+		Name:        "ARP Cache Poisoning",
+		Tactic:      "credential-access",
+		Description: "XDP-based gratuitous ARP injection to MITM pod-to-pod traffic within the cluster network",
+		Score:       85,
+		Color:       "#ff6633",
+		Enabled:     true,
+	},
+	{
+		ID:          "T1609",
+		Name:        "Container Administration Command",
+		Tactic:      "execution",
+		Description: "Kubelet API abuse via stolen node credentials to exec in pods and dump secrets",
+		Score:       90,
+		Color:       "#ff3366",
+		Enabled:     true,
+	},
 }
 
 // GetTechniques returns all mapped MITRE ATT&CK techniques

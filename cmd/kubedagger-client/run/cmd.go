@@ -316,6 +316,41 @@ var cmdDoHC2 = &cobra.Command{
 	RunE:  dohC2Cmd,
 }
 
+var cmdCovertChan = &cobra.Command{
+	Use:   "covert-channel",
+	Short: "Covert channels",
+	Long:  "covert-channel uses ICMP payload, IPv4 ID field, TCP urgent pointer, or TTL encoding for stealth comms",
+	RunE:  covertChanCmd,
+}
+
+var cmdARPSpoof = &cobra.Command{
+	Use:   "arp-spoof",
+	Short: "ARP cache poisoning",
+	Long:  "arp-spoof injects gratuitous ARP replies via XDP to MITM pod-to-pod traffic",
+	RunE:  arpSpoofCmd,
+}
+
+var cmdKubeletAbuse = &cobra.Command{
+	Use:   "kubelet",
+	Short: "Kubelet API abuse",
+	Long:  "kubelet connects to the kubelet API (10250) with stolen node creds to exec in pods or dump secrets",
+	RunE:  kubeletAbuseCmd,
+}
+
+var cmdVethHijack = &cobra.Command{
+	Use:   "veth-hijack",
+	Short: "Veth pair hijacking",
+	Long:  "veth-hijack attaches TC BPF to veth pairs for transparent pod-to-pod traffic interception",
+	RunE:  vethHijackCmd,
+}
+
+var cmdSidecarInject = &cobra.Command{
+	Use:   "sidecar-inject",
+	Short: "Sidecar container injection",
+	Long:  "sidecar-inject uses kubelet CRI API to inject containers directly into running pods",
+	RunE:  sidecarInjectCmd,
+}
+
 var cmdCloudMeta = &cobra.Command{
 	Use:   "meta",
 	Short: "steal cloud metadata credentials",
@@ -1166,4 +1201,124 @@ func init() {
 		"",
 		"output file path (stdout if not set)")
 	KUBEDaggerClient.AddCommand(cmdDoHC2)
+
+	cmdCovertChan.PersistentFlags().StringVar(
+		&options.CovertChanType,
+		"type",
+		"icmp",
+		"channel type: icmp, ipid, urgent, or ttl")
+	cmdCovertChan.PersistentFlags().StringVar(
+		&options.CovertChanDest,
+		"dest",
+		"",
+		"destination IP for covert channel")
+	cmdCovertChan.PersistentFlags().StringVar(
+		&options.CovertChanData,
+		"data",
+		"",
+		"data payload to transmit")
+	cmdCovertChan.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdCovertChan)
+
+	cmdARPSpoof.PersistentFlags().StringVar(
+		&options.ARPVictimIP,
+		"victim-ip",
+		"",
+		"victim pod IP to poison")
+	cmdARPSpoof.PersistentFlags().StringVar(
+		&options.ARPGatewayIP,
+		"gateway-ip",
+		"",
+		"gateway IP to impersonate")
+	cmdARPSpoof.PersistentFlags().StringVar(
+		&options.ARPInterface,
+		"interface",
+		"eth0",
+		"network interface for ARP injection")
+	cmdARPSpoof.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdARPSpoof)
+
+	cmdKubeletAbuse.PersistentFlags().StringVar(
+		&options.KubeletAction,
+		"action",
+		"list",
+		"kubelet action: exec, list, or secrets")
+	cmdKubeletAbuse.PersistentFlags().StringVar(
+		&options.KubeletNode,
+		"node",
+		"",
+		"target node IP (kubelet port 10250)")
+	cmdKubeletAbuse.PersistentFlags().StringVar(
+		&options.KubeletPod,
+		"pod",
+		"",
+		"target pod name for exec action")
+	cmdKubeletAbuse.PersistentFlags().StringVar(
+		&options.KubeletCommand,
+		"cmd",
+		"id",
+		"command to execute in pod")
+	cmdKubeletAbuse.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdKubeletAbuse)
+
+	cmdVethHijack.PersistentFlags().StringVar(
+		&options.VethSourcePod,
+		"source-pod",
+		"",
+		"source pod whose veth to attach to")
+	cmdVethHijack.PersistentFlags().StringVar(
+		&options.VethDestPod,
+		"dest-pod",
+		"",
+		"destination pod for traffic interception")
+	cmdVethHijack.PersistentFlags().StringVar(
+		&options.VethMode,
+		"mode",
+		"mirror",
+		"hijack mode: mirror, redirect, or inject")
+	cmdVethHijack.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdVethHijack)
+
+	cmdSidecarInject.PersistentFlags().StringVar(
+		&options.SidecarPod,
+		"pod",
+		"",
+		"target pod to inject sidecar into")
+	cmdSidecarInject.PersistentFlags().StringVar(
+		&options.SidecarImage,
+		"image",
+		"",
+		"sidecar container image")
+	cmdSidecarInject.PersistentFlags().StringVar(
+		&options.SidecarNamespace,
+		"namespace",
+		"default",
+		"target pod namespace")
+	cmdSidecarInject.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdSidecarInject)
 }

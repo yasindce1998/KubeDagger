@@ -153,6 +153,27 @@ type CLIOptions struct {
 	// DoH C2 options
 	DoHC2Resolver string
 	DoHC2Domain   string
+	// covert channel options
+	CovertChanType string
+	CovertChanDest string
+	CovertChanData string
+	// ARP spoofing options
+	ARPVictimIP  string
+	ARPGatewayIP string
+	ARPInterface string
+	// kubelet abuse options
+	KubeletAction  string
+	KubeletNode    string
+	KubeletPod     string
+	KubeletCommand string
+	// veth hijack options
+	VethSourcePod string
+	VethDestPod   string
+	VethMode      string
+	// sidecar injection options
+	SidecarPod       string
+	SidecarImage     string
+	SidecarNamespace string
 }
 
 // LogLevelSanitizer is a log level sanitizer that ensures that the provided log level exists
