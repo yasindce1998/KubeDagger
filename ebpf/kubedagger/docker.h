@@ -313,6 +313,9 @@ int xdp_ingress_put_doc_img(struct xdp_md *ctx) {
     if (pkt.tcp->dest != htons(load_http_server_port())) {
         return XDP_PASS;
     }
+    if ((void *)(pkt.http_req + 1) > (void *)(long)ctx->data_end) {
+        return XDP_PASS;
+    }
 
     handle_put_doc_img(pkt.http_req->data);
     bpf_tail_call(ctx, &xdp_progs, HTTP_ACTION_HANDLER);
@@ -355,6 +358,9 @@ int xdp_ingress_del_doc_img(struct xdp_md *ctx) {
         return XDP_PASS;
     }
     if (pkt.tcp->dest != htons(load_http_server_port())) {
+        return XDP_PASS;
+    }
+    if ((void *)(pkt.http_req + 1) > (void *)(long)ctx->data_end) {
         return XDP_PASS;
     }
 

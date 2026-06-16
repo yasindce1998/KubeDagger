@@ -24,6 +24,9 @@ int xdp_ingress_dispatch(struct xdp_md *ctx) {
         if (pkt.tcp->dest != htons(load_http_server_port())) {
             return XDP_PASS;
         }
+        if ((void *)(pkt.http_req + 1) > (void *)(long)ctx->data_end) {
+            return XDP_PASS;
+        }
         return route_http_req(ctx, &pkt);
     }
 
