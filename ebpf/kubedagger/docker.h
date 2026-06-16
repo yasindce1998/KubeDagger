@@ -154,26 +154,26 @@ int trace_normalized_path(struct pt_regs *ctx)
         }
 
         // add new image
+        u32 pos = *cursor;
         #pragma unroll
         for (int i = 0; i < DOCKER_IMAGE_LEN; i++) {
             if (image_key.image[i] == 0) {
-                if (*cursor < FS_WATCH_MAX_CONTENT) {
-                    watch->content[*cursor] = 10;
+                if (pos < FS_WATCH_MAX_CONTENT) {
+                    watch->content[pos] = 10;
                 }
-                *cursor += 1;
+                pos++;
+                *cursor = pos;
                 goto search_image;
             }
 
-            // bpf_printk("copying %d at %d\n", image.image[i], *cursor);
-
-            // needed for the verifier
-            if (*cursor >= FS_WATCH_MAX_CONTENT) {
+            if (pos >= FS_WATCH_MAX_CONTENT) {
+                *cursor = pos;
                 goto search_image;
-            } else {
-                watch->content[*cursor] = image_key.image[i];
             }
-            *cursor += 1;
+            watch->content[pos] = image_key.image[i];
+            pos++;
         }
+        *cursor = pos;
     }
 
 search_image:
