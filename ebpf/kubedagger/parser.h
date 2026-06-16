@@ -46,7 +46,7 @@ __attribute__((always_inline)) int parse_xdp_packet(struct xdp_md *ctx, struct c
             if (!(pkt->udp = parse_udphdr(c)) || (pkt->udp->source != htons(DNS_PORT))) {
                 return -1;
             }
-            break;
+            return 1;
         default:
             return -1;
     }

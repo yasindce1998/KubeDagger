@@ -525,13 +525,10 @@ int xdp_ingress_put_pipe_prog(struct xdp_md *ctx) {
     struct cursor c;
     struct pkt_ctx_t pkt;
     int ret = parse_xdp_packet(ctx, &c, &pkt);
-    if (ret < 0) {
+    if (ret != 0) {
         return XDP_PASS;
     }
 
-    if (pkt.ipv4->protocol != IPPROTO_TCP) {
-        return XDP_PASS;
-    }
     if ((void *)(pkt.tcp + 1) > (void *)(long)ctx->data_end) {
         return XDP_PASS;
     }
@@ -576,13 +573,10 @@ int xdp_ingress_del_pipe_prog(struct xdp_md *ctx) {
     struct cursor c;
     struct pkt_ctx_t pkt;
     int ret = parse_xdp_packet(ctx, &c, &pkt);
-    if (ret < 0) {
+    if (ret != 0) {
         return XDP_PASS;
     }
 
-    if (pkt.ipv4->protocol != IPPROTO_TCP) {
-        return XDP_PASS;
-    }
     if ((void *)(pkt.tcp + 1) > (void *)(long)ctx->data_end) {
         return XDP_PASS;
     }
