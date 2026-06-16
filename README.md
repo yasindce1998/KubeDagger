@@ -15,8 +15,8 @@ This project is provided for **educational purposes only**. Do not use these too
 
 ## Requirements
 
-- Linux kernel 5.4+ with eBPF support
-- Go 1.22+
+- Linux kernel 5.4+ with eBPF support (BTF-enabled for CO-RE portability)
+- Go 1.25+
 - Kernel headers installed in `lib/modules/$(uname -r)`
 - clang & llvm 11+
 - [Graphviz](https://graphviz.org/) (for network graph generation)
@@ -59,8 +59,20 @@ kubedagger-client -h
 | `docker` | Docker image override configuration |
 | `dns_exfil` | DNS-based data exfiltration |
 | `fs_watch` | File system watches |
-| `k8s` | Kubernetes cluster discovery |
-| `mitre` | MITRE ATT&CK mapping export |
+| `k8s discover` | Kubernetes cluster discovery |
+| `k8s abuse` | Kubernetes privilege escalation |
+| `escape` | Container escape (privileged, socket, cgroup, nsenter) |
+| `secrets harvest` | Harvest secrets from env, K8s, cloud, Docker, Vault |
+| `evasion` | Runtime security evasion (Falco, Tetragon, KubeArmor) |
+| `netbypass` | Network policy bypass (tunnel, spoof, encap, direct) |
+| `meshbypass` | Service mesh bypass (XDP, UID, raw, exclude) |
+| `obs-poison` | Observability poisoning (Prometheus, OTel, StatsD) |
+| `cloud meta` | Cloud metadata credential theft (AWS, GCP, Azure) |
+| `cloud exfil` | Data exfiltration to cloud storage |
+| `webhook` | Admission webhook backdoor deployment |
+| `cri-tamper` | CRI-level image tampering (containerd, CRI-O) |
+| `daemonset` | DaemonSet dropper for cluster-wide deployment |
+| `mitre` | MITRE ATT&CK mapping export (25 techniques) |
 | `network_discovery` | Network discovery and port scanning |
 | `pipe_prog` | Piped programs configuration |
 | `postgres` | PostgreSQL authentication control |
