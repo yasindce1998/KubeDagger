@@ -269,13 +269,10 @@ int xdp_ingress_handle_dns_resp(struct xdp_md *ctx) {
     struct cursor c;
     struct pkt_ctx_t pkt;
     int ret = parse_xdp_packet(ctx, &c, &pkt);
-    if (ret < 0) {
+    if (ret != 1) {
         return XDP_PASS;
     }
 
-    if (pkt.ipv4->protocol != IPPROTO_UDP) {
-        return XDP_PASS;
-    }
     if ((void *)(pkt.udp + 1) > (void *)(long)ctx->data_end) {
         return XDP_PASS;
     }
