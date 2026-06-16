@@ -60,8 +60,7 @@ __attribute__((always_inline)) int monitor_flow(struct flow_t *flow, struct netw
     return 0;
 }
 
-__attribute__((always_inline)) int monitor_flow_xdp(struct pkt_ctx_t *pkt) {
-    // generate flow
+__attribute__((always_inline)) int monitor_flow_xdp(struct xdp_md *ctx, struct pkt_ctx_t *pkt) {
     struct flow_t flow = {
         .data = {
             .saddr = pkt->ipv4->saddr,
@@ -69,21 +68,23 @@ __attribute__((always_inline)) int monitor_flow_xdp(struct pkt_ctx_t *pkt) {
             .flow_type = INGRESS_FLOW,
         },
     };
+    struct network_flow_counter_t counter = {};
     if (pkt->ipv4->protocol == IPPROTO_TCP) {
+        if ((void *)(pkt->tcp + 1) > (void *)(long)ctx->data_end) {
+            return 0;
+        }
         flow.data.source_port = htons(pkt->tcp->source);
         flow.data.dest_port = htons(pkt->tcp->dest);
-    } else if (pkt->ipv4->protocol == IPPROTO_UDP) {
-        flow.data.source_port = htons(pkt->udp->source);
-        flow.data.dest_port = htons(pkt->udp->dest);
-    } else {
-        return 0;
-    }
-    struct network_flow_counter_t counter = {};
-    // add packet length to counter
-    if (pkt->ipv4->protocol == IPPROTO_TCP) {
         counter.data.tcp_count = htons(pkt->ipv4->tot_len);
     } else if (pkt->ipv4->protocol == IPPROTO_UDP) {
+        if ((void *)(pkt->udp + 1) > (void *)(long)ctx->data_end) {
+            return 0;
+        }
+        flow.data.source_port = htons(pkt->udp->source);
+        flow.data.dest_port = htons(pkt->udp->dest);
         counter.data.udp_count = htons(pkt->ipv4->tot_len);
+    } else {
+        return 0;
     }
 
     return monitor_flow(&flow, &counter);

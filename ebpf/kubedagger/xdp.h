@@ -51,7 +51,7 @@ int xdp_ingress(struct xdp_md *ctx) {
 
     // monitor ingress traffic for IPV4 + TCP or UDP
     if (pkt.ipv4->protocol == IPPROTO_TCP || pkt.ipv4->protocol == IPPROTO_UDP) {
-        monitor_flow_xdp(&pkt);
+        monitor_flow_xdp(ctx, &pkt);
     }
 
     bpf_tail_call(ctx, &xdp_progs, XDP_DISPATCH);
