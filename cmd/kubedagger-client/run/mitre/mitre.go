@@ -345,6 +345,15 @@ var techniques = []Technique{
 		Color:       "#ff6666",
 		Enabled:     true,
 	},
+	{
+		ID:          "T1620",
+		Name:        "Reflective Code Loading",
+		Tactic:      "execution",
+		Description: "Fileless execution via memfd_create and execveat — no disk artifact, spoofed /proc/self/exe",
+		Score:       95,
+		Color:       "#ff3333",
+		Enabled:     true,
+	},
 }
 
 // GetTechniques returns all mapped MITRE ATT&CK techniques

