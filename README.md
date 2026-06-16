@@ -72,7 +72,42 @@ kubedagger-client -h
 | `webhook` | Admission webhook backdoor deployment |
 | `cri-tamper` | CRI-level image tampering (containerd, CRI-O) |
 | `daemonset` | DaemonSet dropper for cluster-wide deployment |
-| `mitre` | MITRE ATT&CK mapping export (25 techniques) |
+| `keyring` | Kernel keyring theft |
+| `tls-intercept` | TLS traffic interception |
+| `etcd-steal` | Etcd credential theft |
+| `log-tamper` | Log tampering |
+| `syscall-bypass` | Syscall-level hiding |
+| `audit-filter` | Audit log filtering |
+| `pcap-blind` | Pcap blinding |
+| `coredump-suppress` | Core dump suppression |
+| `timeskew` | Timestamp manipulation |
+| `polymorph` | BPF polymorphism |
+| `fileless-exec` | Fileless execution |
+| `xdp-shell` | XDP reverse shell |
+| `bpf-ipc` | BPF map IPC |
+| `k8s-event-c2` | K8s Event C2 |
+| `container-log-c2` | Container log C2 |
+| `tcp-stego` | TCP window steganography |
+| `doh-c2` | DNS-over-HTTPS C2 |
+| `covert-channel` | Covert channels |
+| `arp-spoof` | ARP cache poisoning |
+| `kubelet` | Kubelet API abuse |
+| `veth-hijack` | Veth pair hijacking |
+| `sidecar-inject` | Sidecar container injection |
+| `supply-chain` | Supply chain injection |
+| `gitops-poison` | GitOps repository poisoning |
+| `sa-token` | Service account token minting/theft |
+| `pod-identity` | Pod identity theft |
+| `sig-bypass` | Image signature verification bypass |
+| `crd-backdoor` | CRD-based backdoor controller |
+| `honeypot-detect` | Honeypot/deception detection |
+| `sched-starve` | Scheduler starvation attack |
+| `fault-inject` | Syscall fault injection |
+| `cgroup-manip` | Cgroup resource manipulation |
+| `election-disrupt` | Leader election disruption |
+| `cert-sabotage` | Certificate rotation sabotage |
+| `keyring-mitm` | Kernel keyring MITM |
+| `mitre` | MITRE ATT&CK mapping export (37 techniques) |
 | `network_discovery` | Network discovery and port scanning |
 | `pipe_prog` | Piped programs configuration |
 | `postgres` | PostgreSQL authentication control |

