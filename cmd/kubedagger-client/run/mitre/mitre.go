@@ -301,8 +301,8 @@ var techniques = []Technique{
 		Enabled:     true,
 	},
 	{
-		ID:          "T1557.002",
-		Name:        "Adversary-in-the-Middle: ARP Cache Poisoning",
+		ID:          "T1040",
+		Name:        "Network Sniffing",
 		Tactic:      "credential-access",
 		Description: "TLS interception via SSL_read/SSL_write uprobes captures plaintext before encryption",
 		Score:       100,
@@ -337,8 +337,8 @@ var techniques = []Technique{
 		Enabled:     true,
 	},
 	{
-		ID:          "T1014",
-		Name:        "Rootkit",
+		ID:          "T1562.006",
+		Name:        "Impair Defenses: Indicator Blocking",
 		Tactic:      "defense-evasion",
 		Description: "Syscall bypass hooks getdents64, stat, and /proc reads to hide PIDs, files, and network ports",
 		Score:       100,
@@ -391,8 +391,8 @@ var techniques = []Technique{
 		Enabled:     true,
 	},
 	{
-		ID:          "T1528",
-		Name:        "Steal Application Access Token",
+		ID:          "T1550.001",
+		Name:        "Use Alternate Authentication Material: Application Access Token",
 		Tactic:      "credential-access",
 		Description: "Service account token minting and pod identity theft via projected volume stealing",
 		Score:       85,
