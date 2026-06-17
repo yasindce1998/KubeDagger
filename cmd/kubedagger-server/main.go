@@ -70,5 +70,5 @@ func main() {
 	logrus.Info("shutting down...")
 	ctx, cancel := context.WithTimeout(context.Background(), 5000000000)
 	defer cancel()
-	srv.Stop(ctx)
+	_ = srv.Stop(ctx)
 }

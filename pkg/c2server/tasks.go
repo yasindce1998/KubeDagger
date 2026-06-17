@@ -110,6 +110,6 @@ func (q *TaskQueue) ListForAgent(agentID string) []Task {
 
 func generateTaskID() string {
 	b := make([]byte, 8)
-	rand.Read(b)
+	_, _ = rand.Read(b)
 	return hex.EncodeToString(b)
 }

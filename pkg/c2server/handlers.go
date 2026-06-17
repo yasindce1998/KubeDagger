@@ -48,7 +48,7 @@ func (h *Handlers) HandleCheckin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
 func (h *Handlers) HandleTask(w http.ResponseWriter, r *http.Request) {
@@ -95,7 +95,7 @@ func (h *Handlers) HandleTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
 func (h *Handlers) HandleResult(w http.ResponseWriter, r *http.Request) {
@@ -130,5 +130,5 @@ func (h *Handlers) HandleResult(w http.ResponseWriter, r *http.Request) {
 	logrus.Infof("task %s completed by agent %s (status: %s)", req.TaskID, req.AgentID, req.Status)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(ResultResponse{Ack: true})
+	_ = json.NewEncoder(w).Encode(ResultResponse{Ack: true})
 }

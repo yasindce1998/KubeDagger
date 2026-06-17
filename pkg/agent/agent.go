@@ -183,6 +183,6 @@ func (a *Agent) sleep(ctx context.Context, d time.Duration) {
 
 func generateAgentID() string {
 	b := make([]byte, 8)
-	rand.Read(b)
+	_, _ = rand.Read(b)
 	return hex.EncodeToString(b)
 }
