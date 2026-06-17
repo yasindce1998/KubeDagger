@@ -1,4 +1,4 @@
-all: build-ebpf build-webapp build-rootkit build-client build-pause
+all: build-ebpf build-webapp build-rootkit build-client build-server build-operator build-pause
 
 rootkit: build-ebpf build-rootkit
 
@@ -42,6 +42,20 @@ build-rootkit:
 build-client:
 	mkdir -p bin/
 	go build -o bin/ ./cmd/kubedagger-client
+
+build-server:
+	mkdir -p bin/
+	go build -o bin/ ./cmd/kubedagger-server
+
+build-operator:
+	mkdir -p bin/
+	go build -o bin/ ./cmd/kubedagger-operator
+
+build-agent:
+	mkdir -p bin/
+	GOOS=linux GOARCH=amd64 go build -o bin/kubedagger-agent-linux ./cmd/kubedagger-agent
+	GOOS=windows GOARCH=amd64 go build -o bin/kubedagger-agent-windows.exe ./cmd/kubedagger-agent
+	GOOS=darwin GOARCH=arm64 go build -o bin/kubedagger-agent-darwin ./cmd/kubedagger-agent
 
 build-pause:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags '-w' -o bin/ ./cmd/demo/pause/./...
