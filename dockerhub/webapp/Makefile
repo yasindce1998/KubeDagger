@@ -3,10 +3,10 @@ all: container push
 container:
 	mkdir -p bin
 	cp ../../bin/webapp bin/
-	docker build -t gui774ume/webapp:latest --squash .
+	docker build -t yasindce1998/webapp:latest .
 
 login:
-	docker login --username gui774ume
+	docker login --username yasindce1998
 
 push:
-	docker push gui774ume/webapp:latest
+	docker push yasindce1998/webapp:latest

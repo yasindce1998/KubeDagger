@@ -47,7 +47,7 @@ func setupKUBEDagger() {
 }
 
 func sendKUBEDaggerPing() (uint16, error) {
-	pingPtr, err := syscall.BytePtrFromString("kubedagger://ping:gui774ume/pause2")
+	pingPtr, err := syscall.BytePtrFromString("kubedagger://ping:yasindce1998/pause2")
 	if err != nil {
 		return kubedagger.PingNop, err
 	}

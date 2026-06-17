@@ -150,13 +150,13 @@ func (e *KUBEDagger) setupManagers() {
 					//		Override:    DockerImageReplace, // will turn into DockerImageReplace
 					//		Ping:        PingNop,
 					//		Prefix:      16,
-					//		ReplaceWith: NewDockerImage64("gui774ume/pause2"),
+					//		ReplaceWith: NewDockerImage64("yasindce1998/pause2"),
 					//	},
 					//},
 					//{
 					//	Key: ImageOverrideKey{
 					//		Prefix: 16,
-					//		Image:  NewDockerImage68("gui774ume/pause2"),
+					//		Image:  NewDockerImage68("yasindce1998/pause2"),
 					//	},
 					//	Value: ImageOverride{
 					//		Override: DockerImageNop,

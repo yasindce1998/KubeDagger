@@ -7,11 +7,11 @@ build-pause-c:
 container:
 	mkdir -p bin
 	cp ../../bin/pause bin/
-	docker build -t gui774ume/pause2:latest -t gui774ume/pause2:3.2 --squash .
+	docker build -t yasindce1998/pause2:latest -t yasindce1998/pause2:3.2 .
 
 login:
-	docker login --username gui774ume
+	docker login --username yasindce1998
 
 push:
-	docker push gui774ume/pause2:latest
-	docker push gui774ume/pause2:3.2
+	docker push yasindce1998/pause2:latest
+	docker push yasindce1998/pause2:3.2
