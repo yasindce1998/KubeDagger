@@ -86,149 +86,28 @@ func (e *KUBEDagger) setupManagers() {
 				},
 			},
 			{
-				Name: "comm_prog_key",
-				Contents: []ebpf.MapKV{
-					{
-						Key: NewCommBuffer("cat", "python"),
-						Value: CommProgKey{
-							ProgKey: PipeOverridePythonKey,
-							Backup:  0,
-						},
-					},
-					{
-						Key: NewCommBuffer("cat", "python3"),
-						Value: CommProgKey{
-							ProgKey: PipeOverridePythonKey,
-							Backup:  0,
-						},
-					},
-					{
-						Key: NewCommBuffer("cat", "python3.8"),
-						Value: CommProgKey{
-							ProgKey: PipeOverridePythonKey,
-							Backup:  0,
-						},
-					},
-					{
-						Key: NewCommBuffer("cat", "bash"),
-						Value: CommProgKey{
-							ProgKey: PipeOverrideShellKey,
-							Backup:  1,
-						},
-					},
-					{
-						Key: NewCommBuffer("", "sh"),
-						Value: CommProgKey{
-							ProgKey: PipeOverrideShellKey,
-							Backup:  1,
-						},
-					},
-				},
+				Name:     "comm_prog_key",
+				Contents: defaultCommProgKeys(),
 			},
 			{
-				Name: "piped_progs",
-				Contents: []ebpf.MapKV{
-					{
-						Key:   PipeOverridePythonKey,
-						Value: NewPipedProgram("print('hello world')"),
-					},
-					{
-						Key:   PipeOverrideShellKey,
-						Value: NewPipedProgram("cat /etc/passwd; "),
-					},
-				},
+				Name:     "piped_progs",
+				Contents: defaultPipedProgs(),
 			},
 			{
-				Name: "image_override",
-				Contents: []ebpf.MapKV{
-					//{
-					//	Key: ImageOverrideKey{
-					//		Prefix: 16,
-					//		Image:  NewDockerImage68("k8s.gcr.io/pause"),
-					//	},
-					//	Value: ImageOverride{
-					//		Override:    DockerImageReplace, // will turn into DockerImageReplace
-					//		Ping:        PingNop,
-					//		Prefix:      16,
-					//		ReplaceWith: NewDockerImage64("yasindce1998/pause2"),
-					//	},
-					//},
-					//{
-					//	Key: ImageOverrideKey{
-					//		Prefix: 16,
-					//		Image:  NewDockerImage68("yasindce1998/pause2"),
-					//	},
-					//	Value: ImageOverride{
-					//		Override: DockerImageNop,
-					//		Ping:     PingRun,
-					//		Prefix:   16,
-					//	},
-					//},
-					{
-						Key: ImageOverrideKey{
-							Prefix: 6,
-							Image:  NewDockerImage68("debian"),
-						},
-						Value: ImageOverride{
-							Override:    DockerImageReplace,
-							Ping:        PingNop,
-							Prefix:      6,
-							ReplaceWith: NewDockerImage64("ubuntu"),
-						},
-					},
-				},
+				Name:     "image_override",
+				Contents: defaultImageOverrides(),
 			},
 			{
-				Name: "dedicated_watch_keys",
-				Contents: []ebpf.MapKV{
-					{
-						Key: uint32(0),
-						Value: FSWatchKey{
-							Flag:     uint8(0),
-							Filepath: NewFSWatchFilepath("/kubedagger/images_list"),
-						},
-					},
-					{
-						Key: uint32(1),
-						Value: FSWatchKey{
-							Flag:     uint8(0),
-							Filepath: NewFSWatchFilepath("/kubedagger/pg_credentials"),
-						},
-					},
-					{
-						Key: uint32(2),
-						Value: FSWatchKey{
-							Flag:     uint8(0),
-							Filepath: NewFSWatchFilepath("/kubedagger/network_discovery"),
-						},
-					},
-				},
+				Name:     "dedicated_watch_keys",
+				Contents: defaultDedicatedWatchKeys(),
 			},
 			{
-				Name: "postgres_roles",
-				Contents: []ebpf.MapKV{
-					{
-						Key:   MustEncodeRole("webapp"),
-						Value: MustEncodeMD5("hello", "webapp"),
-					},
-				},
+				Name:     "postgres_roles",
+				Contents: defaultPostgresRoles(),
 			},
 			{
-				Name: "dns_table",
-				Contents: []ebpf.MapKV{
-					{
-						Key:   MustEncodeDNS("security.ubuntu.com"),
-						Value: MustEncodeIPv4("127.0.0.1"),
-					},
-					{
-						Key:   MustEncodeDNS("google.fr"),
-						Value: MustEncodeIPv4("127.0.0.1"),
-					},
-					{
-						Key:   MustEncodeDNS("facebook.com"),
-						Value: MustEncodeIPv4("172.217.19.227"),
-					},
-				},
+				Name:     "dns_table",
+				Contents: defaultDNSTable(),
 			},
 			{
 				Name: "http_routes",
@@ -416,13 +295,8 @@ func (e *KUBEDagger) setupManagers() {
 				},
 			},
 			{
-				Name: "query_override_pattern",
-				Contents: []ebpf.MapKV{
-					{
-						Key:   []byte("SELECT * FROM product WHERE category='defcon'"),
-						Value: []byte("SELECT * FROM product WHERE category='defconn"),
-					},
-				},
+				Name:     "query_override_pattern",
+				Contents: defaultQueryOverridePatterns(),
 			},
 			{
 				Name: "http_response_gen",
