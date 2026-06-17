@@ -3,12 +3,14 @@ package evasion
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/shared"
 )
 
 func TestEvasionResultJSON(t *testing.T) {
 	result := &EvasionResult{
 		Mode: "falco",
-		Actions: []ActionInfo{
+		Actions: []shared.ActionInfo{
 			{Name: "suppress_execve_audit", Status: "enabled", Detail: "filter execve"},
 			{Name: "hide_network_connections", Status: "error: timeout", Detail: "mask /proc/net/tcp"},
 		},
@@ -42,12 +44,12 @@ func TestEvasionResultJSON(t *testing.T) {
 func TestAllSucceeded(t *testing.T) {
 	tests := []struct {
 		name    string
-		actions []ActionInfo
+		actions []shared.ActionInfo
 		want    bool
 	}{
 		{
 			name: "all enabled",
-			actions: []ActionInfo{
+			actions: []shared.ActionInfo{
 				{Status: "enabled"},
 				{Status: "enabled"},
 			},
@@ -55,7 +57,7 @@ func TestAllSucceeded(t *testing.T) {
 		},
 		{
 			name: "one failed",
-			actions: []ActionInfo{
+			actions: []shared.ActionInfo{
 				{Status: "enabled"},
 				{Status: "failed (HTTP 500)"},
 			},
@@ -63,21 +65,21 @@ func TestAllSucceeded(t *testing.T) {
 		},
 		{
 			name: "error",
-			actions: []ActionInfo{
+			actions: []shared.ActionInfo{
 				{Status: "error: connection refused"},
 			},
 			want: false,
 		},
 		{
 			name:    "empty",
-			actions: []ActionInfo{},
+			actions: []shared.ActionInfo{},
 			want:    true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := allSucceeded(tt.actions)
+			got := shared.AllSucceeded(tt.actions)
 			if got != tt.want {
 				t.Errorf("allSucceeded() = %v, want %v", got, tt.want)
 			}

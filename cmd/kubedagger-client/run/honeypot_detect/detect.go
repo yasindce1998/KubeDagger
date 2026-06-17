@@ -3,11 +3,10 @@ package honeypot_detect
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
 	"strings"
 
-	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/model"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/shared"
 )
 
 type DetectResult struct {
@@ -81,7 +80,7 @@ func Execute(target, checks, output string) error {
 	suspiciousCount := 0
 	for _, c := range checkList {
 		cmd := c.cmd + "#" + checks
-		status := sendCommand(target, cmd)
+		status := shared.SendCommand(target, "/honeypot_detect", cmd)
 		suspicious := strings.Contains(status, "suspicious") || strings.Contains(status, "failed")
 		if suspicious {
 			suspiciousCount++
@@ -103,33 +102,4 @@ func Execute(target, checks, output string) error {
 	}
 	fmt.Println(string(data))
 	return nil
-}
-
-func sendCommand(target, command string) string {
-	ua := buildUserAgent(command)
-
-	req, err := http.NewRequest("GET", target+"/honeypot_detect", nil)
-	if err != nil {
-		return "error: " + err.Error()
-	}
-	req.Header.Set("User-Agent", ua)
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "error: " + err.Error()
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusOK {
-		return "enabled"
-	}
-	return fmt.Sprintf("failed (HTTP %d)", resp.StatusCode)
-}
-
-func buildUserAgent(command string) string {
-	userAgent := command
-	for len(userAgent) < model.UserAgentPaddingLen {
-		userAgent += "#"
-	}
-	return userAgent
 }

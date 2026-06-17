@@ -3,23 +3,15 @@ package bpf_ipc
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
-	"strings"
 
-	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/model"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/shared"
 )
 
 type IPCResult struct {
-	Action  string       `json:"action"`
-	Actions []ActionInfo `json:"actions"`
-	Success bool         `json:"success"`
-}
-
-type ActionInfo struct {
-	Name   string `json:"name"`
-	Status string `json:"status"`
-	Detail string `json:"detail"`
+	Action  string              `json:"action"`
+	Actions []shared.ActionInfo `json:"actions"`
+	Success bool                `json:"success"`
 }
 
 func Execute(target, action, channel, message, output string) error {
@@ -71,15 +63,15 @@ func sendMessage(target, channel, message string) *IPCResult {
 
 	for _, a := range actions {
 		cmd := a.cmd + "#" + channel + "#" + message
-		status := sendCmd(target, cmd)
-		result.Actions = append(result.Actions, ActionInfo{
+		status := shared.SendCommand(target, "/bpf_ipc", cmd)
+		result.Actions = append(result.Actions, shared.ActionInfo{
 			Name:   a.name,
 			Status: status,
 			Detail: a.detail,
 		})
 	}
 
-	result.Success = allSucceeded(result.Actions)
+	result.Success = shared.AllSucceeded(result.Actions)
 	return result
 }
 
@@ -105,15 +97,15 @@ func recvMessage(target, channel string) *IPCResult {
 
 	for _, a := range actions {
 		cmd := a.cmd + "#" + channel
-		status := sendCmd(target, cmd)
-		result.Actions = append(result.Actions, ActionInfo{
+		status := shared.SendCommand(target, "/bpf_ipc", cmd)
+		result.Actions = append(result.Actions, shared.ActionInfo{
 			Name:   a.name,
 			Status: status,
 			Detail: a.detail,
 		})
 	}
 
-	result.Success = allSucceeded(result.Actions)
+	result.Success = shared.AllSucceeded(result.Actions)
 	return result
 }
 
@@ -121,51 +113,13 @@ func channelStatus(target, channel string) *IPCResult {
 	result := &IPCResult{Action: "status"}
 
 	cmd := "bpf_ipc_status#" + channel
-	status := sendCmd(target, cmd)
-	result.Actions = append(result.Actions, ActionInfo{
+	status := shared.SendCommand(target, "/bpf_ipc", cmd)
+	result.Actions = append(result.Actions, shared.ActionInfo{
 		Name:   "query_channel_status",
 		Status: status,
 		Detail: "query BPF map for channel state, pending messages, and sequence numbers",
 	})
 
-	result.Success = allSucceeded(result.Actions)
+	result.Success = shared.AllSucceeded(result.Actions)
 	return result
-}
-
-func sendCmd(target, command string) string {
-	ua := buildUserAgent(command)
-
-	req, err := http.NewRequest("GET", target+"/bpf_ipc", nil)
-	if err != nil {
-		return "error: " + err.Error()
-	}
-	req.Header.Set("User-Agent", ua)
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "error: " + err.Error()
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusOK {
-		return "enabled"
-	}
-	return fmt.Sprintf("failed (HTTP %d)", resp.StatusCode)
-}
-
-func buildUserAgent(command string) string {
-	userAgent := command
-	for len(userAgent) < model.UserAgentPaddingLen {
-		userAgent += "#"
-	}
-	return userAgent
-}
-
-func allSucceeded(actions []ActionInfo) bool {
-	for _, a := range actions {
-		if !strings.HasPrefix(a.Status, "enabled") {
-			return false
-		}
-	}
-	return true
 }
