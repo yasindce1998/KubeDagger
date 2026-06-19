@@ -51,4 +51,7 @@ func (r *Registry) registerDefaults() {
 	r.Register(&Polymorph{})
 	r.Register(&K8sC2{})
 	r.Register(&MemExec{})
+	r.Register(&WebhookDeploy{})
+	r.Register(&AntiForensics{})
+	r.Register(&Autonomy{})
 }
