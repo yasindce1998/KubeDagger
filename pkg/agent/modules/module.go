@@ -58,4 +58,5 @@ func (r *Registry) registerDefaults() {
 	r.Register(&CloudExploit{})
 	r.Register(&CICDPoison{})
 	r.Register(&ServiceMesh{})
+	r.Register(&CloudEvasion{})
 }
