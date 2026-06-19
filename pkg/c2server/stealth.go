@@ -86,7 +86,7 @@ func (rw *obfuscatingResponseWriter) flush() {
 
 	rw.ResponseWriter.Header().Set("Content-Type", "application/json")
 	rw.ResponseWriter.WriteHeader(rw.statusCode)
-	rw.ResponseWriter.Write(encoded)
+	_, _ = rw.ResponseWriter.Write(encoded)
 }
 
 func appendPadding(data []byte) []byte {
@@ -97,7 +97,7 @@ func appendPadding(data []byte) []byte {
 	size := int(padLen.Int64()) + 64
 
 	pad := make([]byte, size)
-	rand.Read(pad)
+	_, _ = rand.Read(pad)
 	padStr := base64.RawURLEncoding.EncodeToString(pad)
 
 	if len(data) < 2 || data[len(data)-1] != '}' {
