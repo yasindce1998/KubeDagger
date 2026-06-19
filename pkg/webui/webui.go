@@ -85,7 +85,7 @@ func (s *Server) Start(ctx context.Context) error {
 		<-ctx.Done()
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		s.server.Shutdown(shutdownCtx)
+		_ = s.server.Shutdown(shutdownCtx)
 	}()
 
 	return s.server.ListenAndServe()
@@ -128,7 +128,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	tmpl.Execute(w, data)
+	_ = tmpl.Execute(w, data)
 }
 
 func (s *Server) handleAgents(w http.ResponseWriter, _ *http.Request) {
@@ -141,7 +141,7 @@ func (s *Server) handleAgents(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(agents)
+	_ = json.NewEncoder(w).Encode(agents)
 }
 
 func (s *Server) handleAgentRegister(w http.ResponseWriter, r *http.Request) {
@@ -164,7 +164,7 @@ func (s *Server) handleAgentRegister(w http.ResponseWriter, r *http.Request) {
 	s.agents.mu.Unlock()
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "registered"})
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "registered"})
 }
 
 func (s *Server) handleCommands(w http.ResponseWriter, _ *http.Request) {
@@ -177,7 +177,7 @@ func (s *Server) handleCommands(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(commands)
+	_ = json.NewEncoder(w).Encode(commands)
 }
 
 func (s *Server) handleNewCommand(w http.ResponseWriter, r *http.Request) {
@@ -202,7 +202,7 @@ func (s *Server) handleNewCommand(w http.ResponseWriter, r *http.Request) {
 	s.commands.mu.Unlock()
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(cmd)
+	_ = json.NewEncoder(w).Encode(cmd)
 }
 
 func (s *Server) handlePollCommands(w http.ResponseWriter, r *http.Request) {
@@ -227,7 +227,7 @@ func (s *Server) handlePollCommands(w http.ResponseWriter, r *http.Request) {
 	s.commands.mu.Unlock()
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(pending)
+	_ = json.NewEncoder(w).Encode(pending)
 }
 
 func (s *Server) handleCommandResult(w http.ResponseWriter, r *http.Request) {
@@ -260,5 +260,5 @@ func (s *Server) handleCommandResult(w http.ResponseWriter, r *http.Request) {
 	s.commands.mu.Unlock()
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }

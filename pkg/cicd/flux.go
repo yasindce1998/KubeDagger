@@ -82,9 +82,7 @@ func PoisonFluxKustomization(ctx context.Context, dynClient dynamic.Interface, n
 		}
 	}
 
-	if err := unstructured.SetNestedField(ks.Object, false, "spec", "validation"); err == nil {
-		// disabled validation
-	}
+	_ = unstructured.SetNestedField(ks.Object, false, "spec", "validation")
 
 	_, err = dynClient.Resource(fluxKustomizationGVR).Namespace(ns).Update(ctx, ks, metav1.UpdateOptions{})
 	if err != nil {
