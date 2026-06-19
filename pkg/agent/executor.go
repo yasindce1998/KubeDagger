@@ -14,15 +14,18 @@ import (
 
 const (
 	DefaultExecTimeout = 120 * time.Second
+	DefaultMaxOutput   = 1 << 20 // 1MB
 )
 
 type Executor struct {
-	modules *modules.Registry
+	modules   *modules.Registry
+	MaxOutput int
 }
 
 func NewExecutor() *Executor {
 	return &Executor{
-		modules: modules.NewRegistry(),
+		modules:   modules.NewRegistry(),
+		MaxOutput: DefaultMaxOutput,
 	}
 }
 
@@ -66,6 +69,10 @@ func (e *Executor) execShell(ctx context.Context, payload map[string]string) (st
 
 	output, err := proc.CombinedOutput()
 	result := strings.TrimSpace(string(output))
+
+	if e.MaxOutput > 0 && len(result) > e.MaxOutput {
+		result = result[:e.MaxOutput] + "\n[TRUNCATED]"
+	}
 
 	if execCtx.Err() == context.DeadlineExceeded {
 		return result, fmt.Errorf("command timed out after %s", timeout)

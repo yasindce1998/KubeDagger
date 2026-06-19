@@ -102,12 +102,12 @@ func cmdAgents(client *c2.Client) {
 				lastSeen = time.Since(parsed).Truncate(time.Second).String() + " ago"
 			}
 		}
-		status := "alive"
-		if dead, ok := m["dead"].(bool); ok && dead {
-			status = "dead"
+		status := "dead"
+		if alive, ok := m["alive"].(bool); ok && alive {
+			status = "alive"
 		}
 		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-			getStr(m, "agent_id"),
+			getStr(m, "id"),
 			getStr(m, "hostname"),
 			getStr(m, "os"),
 			getStr(m, "arch"),

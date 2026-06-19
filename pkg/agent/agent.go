@@ -20,6 +20,8 @@ type Config struct {
 	BeaconJitter  float64
 	MaxRetries    int
 	RetryInterval time.Duration
+	InitialDelay  time.Duration
+	MaxOutput     int
 }
 
 type Agent struct {
@@ -43,16 +45,27 @@ func New(cfg Config, transport *Transport) *Agent {
 		cfg.RetryInterval = 10 * time.Second
 	}
 
+	executor := NewExecutor()
+	if cfg.MaxOutput > 0 {
+		executor.MaxOutput = cfg.MaxOutput
+	}
+
 	return &Agent{
 		cfg:       cfg,
 		transport: transport,
-		executor:  NewExecutor(),
+		executor:  executor,
 		stop:      make(chan struct{}),
 	}
 }
 
 func (a *Agent) Run(ctx context.Context) error {
 	logrus.Infof("agent %s starting (server: %s)", a.cfg.AgentID, a.cfg.ServerURL)
+
+	if a.cfg.InitialDelay > 0 {
+		delay := a.jitteredSleep(a.cfg.InitialDelay)
+		logrus.Debugf("initial delay: %s", delay)
+		a.sleep(ctx, delay)
+	}
 
 	failures := 0
 	for {
@@ -111,12 +124,19 @@ func (a *Agent) checkin() (int, error) {
 }
 
 func (a *Agent) processTasks(ctx context.Context) {
+	first := true
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		default:
 		}
+
+		if !first {
+			n, _ := rand.Int(rand.Reader, big.NewInt(400))
+			a.sleep(ctx, time.Duration(100+n.Int64())*time.Millisecond)
+		}
+		first = false
 
 		task, err := a.transport.GetTask(a.cfg.AgentID)
 		if err != nil {
