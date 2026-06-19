@@ -14,14 +14,18 @@ import (
 //go:embed templates/*.html
 var templateFS embed.FS
 
+// Server is the web-based C2 dashboard that manages agent registration and command dispatch.
 type Server struct {
 	addr     string
 	agents   *AgentStore
 	commands *CommandQueue
 	mux      *http.ServeMux
 	server   *http.Server
+	auth     AuthConfig
+	sessions *sessionStore
 }
 
+// AgentInfo represents a connected agent's identity and environment metadata.
 type AgentInfo struct {
 	ID           string    `json:"id"`
 	Hostname     string    `json:"hostname"`
@@ -36,6 +40,7 @@ type AgentInfo struct {
 	Status       string    `json:"status"`
 }
 
+// Command represents a module execution request dispatched to an agent.
 type Command struct {
 	ID        string            `json:"id"`
 	AgentID   string            `json:"agent_id"`
@@ -47,18 +52,22 @@ type Command struct {
 	DoneAt    time.Time         `json:"done_at,omitempty"`
 }
 
+// AgentStore is a thread-safe in-memory registry of connected agents.
 type AgentStore struct {
 	mu     sync.RWMutex
 	agents map[string]*AgentInfo
 }
 
+// CommandQueue is a thread-safe store for pending and completed commands.
 type CommandQueue struct {
 	mu       sync.RWMutex
 	commands map[string]*Command
 	pending  map[string][]*Command
 }
 
-func NewServer(addr string) *Server {
+// NewServer creates a web UI server listening on the given address.
+// If token is non-empty, all routes require authentication.
+func NewServer(addr, token string) *Server {
 	s := &Server{
 		addr: addr,
 		agents: &AgentStore{
@@ -68,12 +77,18 @@ func NewServer(addr string) *Server {
 			commands: make(map[string]*Command),
 			pending:  make(map[string][]*Command),
 		},
-		mux: http.NewServeMux(),
+		mux:      http.NewServeMux(),
+		sessions: newSessionStore(),
+		auth: AuthConfig{
+			Token:   token,
+			Enabled: token != "",
+		},
 	}
 	s.registerRoutes()
 	return s
 }
 
+// Start begins serving HTTP requests and blocks until the context is cancelled.
 func (s *Server) Start(ctx context.Context) error {
 	s.server = &http.Server{
 		Addr:              s.addr,
@@ -92,13 +107,15 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 func (s *Server) registerRoutes() {
-	s.mux.HandleFunc("/", s.handleDashboard)
-	s.mux.HandleFunc("/api/agents", s.handleAgents)
-	s.mux.HandleFunc("/api/agents/register", s.handleAgentRegister)
-	s.mux.HandleFunc("/api/commands", s.handleCommands)
-	s.mux.HandleFunc("/api/commands/new", s.handleNewCommand)
-	s.mux.HandleFunc("/api/commands/poll", s.handlePollCommands)
-	s.mux.HandleFunc("/api/commands/result", s.handleCommandResult)
+	s.mux.HandleFunc("/", s.dashboardAuth(s.handleDashboard))
+	s.mux.HandleFunc("/login", s.handleLoginPost)
+	s.mux.HandleFunc("/logout", s.handleLogout)
+	s.mux.HandleFunc("/api/agents", s.authMiddleware(s.handleAgents))
+	s.mux.HandleFunc("/api/agents/register", s.authMiddleware(s.handleAgentRegister))
+	s.mux.HandleFunc("/api/commands", s.authMiddleware(s.handleCommands))
+	s.mux.HandleFunc("/api/commands/new", s.authMiddleware(s.handleNewCommand))
+	s.mux.HandleFunc("/api/commands/poll", s.authMiddleware(s.handlePollCommands))
+	s.mux.HandleFunc("/api/commands/result", s.authMiddleware(s.handleCommandResult))
 }
 
 func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {

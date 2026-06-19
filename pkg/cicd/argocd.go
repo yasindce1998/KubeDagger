@@ -18,6 +18,7 @@ var (
 	}
 )
 
+// PoisonArgoApp modifies an ArgoCD Application's source repository or path to point at attacker-controlled content.
 func PoisonArgoApp(ctx context.Context, dynClient dynamic.Interface, ns, appName, repoURL, path string) (*PoisonResult, error) {
 	result := &PoisonResult{
 		Platform: "argocd",
@@ -56,6 +57,7 @@ func PoisonArgoApp(ctx context.Context, dynClient dynamic.Interface, ns, appName
 	return result, nil
 }
 
+// InjectArgoSyncHook prepares a PreSync hook Job that executes arbitrary commands during ArgoCD sync operations.
 func InjectArgoSyncHook(ctx context.Context, dynClient dynamic.Interface, ns, appName, image, command string) (*PoisonResult, error) {
 	result := &PoisonResult{
 		Platform: "argocd",
@@ -106,6 +108,7 @@ func InjectArgoSyncHook(ctx context.Context, dynClient dynamic.Interface, ns, ap
 	return result, nil
 }
 
+// StealArgoRepoCredentials extracts Git repository credentials and cluster secrets from ArgoCD's secret store.
 func StealArgoRepoCredentials(ctx context.Context, client kubernetes.Interface, ns string) (string, error) {
 	var sb strings.Builder
 	sb.WriteString("ArgoCD Repository Credentials:\n")
@@ -155,6 +158,7 @@ func StealArgoRepoCredentials(ctx context.Context, client kubernetes.Interface, 
 	return sb.String(), nil
 }
 
+// ListArgoApps enumerates all ArgoCD Application resources with their sync and health status.
 func ListArgoApps(ctx context.Context, dynClient dynamic.Interface, ns string) (string, error) {
 	var sb strings.Builder
 

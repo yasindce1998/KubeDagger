@@ -15,12 +15,14 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
+// KubeconfigSource represents a discovered kubeconfig and where it was found.
 type KubeconfigSource struct {
 	Path     string
 	Type     string // "file", "env", "secret", "configmap", "incluster"
 	Clusters []ClusterInfo
 }
 
+// ClusterInfo holds connection details for a discovered Kubernetes cluster.
 type ClusterInfo struct {
 	Name   string
 	Server string
@@ -28,6 +30,7 @@ type ClusterInfo struct {
 	Token  string
 }
 
+// DiscoverKubeconfigs scans the environment for kubeconfig files and credentials.
 func DiscoverKubeconfigs(ctx context.Context) ([]KubeconfigSource, error) {
 	var sources []KubeconfigSource
 
@@ -48,6 +51,7 @@ func DiscoverKubeconfigs(ctx context.Context) ([]KubeconfigSource, error) {
 	return sources, nil
 }
 
+// DiscoverFromSecrets extracts kubeconfig data from Kubernetes secrets in the given namespace.
 func DiscoverFromSecrets(ctx context.Context, client kubernetes.Interface, namespace string) ([]KubeconfigSource, error) {
 	var sources []KubeconfigSource
 
@@ -73,6 +77,7 @@ func DiscoverFromSecrets(ctx context.Context, client kubernetes.Interface, names
 	return sources, nil
 }
 
+// DiscoverFromConfigMaps extracts kubeconfig data from ConfigMaps in the given namespace.
 func DiscoverFromConfigMaps(ctx context.Context, client kubernetes.Interface, namespace string) ([]KubeconfigSource, error) {
 	var sources []KubeconfigSource
 
@@ -254,6 +259,7 @@ func isKubeconfigData(data []byte) bool {
 	return false
 }
 
+// BuildClientFromCluster creates a Kubernetes client from discovered cluster credentials.
 func BuildClientFromCluster(cluster ClusterInfo) (kubernetes.Interface, error) {
 	config := &rest.Config{
 		Host:        cluster.Server,

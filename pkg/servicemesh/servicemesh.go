@@ -10,14 +10,17 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+// MeshType identifies the service mesh implementation.
 type MeshType string
 
+// Service mesh type constants.
 const (
 	MeshIstio   MeshType = "istio"
 	MeshLinkerd MeshType = "linkerd"
 	MeshUnknown MeshType = "unknown"
 )
 
+// MeshInfo holds details about a detected service mesh installation.
 type MeshInfo struct {
 	Type       MeshType
 	Namespace  string
@@ -25,6 +28,7 @@ type MeshInfo struct {
 	Components []string
 }
 
+// DetectMesh probes the cluster for Istio or Linkerd control plane components.
 func DetectMesh(ctx context.Context) (*MeshInfo, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -103,6 +107,7 @@ func detectLinkerd(ctx context.Context, client kubernetes.Interface) *MeshInfo {
 	return nil
 }
 
+// GetKubeClient returns a typed Kubernetes client from the in-cluster config.
 func GetKubeClient() (kubernetes.Interface, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -111,6 +116,7 @@ func GetKubeClient() (kubernetes.Interface, error) {
 	return kubernetes.NewForConfig(config)
 }
 
+// FormatMeshInfo returns a human-readable summary of the detected mesh and its components.
 func FormatMeshInfo(info *MeshInfo) string {
 	if info == nil {
 		return "no service mesh detected"

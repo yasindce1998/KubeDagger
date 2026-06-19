@@ -24,6 +24,7 @@ var (
 	}
 )
 
+// PoisonFluxGitSource modifies a Flux GitRepository's URL or branch to redirect source reconciliation.
 func PoisonFluxGitSource(ctx context.Context, dynClient dynamic.Interface, ns, name, repoURL, branch string) (*PoisonResult, error) {
 	result := &PoisonResult{
 		Platform: "flux",
@@ -62,6 +63,7 @@ func PoisonFluxGitSource(ctx context.Context, dynClient dynamic.Interface, ns, n
 	return result, nil
 }
 
+// PoisonFluxKustomization modifies a Flux Kustomization's path and disables validation to inject malicious manifests.
 func PoisonFluxKustomization(ctx context.Context, dynClient dynamic.Interface, ns, name, path string) (*PoisonResult, error) {
 	result := &PoisonResult{
 		Platform: "flux",
@@ -95,6 +97,7 @@ func PoisonFluxKustomization(ctx context.Context, dynClient dynamic.Interface, n
 	return result, nil
 }
 
+// StealFluxCredentials searches for Git deploy keys and source credentials in Flux's namespace.
 func StealFluxCredentials(ctx context.Context, client kubernetes.Interface, ns string) (string, error) {
 	var sb strings.Builder
 	sb.WriteString("Flux Source Credentials:\n")
@@ -128,6 +131,7 @@ func StealFluxCredentials(ctx context.Context, client kubernetes.Interface, ns s
 	return sb.String(), nil
 }
 
+// ListFluxResources enumerates GitRepositories, Kustomizations, and HelmReleases in the given namespace.
 func ListFluxResources(ctx context.Context, dynClient dynamic.Interface, ns string) (string, error) {
 	var sb strings.Builder
 

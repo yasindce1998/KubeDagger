@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KubeDagger - Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Courier New', monospace; background: #0a0a0a; color: #00ff41; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .login-box { background: #111; border: 1px solid #333; border-radius: 4px; padding: 32px; width: 100%; max-width: 400px; }
+        .login-box h1 { font-size: 20px; letter-spacing: 2px; margin-bottom: 24px; text-align: center; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 11px; color: #888; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
+        .form-group input { width: 100%; background: #1a1a1a; border: 1px solid #333; color: #00ff41; padding: 10px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 14px; }
+        .form-group input:focus { outline: none; border-color: #00ff41; }
+        .btn { width: 100%; background: #00ff41; color: #0a0a0a; border: none; padding: 10px 16px; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .btn:hover { background: #00cc33; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h1>KUBEDAGGER C2</h1>
+        <form method="POST" action="/login">
+            <div class="form-group">
+                <label>Access Token</label>
+                <input type="password" name="token" placeholder="Enter access token" autofocus required>
+            </div>
+            <button type="submit" class="btn">Authenticate</button>
+        </form>
+    </div>
+</body>
+</html>

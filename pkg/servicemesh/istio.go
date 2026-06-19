@@ -26,6 +26,7 @@ var (
 	}
 )
 
+// InjectXDSConfig creates an EnvoyFilter that intercepts authorization headers on the target service's sidecar.
 func InjectXDSConfig(ctx context.Context, dynClient dynamic.Interface, ns, targetService string, port int64) (string, error) {
 	var sb strings.Builder
 	sb.WriteString("Istio xDS Injection:\n")
@@ -129,6 +130,7 @@ end`,
 	return sb.String(), nil
 }
 
+// ExtractMTLSCerts searches for Istio CA certificates and private keys in the control plane namespace.
 func ExtractMTLSCerts(ctx context.Context) (string, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -179,6 +181,7 @@ func ExtractMTLSCerts(ctx context.Context) (string, error) {
 	return sb.String(), nil
 }
 
+// HijackTraffic creates a VirtualService that mirrors all traffic from a target service to an attacker-controlled host.
 func HijackTraffic(ctx context.Context, dynClient dynamic.Interface, ns, targetService, redirectHost string, redirectPort int64) (string, error) {
 	var sb strings.Builder
 	sb.WriteString("Traffic Hijack via VirtualService:\n")
@@ -229,6 +232,7 @@ func HijackTraffic(ctx context.Context, dynClient dynamic.Interface, ns, targetS
 	return sb.String(), nil
 }
 
+// DumpEnvoyConfig queries a sidecar's Envoy admin API to extract clusters, listeners, and certificates.
 func DumpEnvoyConfig(ctx context.Context, podIP string) (string, error) {
 	var sb strings.Builder
 	sb.WriteString("Envoy Admin Dump:\n")

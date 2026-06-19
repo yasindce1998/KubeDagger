@@ -9,6 +9,7 @@ import (
 	"sync"
 )
 
+// ClusterRoute represents a path to reach a specific cluster through relay nodes.
 type ClusterRoute struct {
 	ClusterID  string
 	Endpoint   string
@@ -17,11 +18,13 @@ type ClusterRoute struct {
 	Healthy    bool
 }
 
+// RouteTable maintains routing state for multi-cluster agent communication.
 type RouteTable struct {
 	mu     sync.RWMutex
 	routes map[string]*ClusterRoute
 }
 
+// NewRouteTable creates an empty route table.
 func NewRouteTable() *RouteTable {
 	return &RouteTable{
 		routes: make(map[string]*ClusterRoute),
@@ -89,6 +92,7 @@ func (rt *RouteTable) SetHealth(clusterID string, healthy bool) {
 	}
 }
 
+// BuildRouteTable creates a route table from discovered cluster information.
 func BuildRouteTable(clusters []ClusterInfo) *RouteTable {
 	rt := NewRouteTable()
 
@@ -105,6 +109,7 @@ func BuildRouteTable(clusters []ClusterInfo) *RouteTable {
 	return rt
 }
 
+// BuildRelayChain computes the relay path between source and destination clusters.
 func BuildRelayChain(rt *RouteTable, src, dst string) []string {
 	srcRoute, srcOK := rt.GetRoute(src)
 	dstRoute, dstOK := rt.GetRoute(dst)
@@ -129,6 +134,7 @@ func BuildRelayChain(rt *RouteTable, src, dst string) []string {
 	return chain
 }
 
+// GenerateClusterID produces a deterministic short hash ID from cluster connection details.
 func GenerateClusterID(cluster ClusterInfo) string {
 	h := sha256.New()
 	h.Write([]byte(cluster.Server))
@@ -136,6 +142,7 @@ func GenerateClusterID(cluster ClusterInfo) string {
 	return hex.EncodeToString(h.Sum(nil))[:12]
 }
 
+// FormatRouteTable returns a human-readable summary of all routes and their health status.
 func FormatRouteTable(rt *RouteTable) string {
 	routes := rt.ListRoutes()
 	if len(routes) == 0 {

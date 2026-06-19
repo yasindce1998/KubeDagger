@@ -10,6 +10,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+// DetectionSystem represents a runtime security tool detected in the cluster.
 type DetectionSystem struct {
 	Name      string
 	Detected  bool
@@ -17,23 +18,15 @@ type DetectionSystem struct {
 	Details   string
 }
 
+// EvasionResult holds the outcome of an evasion technique execution.
 type EvasionResult struct {
 	Technique string
 	Success   bool
 	Output    string
 }
 
-func DetectSystems(ctx context.Context) ([]DetectionSystem, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, fmt.Errorf("not in cluster: %w", err)
-	}
-
-	client, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
+// DetectSystems enumerates runtime security tools deployed in the cluster.
+func DetectSystems(ctx context.Context, client kubernetes.Interface) ([]DetectionSystem, error) {
 	var systems []DetectionSystem
 
 	systems = append(systems, detectFalco(ctx, client)...)
@@ -147,6 +140,7 @@ func detectSysdig(ctx context.Context, client kubernetes.Interface) []DetectionS
 	return nil
 }
 
+// GetKubeClient returns a Kubernetes client configured from in-cluster credentials.
 func GetKubeClient() (kubernetes.Interface, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -155,6 +149,7 @@ func GetKubeClient() (kubernetes.Interface, error) {
 	return kubernetes.NewForConfig(config)
 }
 
+// FormatSystems renders detected security systems as a human-readable report.
 func FormatSystems(systems []DetectionSystem) string {
 	if len(systems) == 0 {
 		return "No detection systems found in cluster"

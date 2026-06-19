@@ -1910,7 +1910,7 @@ KubeDagger includes a web-based operator dashboard for managing agents and dispa
 # Or programmatically:
 import "github.com/yasindce1998/KubeDagger/pkg/webui"
 
-server := webui.NewServer(":8080")
+server := webui.NewServer(":8080", "my-secret-token")
 server.Start(ctx)
 ```
 

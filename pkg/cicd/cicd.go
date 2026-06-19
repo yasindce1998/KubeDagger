@@ -13,6 +13,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+// Platform describes a detected CI/CD system and its running controllers.
 type Platform struct {
 	Name        string
 	Detected    bool
@@ -20,6 +21,7 @@ type Platform struct {
 	Controllers []string
 }
 
+// PoisonResult captures the outcome of a CI/CD supply-chain poisoning operation.
 type PoisonResult struct {
 	Platform string
 	Action   string
@@ -28,6 +30,7 @@ type PoisonResult struct {
 	Output   string
 }
 
+// DetectPlatforms discovers CI/CD systems running in the current cluster.
 func DetectPlatforms(ctx context.Context) ([]Platform, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -122,6 +125,7 @@ func detectFlux(ctx context.Context, client kubernetes.Interface) Platform {
 	return p
 }
 
+// GetDynamicClient returns a dynamic Kubernetes client from the in-cluster config.
 func GetDynamicClient() (dynamic.Interface, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -130,6 +134,7 @@ func GetDynamicClient() (dynamic.Interface, error) {
 	return dynamic.NewForConfig(config)
 }
 
+// GetKubeClient returns a typed Kubernetes client from the in-cluster config.
 func GetKubeClient() (kubernetes.Interface, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -138,6 +143,7 @@ func GetKubeClient() (kubernetes.Interface, error) {
 	return kubernetes.NewForConfig(config)
 }
 
+// ListCRDs lists custom resources matching the given GVR in the specified namespace.
 func ListCRDs(ctx context.Context, dynClient dynamic.Interface, gvr schema.GroupVersionResource, ns string) ([]unstructured.Unstructured, error) {
 	list, err := dynClient.Resource(gvr).Namespace(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -146,6 +152,7 @@ func ListCRDs(ctx context.Context, dynClient dynamic.Interface, gvr schema.Group
 	return list.Items, nil
 }
 
+// FormatPlatforms returns a human-readable summary of detected CI/CD platforms.
 func FormatPlatforms(platforms []Platform) string {
 	if len(platforms) == 0 {
 		return "no CI/CD platforms detected"
