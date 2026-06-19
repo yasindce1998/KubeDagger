@@ -54,4 +54,8 @@ func (r *Registry) registerDefaults() {
 	r.Register(&WebhookDeploy{})
 	r.Register(&AntiForensics{})
 	r.Register(&Autonomy{})
+	r.Register(&MultiCluster{})
+	r.Register(&CloudExploit{})
+	r.Register(&CICDPoison{})
+	r.Register(&ServiceMesh{})
 }
