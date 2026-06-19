@@ -126,6 +126,12 @@ KEY=$(kubedagger-client c2 genkey)
 | `pkg/webhook` | Admission webhook weaponization with auto-cert and Pod injection |
 | `pkg/antiforensics` | Anti-forensics eBPF hooks (audit suppression, log filtering, timestomping) |
 | `pkg/autonomy` | Autonomous objective engine with rule-based forward-chaining planner |
+| `pkg/multicluster` | Multi-cluster propagation via kubeconfig theft, federation, and service mesh |
+| `pkg/cloudexploit` | Cloud provider exploitation (AWS, GCP, Azure IAM/metadata attacks) |
+| `pkg/cicd` | CI/CD pipeline poisoning (Tekton, ArgoCD, Flux task/app injection) |
+| `pkg/servicemesh` | Service mesh deep attacks (Istio xDS injection, mTLS cert theft, traffic hijack) |
+| `pkg/cloudevasion` | Detection evasion (Falco bypass, admission controller evasion, runtime hiding) |
+| `pkg/webui` | Operator Web UI with real-time agent dashboard and command dispatch |
 
 ### Available client commands
 

