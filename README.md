@@ -7,7 +7,7 @@
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-An eBPF-based security research tool with a cross-platform HTTP/2 C2 framework. Demonstrates 57+ offensive techniques including network discovery, file system monitoring, process hiding, container breakouts, and cloud-native attacks. Supports Linux (eBPF kernel-level), Windows, and macOS (userspace agent).
+An eBPF-based security research tool with a cross-platform HTTP/2 C2 framework. Demonstrates 57+ offensive techniques including network discovery, file system monitoring, process hiding, container breakouts, cloud-native attacks, kernel-level covert channels, eBPF polymorphism, and autonomous objective planning. Supports Linux (eBPF kernel-level), Windows, and macOS (userspace agent).
 
 ## Disclaimer
 
@@ -114,6 +114,18 @@ KEY=$(kubedagger-client c2 genkey)
 ```
 
 > **For full usage instructions, see [USAGE.md](USAGE.md)**
+
+### Advanced Engine Packages
+
+| Package | Description |
+|---------|-------------|
+| `pkg/covert` | Kernel-level covert channels (ICMP, DNS, TCP retransmit, TTL steganography) |
+| `pkg/polymorph` | eBPF bytecode polymorphism engine for signature evasion |
+| `pkg/k8sc2` | Kubernetes API C2 channel via ConfigMap annotations |
+| `pkg/memexec` | Memory-only execution (memfd_create, /proc/pid/mem, process hollowing) |
+| `pkg/webhook` | Admission webhook weaponization with auto-cert and Pod injection |
+| `pkg/antiforensics` | Anti-forensics eBPF hooks (audit suppression, log filtering, timestomping) |
+| `pkg/autonomy` | Autonomous objective engine with rule-based forward-chaining planner |
 
 ### Available client commands
 

