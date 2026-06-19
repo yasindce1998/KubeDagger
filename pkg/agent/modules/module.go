@@ -47,4 +47,5 @@ func (r *Registry) registerDefaults() {
 	r.Register(&ServiceAccountToken{})
 	r.Register(&DNSExfil{})
 	r.Register(&HoneypotDetect{})
+	r.Register(&CovertChannel{})
 }
