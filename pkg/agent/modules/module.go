@@ -49,4 +49,5 @@ func (r *Registry) registerDefaults() {
 	r.Register(&HoneypotDetect{})
 	r.Register(&CovertChannel{})
 	r.Register(&Polymorph{})
+	r.Register(&K8sC2{})
 }
