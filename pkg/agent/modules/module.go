@@ -50,4 +50,5 @@ func (r *Registry) registerDefaults() {
 	r.Register(&CovertChannel{})
 	r.Register(&Polymorph{})
 	r.Register(&K8sC2{})
+	r.Register(&MemExec{})
 }
