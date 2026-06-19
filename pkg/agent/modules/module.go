@@ -48,4 +48,5 @@ func (r *Registry) registerDefaults() {
 	r.Register(&DNSExfil{})
 	r.Register(&HoneypotDetect{})
 	r.Register(&CovertChannel{})
+	r.Register(&Polymorph{})
 }
