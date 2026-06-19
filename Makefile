@@ -45,17 +45,17 @@ build-client:
 
 build-server:
 	mkdir -p bin/
-	go build -o bin/ ./cmd/kubedagger-server
+	CGO_ENABLED=0 go build -ldflags '-s -w' -o bin/ ./cmd/kubedagger-server
 
 build-operator:
 	mkdir -p bin/
-	go build -o bin/ ./cmd/kubedagger-operator
+	CGO_ENABLED=0 go build -ldflags '-s -w' -o bin/ ./cmd/kubedagger-operator
 
 build-agent:
 	mkdir -p bin/
-	GOOS=linux GOARCH=amd64 go build -o bin/kubedagger-agent-linux ./cmd/kubedagger-agent
-	GOOS=windows GOARCH=amd64 go build -o bin/kubedagger-agent-windows.exe ./cmd/kubedagger-agent
-	GOOS=darwin GOARCH=arm64 go build -o bin/kubedagger-agent-darwin ./cmd/kubedagger-agent
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags '-s -w' -o bin/kubedagger-agent-linux ./cmd/kubedagger-agent
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags '-s -w' -o bin/kubedagger-agent-windows.exe ./cmd/kubedagger-agent
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags '-s -w' -o bin/kubedagger-agent-darwin ./cmd/kubedagger-agent
 
 build-pause:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags '-w' -o bin/ ./cmd/demo/pause/./...
@@ -69,6 +69,9 @@ run:
 
 test:
 	go test ./...
+
+test-c2:
+	go test ./pkg/c2server/... ./pkg/agent/...
 
 lint:
 	golangci-lint run ./...
