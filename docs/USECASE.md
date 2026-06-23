@@ -70,31 +70,9 @@ The eBPF engine is the Linux-only kernel-level component. It loads BPF programs 
 - **Manipulation:** Override Docker images, modify DNS responses, inject pipe programs
 - **Persistence:** Survive reboots via systemd or cron, hidden from filesystem utilities
 
-```
-┌─────────────────────────────────────────────────────┐
-│                    Kernel Space                       │
-│                                                      │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐          │
-│  │ kprobes  │  │ uprobes  │  │   XDP    │          │
-│  │(syscalls)│  │(SSL r/w) │  │(packets) │          │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘          │
-│       │              │              │                │
-│       ▼              ▼              ▼                │
-│  ┌──────────────────────────────────────────┐       │
-│  │           BPF Maps (shared state)         │       │
-│  │  - http_routes  - dns_table               │       │
-│  │  - piped_progs  - comm_prog_key           │       │
-│  └──────────────────────────────────────────┘       │
-└─────────────────────────────────────────────────────┘
-         ▲                              │
-         │ (commands)                   │ (data)
-         │                              ▼
-┌─────────────────────────────────────────────────────┐
-│                    User Space                         │
-│                                                      │
-│  kubedagger (daemon)  ◄──HTTP──►  kubedagger-client  │
-└─────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="diagrams/ebpf-kernel-arch.svg" alt="eBPF Kernel Architecture" width="100%"/>
+</p>
 
 **Key requirements:**
 - Linux kernel 5.4+ with BTF (BPF Type Format) enabled
@@ -105,27 +83,9 @@ The eBPF engine is the Linux-only kernel-level component. It loads BPF programs 
 
 The C2 framework operates independently of eBPF and supports cross-platform implants. It uses HTTP/2 with mutual TLS (mTLS) for agent-server communication.
 
-```
-┌─────────────────┐     HTTP/2 + mTLS     ┌─────────────────┐
-│   C2 Server     │◄────────────────────►  │     Agent       │
-│                 │                         │                 │
-│ - Agent registry│  Endpoints:            │ - Beacon loop   │
-│ - Task queue    │  POST /checkin         │ - Module runner  │
-│ - Mgmt port     │  POST /task            │ - Shell exec    │
-│   (9443)        │  POST /result          │ - Auto-retry    │
-└────────┬────────┘                         └─────────────────┘
-         │
-         │ ChaCha20-Poly1305
-         │ encrypted TCP
-         ▼
-┌─────────────────┐
-│  Operator CLI   │
-│                 │
-│ agents / shell  │
-│ module / tasks  │
-│ status          │
-└─────────────────┘
-```
+<p align="center">
+  <img src="diagrams/c2-framework.svg" alt="HTTP/2 C2 Framework Architecture" width="100%"/>
+</p>
 
 **Transport security:**
 - mTLS with certificate pinning (production)
@@ -881,74 +841,9 @@ kubedagger-client cloud meta --provider azure
 
 ### Component Interaction
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                         OPERATOR LAYER                                 │
-│                                                                        │
-│  ┌──────────────────┐         ┌───────────────────┐                   │
-│  │  Operator CLI    │         │   Web UI (8080)   │                   │
-│  │ (kubedagger-     │         │ - Agent cards     │                   │
-│  │  operator)       │         │ - Command form    │                   │
-│  └────────┬─────────┘         │ - History view    │                   │
-│           │                   └─────────┬─────────┘                   │
-│           │ ChaCha20 TCP (9443)         │ REST API                    │
-└───────────┼─────────────────────────────┼────────────────────────────┘
-            │                             │
-            ▼                             ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│                         SERVER LAYER                                   │
-│                                                                        │
-│  ┌────────────────────────────────────────────────────────────────┐   │
-│  │                    kubedagger-server                             │   │
-│  │                                                                  │   │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐  │   │
-│  │  │Agent Registry│  │  Task Queue  │  │ Mgmt Port Handler    │  │   │
-│  │  │              │  │  (per-agent) │  │ (ChaCha20 + REST)    │  │   │
-│  │  └──────────────┘  └──────────────┘  └──────────────────────┘  │   │
-│  │                                                                  │   │
-│  │  HTTP/2 Listener (:443)                                         │   │
-│  │  - POST /checkin  (beacon registration)                         │   │
-│  │  - POST /task     (task dispatch)                               │   │
-│  │  - POST /result   (result collection)                           │   │
-│  └────────────────────────────────────────────────────────────────┘   │
-└───────────────────────────────────────────────────────────────────────┘
-            ▲
-            │ HTTP/2 + mTLS (cert-pinned, TLS 1.3)
-            │
-            ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│                         AGENT LAYER                                    │
-│                                                                        │
-│  ┌────────────────────────────────────────────────────────────────┐   │
-│  │                    kubedagger-agent                              │   │
-│  │                                                                  │   │
-│  │  ┌──────────┐  ┌──────────────┐  ┌─────────────────────────┐  │   │
-│  │  │  Beacon  │  │ Shell Exec   │  │     Module System       │  │   │
-│  │  │  Loop    │  │              │  │                          │  │   │
-│  │  │ (30s ±   │  │ cmd.exe /    │  │ cloud_metadata  sa_token │  │   │
-│  │  │  jitter) │  │ /bin/sh      │  │ k8s_discovery   dns_exfil│  │   │
-│  │  └──────────┘  └──────────────┘  │ multi_cluster  memexec  │  │   │
-│  │                                   │ cicd_poison    autonomy │  │   │
-│  │                                   │ service_mesh   polymorph│  │   │
-│  │                                   │ cloud_evasion  ...      │  │   │
-│  │                                   └─────────────────────────┘  │   │
-│  └────────────────────────────────────────────────────────────────┘   │
-│                                                                        │
-│  ┌────────────────────────────────────────────────────────────────┐   │
-│  │              eBPF Rootkit (Linux only, requires root)            │   │
-│  │                                                                  │   │
-│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────────────┐  │   │
-│  │  │kprobes  │  │uprobes  │  │  XDP    │  │ TC (traffic     │  │   │
-│  │  │         │  │         │  │         │  │  control)       │  │   │
-│  │  │-vfs_read│  │-SSL_read│  │-packet  │  │-packet modify   │  │   │
-│  │  │-getdents│  │-SSL_writ│  │ filter  │  │-stego encode    │  │   │
-│  │  │-execve  │  │-connect │  │-XDP C2  │  │-ARP inject      │  │   │
-│  │  │-keyctl  │  │         │  │-reverse │  │                 │  │   │
-│  │  │-audit_* │  │         │  │  shell  │  │                 │  │   │
-│  │  └─────────┘  └─────────┘  └─────────┘  └─────────────────┘  │   │
-│  └────────────────────────────────────────────────────────────────┘   │
-└───────────────────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="diagrams/full-architecture.svg" alt="Full Architecture Deep Dive" width="100%"/>
+</p>
 
 ### Data Flow
 
@@ -1276,56 +1171,9 @@ A: Not all containers are escapable. Check:
 
 ## Quick Reference: Complete Attack Lifecycle
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    KUBERNETES ATTACK LIFECYCLE                        │
-│                                                                       │
-│  ┌─────────────┐                                                     │
-│  │ 1. INITIAL  │  RCE in pod, stolen kubeconfig, malicious image    │
-│  │    ACCESS   │  → Deploy kubedagger-agent                          │
-│  └──────┬──────┘                                                     │
-│         │                                                            │
-│  ┌──────▼──────┐                                                     │
-│  │ 2. RECON    │  k8s_discovery, cloud_metadata, honeypot_detect    │
-│  │             │  network_discovery, sa_token                        │
-│  └──────┬──────┘                                                     │
-│         │                                                            │
-│  ┌──────▼──────┐                                                     │
-│  │ 3. PRIVESC  │  escape (privileged/socket/cgroup/nsenter)          │
-│  │             │  k8s abuse --action escalate                        │
-│  │             │  cloud_exploit action=iam_escalate                   │
-│  └──────┬──────┘                                                     │
-│         │                                                            │
-│  ┌──────▼──────┐                                                     │
-│  │ 4. LATERAL  │  multi_cluster, kubelet API abuse                   │
-│  │   MOVEMENT  │  veth-hijack, sidecar-inject                        │
-│  │             │  arp-spoof, pod-identity theft                       │
-│  └──────┬──────┘                                                     │
-│         │                                                            │
-│  ┌──────▼──────┐                                                     │
-│  │ 5. PERSIST  │  daemonset, webhook, crd-backdoor                   │
-│  │             │  persistence (systemd/cron), gitops-poison          │
-│  │             │  cicd_poison                                         │
-│  └──────┬──────┘                                                     │
-│         │                                                            │
-│  ┌──────▼──────┐                                                     │
-│  │ 6. EVASION  │  cloud_evasion (falco/tetragon bypass)              │
-│  │             │  antiforensics, polymorph, log-tamper                │
-│  │             │  syscall-bypass, audit-filter, pcap-blind            │
-│  └──────┬──────┘                                                     │
-│         │                                                            │
-│  ┌──────▼──────┐                                                     │
-│  │ 7. COLLECT  │  secrets harvest, fs_watch, tls-intercept           │
-│  │   & EXFIL   │  etcd-steal, keyring, cloud exfil                   │
-│  │             │  dns_exfil, covert-channel, tcp-stego               │
-│  └──────┬──────┘                                                     │
-│         │                                                            │
-│  ┌──────▼──────┐                                                     │
-│  │ 8. IMPACT   │  obs-poison, sched-starve, election-disrupt         │
-│  │ (optional)  │  cert-sabotage, cgroup-manip, fault-inject          │
-│  └─────────────┘                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="diagrams/attack-lifecycle.svg" alt="Kubernetes Attack Lifecycle" width="100%"/>
+</p>
 
 ---
 

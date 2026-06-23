@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 1100" width="100%" height="100%">
+  <defs>
+    <filter id="neonCyan" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0  0 1 1 0 0  0 1 1 0 0  0 0 0 1 0" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="neonGreen" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="neonPurple" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.7  0 0 0 0 0  0 0 0 0 1  0 0 0 1 0" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="neonOrange" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 1  0 0 0 0 0.5  0 0 0 0 0  0 0 0 1 0" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="neonPink" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 1  0 0 0 0 0  0 0 0 0 0.9  0 0 0 1 0" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="1100" rx="12" fill="#0d1117"/>
+  <rect width="960" height="1100" rx="12" fill="none" stroke="#21262d" stroke-width="1"/>
+
+  <!-- ==================== OPERATOR LAYER ==================== -->
+  <rect x="30" y="20" width="900" height="180" rx="10" fill="#1a1520" stroke="#bf00ff" stroke-width="2" filter="url(#neonPurple)"/>
+  <text x="480" y="48" text-anchor="middle" fill="#bf00ff" font-family="monospace" font-size="15" font-weight="bold">OPERATOR LAYER</text>
+
+  <!-- Operator CLI -->
+  <rect x="80" y="65" width="280" height="110" rx="6" fill="#161b22" stroke="#bf00ff" stroke-width="1.5"/>
+  <text x="220" y="90" text-anchor="middle" fill="#bf00ff" font-family="monospace" font-size="13" font-weight="bold">Operator CLI</text>
+  <text x="220" y="108" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="10">(kubedagger-operator)</text>
+  <line x1="100" y1="118" x2="340" y2="118" stroke="#21262d" stroke-width="1"/>
+  <text x="110" y="138" fill="#e6edf3" font-family="monospace" font-size="11">agents / shell / module</text>
+  <text x="110" y="158" fill="#e6edf3" font-family="monospace" font-size="11">tasks / status</text>
+
+  <!-- Web UI -->
+  <rect x="560" y="65" width="320" height="110" rx="6" fill="#161b22" stroke="#ff00e4" stroke-width="1.5" filter="url(#neonPink)"/>
+  <text x="720" y="90" text-anchor="middle" fill="#ff00e4" font-family="monospace" font-size="13" font-weight="bold">Web UI (port 8080)</text>
+  <line x1="580" y1="102" x2="860" y2="102" stroke="#21262d" stroke-width="1"/>
+  <text x="590" y="122" fill="#e6edf3" font-family="monospace" font-size="11">- Agent cards</text>
+  <text x="590" y="142" fill="#e6edf3" font-family="monospace" font-size="11">- Command form</text>
+  <text x="590" y="162" fill="#e6edf3" font-family="monospace" font-size="11">- History view</text>
+
+  <!-- Connection labels from operator layer -->
+  <text x="220" y="210" text-anchor="middle" fill="#bf00ff" font-family="monospace" font-size="9">ChaCha20 TCP (9443)</text>
+  <text x="720" y="210" text-anchor="middle" fill="#ff00e4" font-family="monospace" font-size="9">REST API</text>
+
+  <!-- Arrows down to server -->
+  <line x1="220" y1="200" x2="220" y2="240" stroke="#bf00ff" stroke-width="2"/>
+  <polygon points="215,235 220,245 225,235" fill="#bf00ff"/>
+  <line x1="720" y1="200" x2="720" y2="240" stroke="#ff00e4" stroke-width="2"/>
+  <polygon points="715,235 720,245 725,235" fill="#ff00e4"/>
+
+  <!-- ==================== SERVER LAYER ==================== -->
+  <rect x="30" y="250" width="900" height="260" rx="10" fill="#0f1a1a" stroke="#00fff2" stroke-width="2" filter="url(#neonCyan)"/>
+  <text x="480" y="278" text-anchor="middle" fill="#00fff2" font-family="monospace" font-size="15" font-weight="bold">SERVER LAYER</text>
+
+  <!-- Server inner box -->
+  <rect x="60" y="295" width="840" height="195" rx="6" fill="#161b22" stroke="#00fff2" stroke-width="1.5"/>
+  <text x="480" y="320" text-anchor="middle" fill="#00fff2" font-family="monospace" font-size="13" font-weight="bold">kubedagger-server</text>
+
+  <!-- Agent Registry -->
+  <rect x="90" y="335" width="200" height="55" rx="4" fill="#0d1117" stroke="#00fff2" stroke-width="1"/>
+  <text x="190" y="358" text-anchor="middle" fill="#e6edf3" font-family="monospace" font-size="11">Agent Registry</text>
+  <text x="190" y="378" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="9">(connected agents)</text>
+
+  <!-- Task Queue -->
+  <rect x="320" y="335" width="200" height="55" rx="4" fill="#0d1117" stroke="#00fff2" stroke-width="1"/>
+  <text x="420" y="358" text-anchor="middle" fill="#e6edf3" font-family="monospace" font-size="11">Task Queue</text>
+  <text x="420" y="378" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="9">(per-agent FIFO)</text>
+
+  <!-- Mgmt Port Handler -->
+  <rect x="550" y="335" width="320" height="55" rx="4" fill="#0d1117" stroke="#00fff2" stroke-width="1"/>
+  <text x="710" y="358" text-anchor="middle" fill="#e6edf3" font-family="monospace" font-size="11">Mgmt Port Handler</text>
+  <text x="710" y="378" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="9">(ChaCha20 + REST)</text>
+
+  <!-- HTTP/2 Listener -->
+  <text x="90" y="420" fill="#39ff14" font-family="monospace" font-size="12" font-weight="bold">HTTP/2 Listener (:443)</text>
+  <text x="90" y="440" fill="#8b949e" font-family="monospace" font-size="10">POST /checkin  (beacon registration)</text>
+  <text x="90" y="458" fill="#8b949e" font-family="monospace" font-size="10">POST /task     (task dispatch)</text>
+  <text x="90" y="476" fill="#8b949e" font-family="monospace" font-size="10">POST /result   (result collection)</text>
+
+  <!-- Arrow down to Agent -->
+  <line x1="480" y1="510" x2="480" y2="570" stroke="#39ff14" stroke-width="2" stroke-dasharray="6,3"/>
+  <polygon points="475,565 480,575 485,565" fill="#39ff14"/>
+  <polygon points="475,515 480,505 485,515" fill="#39ff14"/>
+  <text x="490" y="545" fill="#39ff14" font-family="monospace" font-size="10" font-weight="bold">HTTP/2 + mTLS (cert-pinned, TLS 1.3)</text>
+
+  <!-- ==================== AGENT LAYER ==================== -->
+  <rect x="30" y="580" width="900" height="500" rx="10" fill="#0f1a12" stroke="#39ff14" stroke-width="2" filter="url(#neonGreen)"/>
+  <text x="480" y="608" text-anchor="middle" fill="#39ff14" font-family="monospace" font-size="15" font-weight="bold">AGENT LAYER</text>
+
+  <!-- Agent inner box -->
+  <rect x="60" y="625" width="840" height="200" rx="6" fill="#161b22" stroke="#39ff14" stroke-width="1.5"/>
+  <text x="480" y="650" text-anchor="middle" fill="#39ff14" font-family="monospace" font-size="13" font-weight="bold">kubedagger-agent</text>
+
+  <!-- Beacon Loop -->
+  <rect x="90" y="665" width="160" height="70" rx="4" fill="#0d1117" stroke="#39ff14" stroke-width="1"/>
+  <text x="170" y="688" text-anchor="middle" fill="#e6edf3" font-family="monospace" font-size="11">Beacon Loop</text>
+  <text x="170" y="708" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="9">(30s ± jitter)</text>
+  <text x="170" y="726" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="9">heartbeat</text>
+
+  <!-- Shell Exec -->
+  <rect x="280" y="665" width="160" height="70" rx="4" fill="#0d1117" stroke="#39ff14" stroke-width="1"/>
+  <text x="360" y="688" text-anchor="middle" fill="#e6edf3" font-family="monospace" font-size="11">Shell Exec</text>
+  <text x="360" y="708" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="9">cmd.exe /</text>
+  <text x="360" y="726" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="9">/bin/sh</text>
+
+  <!-- Module System -->
+  <rect x="470" y="665" width="400" height="145" rx="4" fill="#0d1117" stroke="#39ff14" stroke-width="1"/>
+  <text x="670" y="688" text-anchor="middle" fill="#39ff14" font-family="monospace" font-size="12" font-weight="bold">Module System</text>
+  <text x="540" y="712" fill="#e6edf3" font-family="monospace" font-size="10">cloud_metadata</text>
+  <text x="540" y="730" fill="#e6edf3" font-family="monospace" font-size="10">k8s_discovery</text>
+  <text x="540" y="748" fill="#e6edf3" font-family="monospace" font-size="10">multi_cluster</text>
+  <text x="540" y="766" fill="#e6edf3" font-family="monospace" font-size="10">cicd_poison</text>
+  <text x="540" y="784" fill="#e6edf3" font-family="monospace" font-size="10">service_mesh</text>
+  <text x="720" y="712" fill="#e6edf3" font-family="monospace" font-size="10">sa_token</text>
+  <text x="720" y="730" fill="#e6edf3" font-family="monospace" font-size="10">dns_exfil</text>
+  <text x="720" y="748" fill="#e6edf3" font-family="monospace" font-size="10">memexec</text>
+  <text x="720" y="766" fill="#e6edf3" font-family="monospace" font-size="10">autonomy</text>
+  <text x="720" y="784" fill="#e6edf3" font-family="monospace" font-size="10">polymorph ...</text>
+
+  <!-- eBPF Rootkit box -->
+  <rect x="60" y="845" width="840" height="215" rx="6" fill="#161b22" stroke="#ff6600" stroke-width="2" filter="url(#neonOrange)"/>
+  <text x="480" y="872" text-anchor="middle" fill="#ff6600" font-family="monospace" font-size="13" font-weight="bold">eBPF Rootkit (Linux only, requires root)</text>
+
+  <!-- kprobes -->
+  <rect x="90" y="890" width="170" height="150" rx="4" fill="#0d1117" stroke="#ff6600" stroke-width="1"/>
+  <text x="175" y="912" text-anchor="middle" fill="#ff6600" font-family="monospace" font-size="11" font-weight="bold">kprobes</text>
+  <text x="110" y="935" fill="#e6edf3" font-family="monospace" font-size="10">- vfs_read</text>
+  <text x="110" y="953" fill="#e6edf3" font-family="monospace" font-size="10">- getdents</text>
+  <text x="110" y="971" fill="#e6edf3" font-family="monospace" font-size="10">- execve</text>
+  <text x="110" y="989" fill="#e6edf3" font-family="monospace" font-size="10">- keyctl</text>
+  <text x="110" y="1007" fill="#e6edf3" font-family="monospace" font-size="10">- audit_*</text>
+
+  <!-- uprobes -->
+  <rect x="290" y="890" width="170" height="150" rx="4" fill="#0d1117" stroke="#ff6600" stroke-width="1"/>
+  <text x="375" y="912" text-anchor="middle" fill="#ff6600" font-family="monospace" font-size="11" font-weight="bold">uprobes</text>
+  <text x="310" y="935" fill="#e6edf3" font-family="monospace" font-size="10">- SSL_read</text>
+  <text x="310" y="953" fill="#e6edf3" font-family="monospace" font-size="10">- SSL_write</text>
+  <text x="310" y="971" fill="#e6edf3" font-family="monospace" font-size="10">- connect</text>
+
+  <!-- XDP -->
+  <rect x="490" y="890" width="170" height="150" rx="4" fill="#0d1117" stroke="#ff6600" stroke-width="1"/>
+  <text x="575" y="912" text-anchor="middle" fill="#ff6600" font-family="monospace" font-size="11" font-weight="bold">XDP</text>
+  <text x="510" y="935" fill="#e6edf3" font-family="monospace" font-size="10">- packet filter</text>
+  <text x="510" y="953" fill="#e6edf3" font-family="monospace" font-size="10">- XDP C2</text>
+  <text x="510" y="971" fill="#e6edf3" font-family="monospace" font-size="10">- reverse shell</text>
+
+  <!-- TC -->
+  <rect x="690" y="890" width="180" height="150" rx="4" fill="#0d1117" stroke="#ff6600" stroke-width="1"/>
+  <text x="780" y="912" text-anchor="middle" fill="#ff6600" font-family="monospace" font-size="11" font-weight="bold">TC (traffic ctrl)</text>
+  <text x="710" y="935" fill="#e6edf3" font-family="monospace" font-size="10">- packet modify</text>
+  <text x="710" y="953" fill="#e6edf3" font-family="monospace" font-size="10">- stego encode</text>
+  <text x="710" y="971" fill="#e6edf3" font-family="monospace" font-size="10">- ARP inject</text>
+</svg>

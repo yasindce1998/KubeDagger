@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 480" width="100%" height="100%">
+  <defs>
+    <filter id="neonCyan" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0  0 1 1 0 0  0 1 1 0 0  0 0 0 1 0" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="neonGreen" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="neonPurple" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.7  0 0 0 0 0  0 0 0 0 1  0 0 0 1 0" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="480" rx="12" fill="#0d1117"/>
+  <rect width="900" height="480" rx="12" fill="none" stroke="#21262d" stroke-width="1"/>
+
+  <!-- C2 Server Box -->
+  <rect x="60" y="40" width="280" height="190" rx="8" fill="#161b22" stroke="#00fff2" stroke-width="2" filter="url(#neonCyan)"/>
+  <text x="200" y="72" text-anchor="middle" fill="#00fff2" font-family="monospace" font-size="16" font-weight="bold">C2 Server</text>
+  <line x1="90" y1="85" x2="310" y2="85" stroke="#21262d" stroke-width="1"/>
+  <text x="90" y="110" fill="#e6edf3" font-family="monospace" font-size="12">- Agent registry</text>
+  <text x="90" y="132" fill="#e6edf3" font-family="monospace" font-size="12">- Task queue</text>
+  <text x="90" y="154" fill="#e6edf3" font-family="monospace" font-size="12">- Mgmt port (9443)</text>
+
+  <!-- Agent Box -->
+  <rect x="560" y="40" width="280" height="190" rx="8" fill="#161b22" stroke="#39ff14" stroke-width="2" filter="url(#neonGreen)"/>
+  <text x="700" y="72" text-anchor="middle" fill="#39ff14" font-family="monospace" font-size="16" font-weight="bold">Agent</text>
+  <line x1="590" y1="85" x2="810" y2="85" stroke="#21262d" stroke-width="1"/>
+  <text x="590" y="110" fill="#e6edf3" font-family="monospace" font-size="12">- Beacon loop</text>
+  <text x="590" y="132" fill="#e6edf3" font-family="monospace" font-size="12">- Module runner</text>
+  <text x="590" y="154" fill="#e6edf3" font-family="monospace" font-size="12">- Shell exec</text>
+  <text x="590" y="176" fill="#e6edf3" font-family="monospace" font-size="12">- Auto-retry</text>
+
+  <!-- Connection between Server and Agent -->
+  <line x1="340" y1="110" x2="560" y2="110" stroke="#00fff2" stroke-width="2" stroke-dasharray="6,3"/>
+  <polygon points="555,105 565,110 555,115" fill="#00fff2"/>
+  <polygon points="345,105 335,110 345,115" fill="#00fff2"/>
+  <text x="450" y="95" text-anchor="middle" fill="#00fff2" font-family="monospace" font-size="12" font-weight="bold">HTTP/2 + mTLS</text>
+
+  <!-- Endpoints -->
+  <text x="450" y="140" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="11">POST /checkin</text>
+  <text x="450" y="158" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="11">POST /task</text>
+  <text x="450" y="176" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="11">POST /result</text>
+
+  <!-- Vertical connection to Operator -->
+  <line x1="200" y1="230" x2="200" y2="300" stroke="#bf00ff" stroke-width="2" stroke-dasharray="6,3"/>
+  <polygon points="195,295 200,305 205,295" fill="#bf00ff"/>
+  <polygon points="195,235 200,225 205,235" fill="#bf00ff"/>
+  <text x="220" y="260" fill="#bf00ff" font-family="monospace" font-size="11" font-weight="bold">ChaCha20-Poly1305</text>
+  <text x="220" y="278" fill="#8b949e" font-family="monospace" font-size="10">encrypted TCP</text>
+
+  <!-- Operator CLI Box -->
+  <rect x="60" y="310" width="280" height="140" rx="8" fill="#161b22" stroke="#bf00ff" stroke-width="2" filter="url(#neonPurple)"/>
+  <text x="200" y="342" text-anchor="middle" fill="#bf00ff" font-family="monospace" font-size="16" font-weight="bold">Operator CLI</text>
+  <line x1="90" y1="355" x2="310" y2="355" stroke="#21262d" stroke-width="1"/>
+  <text x="90" y="380" fill="#e6edf3" font-family="monospace" font-size="12">agents / shell</text>
+  <text x="90" y="402" fill="#e6edf3" font-family="monospace" font-size="12">module / tasks</text>
+  <text x="90" y="424" fill="#e6edf3" font-family="monospace" font-size="12">status</text>
+</svg>

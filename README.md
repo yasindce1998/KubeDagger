@@ -15,27 +15,9 @@ This project is provided for **educational purposes only**. Do not use these too
 
 ## Architecture
 
-```
-┌─────────────────────┐       HTTP/2 (mTLS)       ┌──────────────────────┐
-│   C2 Server         │◄─────────────────────────►│   Agent              │
-│ (kubedagger-server) │  cert-pinned, TLS 1.3     │ (kubedagger-agent)   │
-│                     │                            │                      │
-│ - Agent registry    │  POST /checkin (beacon)    │ - Shell executor     │
-│ - Task queue (FIFO) │  POST /task    (dispatch)  │ - Module system      │
-│ - Mgmt port (9443)  │  POST /result  (output)   │ - Cross-platform     │
-└─────────────────────┘                            └──────────────────────┘
-         ▲
-         │ ChaCha20-Poly1305 encrypted TCP
-         ▼
-┌─────────────────────┐
-│   Operator CLI       │
-│ (kubedagger-operator)│
-│                      │
-│ - agents / shell     │
-│ - module / tasks     │
-│ - status             │
-└──────────────────────┘
-```
+<p align="center">
+  <img src="docs/diagrams/c2-architecture.svg" alt="C2 Architecture" width="100%"/>
+</p>
 
 **Binaries:**
 
