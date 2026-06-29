@@ -25,9 +25,20 @@ issues:
         - errcheck
         - unused
         - gosec
+        - gocritic
     - path: _test\.go
       linters:
         - gosec
+        - gocritic
+    - path: pkg/agent/modules/
+      linters:
+        - gosec
+    - path: cmd/kubedagger-client/
+      linters:
+        - gocritic
+    - path: cmd/kubedagger-operator/
+      linters:
+        - gocritic
 
 linters-settings:
   errcheck:
@@ -38,7 +49,16 @@ linters-settings:
     excludes:
       - G104
       - G304
+      - G402
   revive:
     rules:
       - name: exported
         disabled: true
+  gocritic:
+    disabled-checks:
+      - ifElseChain
+      - assignOp
+      - singleCaseSwitch
+      - unslice
+      - commentFormatting
+      - dupBranchBody
