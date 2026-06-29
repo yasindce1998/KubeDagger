@@ -4,8 +4,13 @@
   <img src="https://github.com/yasindce1998/KubeDagger/blob/master/logo/logo-removebg-preview.png?raw=true" alt="KubeDagger"/>
 </p>
 
+[![Build](https://github.com/yasindce1998/KubeDagger/actions/workflows/build.yml/badge.svg)](https://github.com/yasindce1998/KubeDagger/actions/workflows/build.yml)
+[![Release](https://github.com/yasindce1998/KubeDagger/actions/workflows/release.yml/badge.svg)](https://github.com/yasindce1998/KubeDagger/actions/workflows/release.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/yasindce1998/KubeDagger)](https://goreportcard.com/report/github.com/yasindce1998/KubeDagger)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Go Version](https://img.shields.io/github/go-mod-go-version/yasindce1998/KubeDagger)](https://go.dev/)
+[![Platform](https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macOS-lightgrey)](https://github.com/yasindce1998/KubeDagger)
 
 An eBPF-based security research tool with a cross-platform HTTP/2 C2 framework. Demonstrates 57+ offensive techniques including network discovery, file system monitoring, process hiding, container breakouts, cloud-native attacks, kernel-level covert channels, eBPF polymorphism, and autonomous objective planning. Supports Linux (eBPF kernel-level), Windows, and macOS (userspace agent).
 
