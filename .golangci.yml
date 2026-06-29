@@ -33,6 +33,12 @@ issues:
     - path: pkg/agent/modules/
       linters:
         - gosec
+    - path: pkg/antiforensics/
+      linters:
+        - gosec
+    - path: pkg/cloudevasion/
+      linters:
+        - gosec
     - path: pkg/covert/
       linters:
         - gosec
