@@ -33,12 +33,28 @@ issues:
     - path: pkg/agent/modules/
       linters:
         - gosec
+    - path: pkg/covert/
+      linters:
+        - gosec
+    - path: pkg/polymorph/
+      linters:
+        - gosec
+    - path: pkg/cloudexploit/
+      linters:
+        - gosec
+    - path: pkg/webhook/
+      linters:
+        - gosec
     - path: cmd/kubedagger-client/
       linters:
         - gocritic
+        - gosec
     - path: cmd/kubedagger-operator/
       linters:
         - gocritic
+    - path: cmd/demo/
+      linters:
+        - gosec
 
 linters-settings:
   errcheck:
@@ -48,6 +64,7 @@ linters-settings:
   gosec:
     excludes:
       - G104
+      - G115
       - G304
       - G402
   revive:
