@@ -1,0 +1,125 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-ebpf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang llvm build-essential libelf-dev
+          git clone --depth 1 --recurse-submodules https://github.com/libbpf/bpftool.git /tmp/bpftool
+          make -C /tmp/bpftool/src -j$(nproc)
+          sudo make -C /tmp/bpftool/src install
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Build eBPF programs
+        run: make build-ebpf
+
+      - name: Upload eBPF objects
+        uses: actions/upload-artifact@v4
+        with:
+          name: ebpf-objects
+          path: pkg/assets/bin/*.o
+
+  build-binaries:
+    needs: build-ebpf
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            suffix: linux-amd64
+          - goos: linux
+            goarch: arm64
+            suffix: linux-arm64
+          - goos: darwin
+            goarch: amd64
+            suffix: darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            suffix: darwin-arm64
+          - goos: windows
+            goarch: amd64
+            suffix: windows-amd64
+            ext: .exe
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Download eBPF objects
+        uses: actions/download-artifact@v4
+        with:
+          name: ebpf-objects
+          path: pkg/assets/bin/
+
+      - name: Build binaries
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: '0'
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          LDFLAGS="-s -w -X main.version=${VERSION}"
+          mkdir -p dist
+
+          go build -ldflags "${LDFLAGS}" -o dist/kubedagger-${{ matrix.suffix }}${{ matrix.ext }} ./cmd/kubedagger
+          go build -ldflags "${LDFLAGS}" -o dist/kubedagger-client-${{ matrix.suffix }}${{ matrix.ext }} ./cmd/kubedagger-client
+          go build -ldflags "${LDFLAGS}" -o dist/kubedagger-server-${{ matrix.suffix }}${{ matrix.ext }} ./cmd/kubedagger-server
+          go build -ldflags "${LDFLAGS}" -o dist/kubedagger-operator-${{ matrix.suffix }}${{ matrix.ext }} ./cmd/kubedagger-operator
+          go build -ldflags "${LDFLAGS}" -o dist/kubedagger-agent-${{ matrix.suffix }}${{ matrix.ext }} ./cmd/kubedagger-agent
+
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum * > checksums-${{ matrix.suffix }}.txt
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.suffix }}
+          path: dist/
+
+  release:
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+          pattern: binaries-*
+          merge-multiple: true
+
+      - name: Create combined checksums
+        run: |
+          cd artifacts
+          cat checksums-*.txt | sort > checksums.txt
+          rm checksums-*.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: artifacts/*
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
