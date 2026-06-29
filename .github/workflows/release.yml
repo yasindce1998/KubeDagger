@@ -80,8 +80,12 @@ jobs:
           LDFLAGS="-s -w -X main.version=${VERSION}"
           mkdir -p dist
 
-          go build -ldflags "${LDFLAGS}" -o dist/kubedagger-${{ matrix.suffix }}${{ matrix.ext }} ./cmd/kubedagger
-          go build -ldflags "${LDFLAGS}" -o dist/kubedagger-client-${{ matrix.suffix }}${{ matrix.ext }} ./cmd/kubedagger-client
+          # kubedagger and kubedagger-client depend on eBPF (Linux-only)
+          if [ "$GOOS" = "linux" ]; then
+            go build -ldflags "${LDFLAGS}" -o dist/kubedagger-${{ matrix.suffix }} ./cmd/kubedagger
+            go build -ldflags "${LDFLAGS}" -o dist/kubedagger-client-${{ matrix.suffix }} ./cmd/kubedagger-client
+          fi
+
           go build -ldflags "${LDFLAGS}" -o dist/kubedagger-server-${{ matrix.suffix }}${{ matrix.ext }} ./cmd/kubedagger-server
           go build -ldflags "${LDFLAGS}" -o dist/kubedagger-operator-${{ matrix.suffix }}${{ matrix.ext }} ./cmd/kubedagger-operator
           go build -ldflags "${LDFLAGS}" -o dist/kubedagger-agent-${{ matrix.suffix }}${{ matrix.ext }} ./cmd/kubedagger-agent
