@@ -7,12 +7,13 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   build-ebpf:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Install dependencies
         run: |
@@ -22,7 +23,7 @@ jobs:
           make -C /tmp/bpftool/src -j$(nproc)
           sudo make -C /tmp/bpftool/src install
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: '1.26'
 
@@ -30,7 +31,7 @@ jobs:
         run: make build-ebpf
 
       - name: Upload eBPF objects
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ebpf-objects
           path: pkg/assets/bin/*.o
@@ -58,14 +59,14 @@ jobs:
             suffix: windows-amd64
             ext: .exe
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: '1.26'
 
       - name: Download eBPF objects
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: ebpf-objects
           path: pkg/assets/bin/
@@ -90,13 +91,8 @@ jobs:
           go build -ldflags "${LDFLAGS}" -o dist/kubedagger-operator-${{ matrix.suffix }}${{ matrix.ext }} ./cmd/kubedagger-operator
           go build -ldflags "${LDFLAGS}" -o dist/kubedagger-agent-${{ matrix.suffix }}${{ matrix.ext }} ./cmd/kubedagger-agent
 
-      - name: Generate checksums
-        run: |
-          cd dist
-          sha256sum * > checksums-${{ matrix.suffix }}.txt
-
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: binaries-${{ matrix.suffix }}
           path: dist/
@@ -105,23 +101,43 @@ jobs:
     needs: build-binaries
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # main
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           path: artifacts/
           pattern: binaries-*
           merge-multiple: true
 
-      - name: Create combined checksums
+      - name: Create checksums
         run: |
           cd artifacts
-          cat checksums-*.txt | sort > checksums.txt
-          rm checksums-*.txt
+          sha256sum * > checksums.txt
+
+      - name: Sign checksums with cosign (keyless)
+        run: cosign sign-blob --yes artifacts/checksums.txt --output-signature artifacts/checksums.txt.sig --output-certificate artifacts/checksums.txt.pem
+
+      - name: Sign binaries with cosign (keyless)
+        run: |
+          for f in artifacts/*; do
+            [ -f "$f" ] || continue
+            case "$f" in *.sig|*.pem|checksums.txt) continue ;; esac
+            cosign sign-blob --yes "$f" --output-signature "${f}.sig" --output-certificate "${f}.pem"
+          done
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0
+        with:
+          path: .
+          output-file: artifacts/sbom.spdx.json
+          format: spdx-json
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           generate_release_notes: true
           files: artifacts/*

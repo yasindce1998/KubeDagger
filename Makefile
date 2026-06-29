@@ -70,11 +70,22 @@ run:
 test:
 	go test ./...
 
+test-race:
+	go test -race -count=1 -timeout 120s ./...
+
+test-cover:
+	go test -race -coverprofile=coverage.out -covermode=atomic ./...
+	chmod +x scripts/check-coverage.sh
+	./scripts/check-coverage.sh coverage.out 60
+
 test-c2:
 	go test ./pkg/c2server/... ./pkg/agent/...
 
 lint:
 	golangci-lint run ./...
+
+lint-strict:
+	golangci-lint run --enable-all --disable depguard,gci,wrapcheck,funlen,lll,cyclop,gocognit,nestif,maintidx,ireturn,nonamedreturns,exhaustruct,varnamelen,nlreturn,wsl,paralleltest,tparallel,testpackage,gomnd,mnd ./...
 
 install_client:
 	sudo cp ./bin/kubedagger-client /usr/bin/

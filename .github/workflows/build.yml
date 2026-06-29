@@ -10,21 +10,20 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y clang llvm build-essential libelf-dev
-          # Build bpftool from source (distro packages broken on Azure kernel runners)
           git clone --depth 1 --recurse-submodules https://github.com/libbpf/bpftool.git /tmp/bpftool
           make -C /tmp/bpftool/src -j$(nproc)
           sudo make -C /tmp/bpftool/src install
           bpftool version
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
-          go-version: '1.25'
+          go-version: '1.26'
 
       - name: Build eBPF programs
         run: make build-ebpf
@@ -38,14 +37,20 @@ jobs:
       - name: Vet
         run: go vet ./...
 
-      - name: Test
-        run: go test ./...
+      - name: Test (race detector)
+        run: go test -race -count=1 -timeout 120s ./...
+
+      - name: Test with coverage
+        run: |
+          go test -race -coverprofile=coverage.out -covermode=atomic ./...
+          chmod +x scripts/check-coverage.sh
+          ./scripts/check-coverage.sh coverage.out 60
 
       - name: Integration Test
         run: sudo $(which go) test -tags integration -v -count=1 -timeout 60s ./pkg/kubedagger/
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@55c2c1448f86e01eaae002a5a3a9624417608d84 # v6
         with:
           version: v1.64.8
           install-mode: goinstall

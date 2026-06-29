@@ -11,6 +11,10 @@ linters:
     - staticcheck
     - unused
     - gosimple
+    - gocritic
+    - gosec
+    - revive
+    - bodyclose
 
 issues:
   exclude-dirs:
@@ -20,9 +24,21 @@ issues:
       linters:
         - errcheck
         - unused
+        - gosec
+    - path: _test\.go
+      linters:
+        - gosec
 
 linters-settings:
   errcheck:
     exclude-functions:
       - (io.Closer).Close
       - (*os.File).Close
+  gosec:
+    excludes:
+      - G104
+      - G304
+  revive:
+    rules:
+      - name: exported
+        disabled: true
