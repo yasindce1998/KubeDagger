@@ -119,14 +119,14 @@ jobs:
           sha256sum * > checksums.txt
 
       - name: Sign checksums with cosign (keyless)
-        run: cosign sign-blob --yes artifacts/checksums.txt --output-signature artifacts/checksums.txt.sig --output-certificate artifacts/checksums.txt.pem
+        run: cosign sign-blob --yes artifacts/checksums.txt --bundle artifacts/checksums.txt.bundle
 
       - name: Sign binaries with cosign (keyless)
         run: |
           for f in artifacts/*; do
             [ -f "$f" ] || continue
-            case "$f" in *.sig|*.pem|checksums.txt) continue ;; esac
-            cosign sign-blob --yes "$f" --output-signature "${f}.sig" --output-certificate "${f}.pem"
+            case "$f" in *.bundle|checksums.txt) continue ;; esac
+            cosign sign-blob --yes "$f" --bundle "${f}.bundle"
           done
 
       - name: Generate SBOM
