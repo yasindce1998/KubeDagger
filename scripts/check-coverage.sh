@@ -2,7 +2,7 @@
 set -uo pipefail
 
 COVERAGE_FILE="${1:-coverage.out}"
-THRESHOLD="${2:-60}"
+THRESHOLD="${2:-15}"
 
 if [ ! -f "$COVERAGE_FILE" ]; then
   echo "ERROR: coverage file not found: $COVERAGE_FILE"

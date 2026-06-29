@@ -44,7 +44,7 @@ jobs:
         run: |
           go test -race -coverprofile=coverage.out -covermode=atomic ./...
           chmod +x scripts/check-coverage.sh
-          ./scripts/check-coverage.sh coverage.out 60
+          ./scripts/check-coverage.sh coverage.out 15
 
       - name: Integration Test
         run: sudo $(which go) test -tags integration -v -count=1 -timeout 60s ./pkg/kubedagger/

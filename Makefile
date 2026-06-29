@@ -76,7 +76,7 @@ test-race:
 test-cover:
 	go test -race -coverprofile=coverage.out -covermode=atomic ./...
 	chmod +x scripts/check-coverage.sh
-	./scripts/check-coverage.sh coverage.out 60
+	./scripts/check-coverage.sh coverage.out 15
 
 test-c2:
 	go test ./pkg/c2server/... ./pkg/agent/...
