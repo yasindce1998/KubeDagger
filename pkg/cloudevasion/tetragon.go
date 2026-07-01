@@ -20,10 +20,6 @@ var tracingPolicyGVR = schema.GroupVersionResource{
 	Group: "cilium.io", Version: "v1alpha1", Resource: "tracingpolicies",
 }
 
-var clusterTracingPolicyGVR = schema.GroupVersionResource{
-	Group: "cilium.io", Version: "v1alpha1", Resource: "tracingpoliciesnamespaced",
-}
-
 func detectTetragon(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
 	namespaces := []string{"kube-system", "cilium", "tetragon"}
 	for _, ns := range namespaces {

@@ -16,14 +16,6 @@ var kubeArmorPolicyGVR = schema.GroupVersionResource{
 	Group: "security.kubearmor.com", Version: "v1", Resource: "kubearmorpolicies",
 }
 
-var kubeArmorClusterPolicyGVR = schema.GroupVersionResource{
-	Group: "security.kubearmor.com", Version: "v1", Resource: "kubearmorclusterpolicies",
-}
-
-var kubeArmorHostPolicyGVR = schema.GroupVersionResource{
-	Group: "security.kubearmor.com", Version: "v1", Resource: "kubearmorhostpolicies",
-}
-
 func detectKubeArmor(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
 	namespaces := []string{"kubearmor", "kube-system", "accuknox-agents"}
 	for _, ns := range namespaces {

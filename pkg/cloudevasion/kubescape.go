@@ -7,18 +7,9 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 )
-
-var kubescapeScanGVR = schema.GroupVersionResource{
-	Group: "spdx.softwarecomposition.kubescape.io", Version: "v1beta1", Resource: "vulnerabilitymanifests",
-}
-
-var kubescapeConfigScanGVR = schema.GroupVersionResource{
-	Group: "spdx.softwarecomposition.kubescape.io", Version: "v1beta1", Resource: "configurationscansummaries",
-}
 
 func detectKubescape(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
 	namespaces := []string{"kubescape", "armo-system", "kube-system"}

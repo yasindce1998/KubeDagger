@@ -24,10 +24,6 @@ var certManagerCertificateGVR = schema.GroupVersionResource{
 	Group: "cert-manager.io", Version: "v1", Resource: "certificates",
 }
 
-var certManagerCertRequestGVR = schema.GroupVersionResource{
-	Group: "cert-manager.io", Version: "v1", Resource: "certificaterequests",
-}
-
 func detectCertManager(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
 	namespaces := []string{"cert-manager", "kube-system"}
 	for _, ns := range namespaces {
