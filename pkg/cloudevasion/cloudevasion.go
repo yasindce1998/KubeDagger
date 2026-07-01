@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -26,7 +27,7 @@ type EvasionResult struct {
 }
 
 // DetectSystems enumerates runtime security tools deployed in the cluster.
-func DetectSystems(ctx context.Context, client kubernetes.Interface) ([]DetectionSystem, error) {
+func DetectSystems(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) ([]DetectionSystem, error) {
 	var systems []DetectionSystem
 
 	systems = append(systems, detectFalco(ctx, client)...)
@@ -34,6 +35,12 @@ func DetectSystems(ctx context.Context, client kubernetes.Interface) ([]Detectio
 	systems = append(systems, detectKyverno(ctx, client)...)
 	systems = append(systems, detectTrivy(ctx, client)...)
 	systems = append(systems, detectSysdig(ctx, client)...)
+	systems = append(systems, detectTetragon(ctx, client)...)
+	systems = append(systems, detectKubeArmor(ctx, client)...)
+	systems = append(systems, detectKubescape(ctx, client)...)
+	systems = append(systems, detectFalcoTalon(ctx, client)...)
+	systems = append(systems, detectCertManager(ctx, client)...)
+	systems = append(systems, detectMeshSecurity(ctx, client, dynClient)...)
 
 	return systems, nil
 }
