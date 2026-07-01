@@ -12,7 +12,7 @@
 [![Go Version](https://img.shields.io/github/go-mod-go-version/yasindce1998/KubeDagger)](https://go.dev/)
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macOS-lightgrey)](https://github.com/yasindce1998/KubeDagger)
 
-An eBPF-based security research tool with a cross-platform HTTP/2 C2 framework. Demonstrates 70+ offensive techniques including network discovery, file system monitoring, process hiding, container breakouts, cloud-native attacks, kernel-level covert channels, eBPF polymorphism, autonomous objective planning, and adversarial evasion of CNCF security products (Tetragon, KubeArmor, Kubescape, Falco Talon, service mesh mTLS, cert-manager). Supports Linux (eBPF kernel-level), Windows, and macOS (userspace agent).
+An eBPF-based security research tool with a cross-platform HTTP/2 C2 framework. Demonstrates 110+ offensive techniques including network discovery, file system monitoring, process hiding, container breakouts, cloud-native attacks, kernel-level covert channels, eBPF polymorphism, autonomous objective planning, and adversarial evasion of 17 CNCF security products (Falco, Tetragon, KubeArmor, Kubescape, Falco Talon, service mesh mTLS, cert-manager, SPIFFE/SPIRE, Kyverno, Cilium, Harbor, Sigstore/Cosign, Velero, External Secrets Operator, Crossplane, Knative, Argo Workflows). Supports Linux (eBPF kernel-level), Windows, and macOS (userspace agent).
 
 ## Disclaimer
 
@@ -117,7 +117,7 @@ KEY=$(kubedagger-client c2 genkey)
 | `pkg/cloudexploit` | Cloud provider exploitation (AWS, GCP, Azure IAM/metadata attacks) |
 | `pkg/cicd` | CI/CD pipeline poisoning (Tekton, ArgoCD, Flux task/app injection) |
 | `pkg/servicemesh` | Service mesh deep attacks (Istio xDS injection, mTLS cert theft, traffic hijack) |
-| `pkg/cloudevasion` | Detection evasion (Falco, Tetragon, KubeArmor, Kubescape, Falco Talon, service mesh, cert-manager) |
+| `pkg/cloudevasion` | Detection evasion for 17 CNCF products (Falco, Tetragon, KubeArmor, Kubescape, Falco Talon, service mesh, cert-manager, SPIFFE/SPIRE, Kyverno, Cilium, Harbor, Sigstore/Cosign, Velero, External Secrets, Crossplane, Knative, Argo Workflows) |
 | `pkg/webui` | Operator Web UI with real-time agent dashboard and command dispatch |
 
 ### Available client commands

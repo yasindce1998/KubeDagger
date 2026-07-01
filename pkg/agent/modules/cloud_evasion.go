@@ -60,6 +60,26 @@ func (m *CloudEvasion) Execute(ctx context.Context, args map[string]string) (*Re
 		return m.evadeServiceMesh(ctx, args)
 	case "certmanager":
 		return m.exploitCertManager(ctx, args)
+	case "kyverno":
+		return m.evadeKyverno(ctx, args)
+	case "spiffe":
+		return m.exploitSPIFFE(ctx, args)
+	case "cilium":
+		return m.evadeCilium(ctx, args)
+	case "harbor":
+		return m.exploitHarbor(ctx, args)
+	case "sigstore":
+		return m.evadeSigstore(ctx, args)
+	case "velero":
+		return m.exploitVelero(ctx, args)
+	case "externalsecrets":
+		return m.exploitExternalSecrets(ctx, args)
+	case "crossplane":
+		return m.exploitCrossplane(ctx, args)
+	case "knative":
+		return m.exploitKnative(ctx, args)
+	case "argo":
+		return m.exploitArgoWorkflows(ctx, args)
 	default:
 		return &Result{Success: false, Error: fmt.Sprintf("unknown action: %s", action)}, nil
 	}
@@ -243,6 +263,166 @@ func (m *CloudEvasion) exploitCertManager(ctx context.Context, args map[string]s
 		return &Result{Success: false, Error: err.Error()}, nil
 	}
 	result, err := cloudevasion.ExploitCertManager(ctx, client, dynClient, technique)
+	if err != nil {
+		return &Result{Success: false, Error: err.Error()}, nil
+	}
+	return &Result{Success: result.Success, Output: result.Output}, nil
+}
+
+func (m *CloudEvasion) evadeKyverno(ctx context.Context, args map[string]string) (*Result, error) {
+	technique := args["technique"]
+	if technique == "" {
+		technique = "policy_gaps"
+	}
+	client, dynClient, err := m.getClients()
+	if err != nil {
+		return &Result{Success: false, Error: err.Error()}, nil
+	}
+	result, err := cloudevasion.EvadeKyverno(ctx, client, dynClient, technique)
+	if err != nil {
+		return &Result{Success: false, Error: err.Error()}, nil
+	}
+	return &Result{Success: result.Success, Output: result.Output}, nil
+}
+
+func (m *CloudEvasion) exploitSPIFFE(ctx context.Context, args map[string]string) (*Result, error) {
+	technique := args["technique"]
+	if technique == "" {
+		technique = "enumerate"
+	}
+	client, dynClient, err := m.getClients()
+	if err != nil {
+		return &Result{Success: false, Error: err.Error()}, nil
+	}
+	result, err := cloudevasion.ExploitSPIFFE(ctx, client, dynClient, technique)
+	if err != nil {
+		return &Result{Success: false, Error: err.Error()}, nil
+	}
+	return &Result{Success: result.Success, Output: result.Output}, nil
+}
+
+func (m *CloudEvasion) evadeCilium(ctx context.Context, args map[string]string) (*Result, error) {
+	technique := args["technique"]
+	if technique == "" {
+		technique = "identity_spoof"
+	}
+	client, dynClient, err := m.getClients()
+	if err != nil {
+		return &Result{Success: false, Error: err.Error()}, nil
+	}
+	result, err := cloudevasion.EvadeCilium(ctx, client, dynClient, technique)
+	if err != nil {
+		return &Result{Success: false, Error: err.Error()}, nil
+	}
+	return &Result{Success: result.Success, Output: result.Output}, nil
+}
+
+func (m *CloudEvasion) exploitHarbor(ctx context.Context, args map[string]string) (*Result, error) {
+	technique := args["technique"]
+	if technique == "" {
+		technique = "enumerate"
+	}
+	client, dynClient, err := m.getClients()
+	if err != nil {
+		return &Result{Success: false, Error: err.Error()}, nil
+	}
+	result, err := cloudevasion.ExploitHarbor(ctx, client, dynClient, technique)
+	if err != nil {
+		return &Result{Success: false, Error: err.Error()}, nil
+	}
+	return &Result{Success: result.Success, Output: result.Output}, nil
+}
+
+func (m *CloudEvasion) evadeSigstore(ctx context.Context, args map[string]string) (*Result, error) {
+	technique := args["technique"]
+	if technique == "" {
+		technique = "policy_gaps"
+	}
+	client, dynClient, err := m.getClients()
+	if err != nil {
+		return &Result{Success: false, Error: err.Error()}, nil
+	}
+	result, err := cloudevasion.EvadeSigstore(ctx, client, dynClient, technique)
+	if err != nil {
+		return &Result{Success: false, Error: err.Error()}, nil
+	}
+	return &Result{Success: result.Success, Output: result.Output}, nil
+}
+
+func (m *CloudEvasion) exploitVelero(ctx context.Context, args map[string]string) (*Result, error) {
+	technique := args["technique"]
+	if technique == "" {
+		technique = "enumerate"
+	}
+	client, dynClient, err := m.getClients()
+	if err != nil {
+		return &Result{Success: false, Error: err.Error()}, nil
+	}
+	result, err := cloudevasion.ExploitVelero(ctx, client, dynClient, technique)
+	if err != nil {
+		return &Result{Success: false, Error: err.Error()}, nil
+	}
+	return &Result{Success: result.Success, Output: result.Output}, nil
+}
+
+func (m *CloudEvasion) exploitExternalSecrets(ctx context.Context, args map[string]string) (*Result, error) {
+	technique := args["technique"]
+	if technique == "" {
+		technique = "enumerate"
+	}
+	client, dynClient, err := m.getClients()
+	if err != nil {
+		return &Result{Success: false, Error: err.Error()}, nil
+	}
+	result, err := cloudevasion.ExploitExternalSecrets(ctx, client, dynClient, technique)
+	if err != nil {
+		return &Result{Success: false, Error: err.Error()}, nil
+	}
+	return &Result{Success: result.Success, Output: result.Output}, nil
+}
+
+func (m *CloudEvasion) exploitCrossplane(ctx context.Context, args map[string]string) (*Result, error) {
+	technique := args["technique"]
+	if technique == "" {
+		technique = "enumerate"
+	}
+	client, dynClient, err := m.getClients()
+	if err != nil {
+		return &Result{Success: false, Error: err.Error()}, nil
+	}
+	result, err := cloudevasion.ExploitCrossplane(ctx, client, dynClient, technique)
+	if err != nil {
+		return &Result{Success: false, Error: err.Error()}, nil
+	}
+	return &Result{Success: result.Success, Output: result.Output}, nil
+}
+
+func (m *CloudEvasion) exploitKnative(ctx context.Context, args map[string]string) (*Result, error) {
+	technique := args["technique"]
+	if technique == "" {
+		technique = "enumerate"
+	}
+	client, dynClient, err := m.getClients()
+	if err != nil {
+		return &Result{Success: false, Error: err.Error()}, nil
+	}
+	result, err := cloudevasion.ExploitKnative(ctx, client, dynClient, technique)
+	if err != nil {
+		return &Result{Success: false, Error: err.Error()}, nil
+	}
+	return &Result{Success: result.Success, Output: result.Output}, nil
+}
+
+func (m *CloudEvasion) exploitArgoWorkflows(ctx context.Context, args map[string]string) (*Result, error) {
+	technique := args["technique"]
+	if technique == "" {
+		technique = "enumerate"
+	}
+	client, dynClient, err := m.getClients()
+	if err != nil {
+		return &Result{Success: false, Error: err.Error()}, nil
+	}
+	result, err := cloudevasion.ExploitArgoWorkflows(ctx, client, dynClient, technique)
 	if err != nil {
 		return &Result{Success: false, Error: err.Error()}, nil
 	}

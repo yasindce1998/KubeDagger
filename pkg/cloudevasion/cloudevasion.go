@@ -41,6 +41,15 @@ func DetectSystems(ctx context.Context, client kubernetes.Interface, dynClient d
 	systems = append(systems, detectFalcoTalon(ctx, client)...)
 	systems = append(systems, detectCertManager(ctx, client)...)
 	systems = append(systems, detectMeshSecurity(ctx, client, dynClient)...)
+	systems = append(systems, detectSPIFFE(ctx, client, dynClient)...)
+	systems = append(systems, detectCilium(ctx, client)...)
+	systems = append(systems, detectHarbor(ctx, client)...)
+	systems = append(systems, detectSigstore(ctx, client, dynClient)...)
+	systems = append(systems, detectVelero(ctx, client)...)
+	systems = append(systems, detectExternalSecrets(ctx, client)...)
+	systems = append(systems, detectCrossplane(ctx, client)...)
+	systems = append(systems, detectKnative(ctx, client)...)
+	systems = append(systems, detectArgoWorkflows(ctx, client)...)
 
 	return systems, nil
 }
