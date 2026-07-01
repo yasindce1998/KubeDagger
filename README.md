@@ -12,6 +12,8 @@
 [![Go Version](https://img.shields.io/github/go-mod-go-version/yasindce1998/KubeDagger)](https://go.dev/)
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macOS-lightgrey)](https://github.com/yasindce1998/KubeDagger)
 
+KubeDagger is a sophisticated, eBPF-powered offensive security research tool focused on Kubernetes/container environments, blending kernel-level rootkit capabilities with a full cross-platform Command & Control (C2) framework.
+
 An eBPF-based security research tool with a cross-platform HTTP/2 C2 framework. Demonstrates 110+ offensive techniques including network discovery, file system monitoring, process hiding, container breakouts, cloud-native attacks, kernel-level covert channels, eBPF polymorphism, autonomous objective planning, and adversarial evasion of 17 CNCF security products (Falco, Tetragon, KubeArmor, Kubescape, Falco Talon, service mesh mTLS, cert-manager, SPIFFE/SPIRE, Kyverno, Cilium, Harbor, Sigstore/Cosign, Velero, External Secrets Operator, Crossplane, Knative, Argo Workflows). Supports Linux (eBPF kernel-level), Windows, and macOS (userspace agent).
 
 ## Disclaimer
