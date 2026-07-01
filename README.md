@@ -14,11 +14,11 @@
 
 KubeDagger is a sophisticated, eBPF-powered offensive security research tool focused on Kubernetes/container environments, blending kernel-level rootkit capabilities with a full cross-platform Command & Control (C2) framework.
 
-An eBPF-based security research tool with a cross-platform HTTP/2 C2 framework. Demonstrates 110+ offensive techniques including network discovery, file system monitoring, process hiding, container breakouts, cloud-native attacks, kernel-level covert channels, eBPF polymorphism, autonomous objective planning, and adversarial evasion of 17 CNCF security products (Falco, Tetragon, KubeArmor, Kubescape, Falco Talon, service mesh mTLS, cert-manager, SPIFFE/SPIRE, Kyverno, Cilium, Harbor, Sigstore/Cosign, Velero, External Secrets Operator, Crossplane, Knative, Argo Workflows). Supports Linux (eBPF kernel-level), Windows, and macOS (userspace agent).
+Demonstrates 110+ offensive techniques including network discovery, file system monitoring, process hiding, container breakouts, cloud-native attacks, kernel-level covert channels, eBPF polymorphism, autonomous objective planning, and adversarial evasion of 17 CNCF security products (Falco, Tetragon, KubeArmor, Kubescape, Falco Talon, service mesh mTLS, cert-manager, SPIFFE/SPIRE, Kyverno, Cilium, Harbor, Sigstore/Cosign, Velero, External Secrets Operator, Crossplane, Knative, Argo Workflows). Supports Linux (eBPF kernel-level), Windows, and macOS (userspace agent).
 
 ## Disclaimer
 
-This project is provided for **educational purposes only**. Do not use these tools to violate the law. The author is not responsible for any illegal action. Misuse of the provided information can result in criminal charges.
+This project is provided for **strictly educational purposes only**. Do not use these tools to violate the law. The author is not responsible for any illegal action. Misuse of the provided information can result in criminal charges.
 
 ## Architecture
 
