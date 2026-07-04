@@ -16,28 +16,32 @@ KubeDagger is a highly advanced, sophisticated offensive security research tool 
 
 Demonstrates 110+ offensive techniques including network discovery, file system monitoring, process hiding, container breakouts, cloud-native attacks, kernel-level covert channels, eBPF polymorphism, autonomous objective planning, and adversarial evasion of 17 CNCF security products (Falco, Tetragon, KubeArmor, Kubescape, Falco Talon, service mesh mTLS, cert-manager, SPIFFE/SPIRE, Kyverno, Cilium, Harbor, Sigstore/Cosign, Velero, External Secrets Operator, Crossplane, Knative, Argo Workflows). Supports Linux (eBPF kernel-level), Windows, and macOS (userspace agent).
 
-<div style="background-color: #ffe6e6; border-left: 6px solid #f44336; padding: 15px; margin: 20px 0;">**⚠️ STRICT LEGAL DISCLAIMER & WARNING**
+> [!CAUTION]
+> ## ⚠️ STRICT LEGAL DISCLAIMER & WARNING
+>
+> This project (KubeDagger) is provided strictly for **educational, research, and authorized security testing purposes only**. It is intended solely to demonstrate offensive security techniques in controlled, legal environments such as personal labs, authorized penetration testing engagements (with explicit written permission), or academic research.
+>
+> **Do not** use these tools, code, techniques, or any derived materials to violate any laws, access systems without explicit authorization, or engage in any unauthorized activity.
+>
+> The author and contributors are not responsible for any misuse, damage, or consequences arising from the use of this project. Misuse can result in severe civil and criminal liability.
 
-This project (**KubeDagger**) is provided **strictly for educational, research, and authorized security testing purposes only**. It is intended solely to demonstrate offensive security techniques in controlled, legal environments such as personal labs, authorized penetration testing engagements (with explicit written permission), or academic research.
+> [!IMPORTANT]
+> ### Key Legal Warnings by Jurisdiction (Non-Exhaustive)
+>
+> **United States** — Unauthorized access to computer systems is prohibited under the Computer Fraud and Abuse Act (CFAA, 18 U.S.C. § 1030). Penalties range from 1 year (misdemeanor) to 10–20 years or more (felony), depending on intent, damage, financial gain, or involvement of protected computers/national security information.
+>
+> **India** — Hacking and unauthorized access are criminal offenses under Section 66 of the Information Technology Act, 2000 (often read with IPC sections). Penalties include imprisonment up to 3 years and/or fines up to ₹5 lakh (or higher in combined charges). Additional laws may apply for data theft, fraud, or critical infrastructure attacks.
+>
+> **European Union / United Kingdom** — Unauthorized access and system interference are criminalized under national laws implementing the EU Directive 2013/40/EU on attacks against information systems (and the earlier Budapest Convention on Cybercrime), as well as country-specific statutes such as the UK's Computer Misuse Act 1990, Germany's StGB §202a–c, and France's Loi Godfrain. Penalties typically range from fines to several years' imprisonment, with harsher sentences for attacks on critical infrastructure, large-scale data breaches, or aggravated/organized offenses. Processing of personal data obtained through unauthorized access may also trigger separate GDPR liability.
+>
+> **Middle East** (UAE, Qatar, Saudi Arabia, and similar) — Cybercrime laws impose heavy penalties for hacking, unauthorized access, data tampering, or attacking information systems, including imprisonment (months to life in aggravated cases) and substantial fines. Targeting government or critical systems carries especially severe consequences.
+>
+> **Russia** — Illegal access to computer information is punishable under Article 272 of the Criminal Code of the Russian Federation (and related articles), with harsher sentences for damage to critical information infrastructure or aggravated cases.
+>
+> Laws vary by country, state, and specific circumstances. **This is not legal advice.** Consult qualified legal counsel in your jurisdiction before any activity involving this tool. Users are solely responsible for ensuring full compliance with all applicable local, national, and international laws.
 
-**Do not use these tools, code, techniques, or any derived materials to violate any laws, access systems without explicit authorization, or engage in any unauthorized activity.**
-
-The author and contributors are **not responsible** for any misuse, damage, or consequences arising from the use of this project. Misuse can result in severe civil and criminal liability.
-
-### Key Legal Warnings by Jurisdiction (Non-Exhaustive)
-
-- **United States**: Unauthorized access to computer systems is prohibited under the **Computer Fraud and Abuse Act (CFAA, 18 U.S.C. § 1030)**. Penalties can include fines and imprisonment ranging from 1 year (misdemeanor) to 10–20 years (felony) or more, depending on factors such as intent, damage caused, financial gain, or involvement of protected computers/national security information.
-
-- **India**: Hacking and unauthorized access are criminal offenses under **Section 66 of the Information Technology Act, 2000** (often read with IPC sections). Penalties include imprisonment up to 3 years and/or fines up to ₹5 lakh (or higher in combined charges). Additional laws may apply for data theft, fraud, or critical infrastructure attacks.
-
-- **Middle East** (e.g., UAE, Qatar, Saudi Arabia, and similar jurisdictions): Cybercrime laws impose heavy penalties for hacking, unauthorized access, data tampering, or attacking information systems. These can include imprisonment (from months to several years or life in aggravated cases) and substantial fines (often ranging from hundreds of thousands to millions in local currency). Targeting government or critical systems carries especially severe consequences.
-
-- **Russia**: Illegal access to computer information is punishable under **Article 272 of the Criminal Code of the Russian Federation** (and related articles). Penalties include fines and imprisonment, with significantly harsher sentences for damage to critical information infrastructure or aggravated cases.
-
-**Laws vary by country, state, and specific circumstances. This is not legal advice.** Consult qualified legal counsel in your jurisdiction before any activity involving this tool. Users are solely responsible for ensuring full compliance with all applicable local, national, and international laws.
-
-By accessing or using this repository, you acknowledge that you have read, understood, and agree to this disclaimer. Unauthorized or illegal use is strictly prohibited.
-</div>
+> [!WARNING]
+> By accessing or using this repository, you acknowledge that you have read, understood, and agree to this disclaimer. **Unauthorized or illegal use is strictly prohibited.** 
 
 ## Architecture
 
