@@ -16,9 +16,7 @@ KubeDagger is a highly advanced, sophisticated offensive security research tool 
 
 Demonstrates 110+ offensive techniques including network discovery, file system monitoring, process hiding, container breakouts, cloud-native attacks, kernel-level covert channels, eBPF polymorphism, autonomous objective planning, and adversarial evasion of 17 CNCF security products (Falco, Tetragon, KubeArmor, Kubescape, Falco Talon, service mesh mTLS, cert-manager, SPIFFE/SPIRE, Kyverno, Cilium, Harbor, Sigstore/Cosign, Velero, External Secrets Operator, Crossplane, Knative, Argo Workflows). Supports Linux (eBPF kernel-level), Windows, and macOS (userspace agent).
 
-<div style="background-color: #ffe6e6; border-left: 6px solid #f44336; padding: 15px; margin: 20px 0;">
-
-> **⚠️ STRICT LEGAL DISCLAIMER & WARNING**
+<div style="background-color: #ffe6e6; border-left: 6px solid #f44336; padding: 15px; margin: 20px 0;">**⚠️ STRICT LEGAL DISCLAIMER & WARNING**
 
 This project (**KubeDagger**) is provided **strictly for educational, research, and authorized security testing purposes only**. It is intended solely to demonstrate offensive security techniques in controlled, legal environments such as personal labs, authorized penetration testing engagements (with explicit written permission), or academic research.
 
