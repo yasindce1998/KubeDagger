@@ -16,9 +16,26 @@ KubeDagger is a highly advanced, sophisticated offensive security research tool 
 
 Demonstrates 110+ offensive techniques including network discovery, file system monitoring, process hiding, container breakouts, cloud-native attacks, kernel-level covert channels, eBPF polymorphism, autonomous objective planning, and adversarial evasion of 17 CNCF security products (Falco, Tetragon, KubeArmor, Kubescape, Falco Talon, service mesh mTLS, cert-manager, SPIFFE/SPIRE, Kyverno, Cilium, Harbor, Sigstore/Cosign, Velero, External Secrets Operator, Crossplane, Knative, Argo Workflows). Supports Linux (eBPF kernel-level), Windows, and macOS (userspace agent).
 
-## Disclaimer
+## Strict Disclaimer
 
-This project is provided for **strictly educational purposes only**. Do not use these tools to violate the law. The author is not responsible for any illegal action. Misuse of the provided information can result in criminal charges.
+This project (**KubeDagger**) is provided **strictly for educational, research, and authorized security testing purposes only**. It is intended solely to demonstrate offensive security techniques in controlled, legal environments such as personal labs, authorized penetration testing engagements (with explicit written permission), or academic research. 
+
+**Do not use these tools, code, techniques, or any derived materials to violate any laws, access systems without explicit authorization, or engage in any unauthorized activity.**
+
+The author and contributors are **not responsible** for any misuse, damage, or consequences arising from the use of this project. Misuse can result in severe civil and criminal liability.
+
+### Key Legal Warnings by Jurisdiction (Non-Exhaustive)
+- **United States**: Unauthorized access to computer systems is prohibited under the **Computer Fraud and Abuse Act (CFAA, 18 U.S.C. § 1030)**. Penalties can include fines and imprisonment ranging from 1 year (misdemeanor) to 10–20 years (felony) or more, depending on factors such as intent, damage caused, financial gain, or involvement of protected computers/national security information.
+
+- **India**: Hacking and unauthorized access are criminal offenses under **Section 66 of the Information Technology Act, 2000** (often read with IPC sections). Penalties include imprisonment up to 3 years and/or fines up to ₹5 lakh (or higher in combined charges). Additional laws may apply for data theft, fraud, or critical infrastructure attacks.
+
+- **Middle East (e.g., UAE, Qatar, Saudi Arabia, and similar jurisdictions)**: Cybercrime laws (such as UAE Federal Decree-Law No. 34/2021) impose heavy penalties for hacking, unauthorized access, data tampering, or attacking information systems. These can include imprisonment (from months to several years or life in aggravated cases) and substantial fines (often ranging from hundreds of thousands to millions of AED/QAR/SAR or equivalent). Targeting government or critical systems carries especially severe consequences.
+
+- **Russia**: Illegal access to computer information is punishable under **Article 272 of the Criminal Code of the Russian Federation** (and related articles such as 273, 274). Penalties include fines and imprisonment, with significantly harsher sentences for damage to critical information infrastructure, personal data misuse, or aggravated cases.
+
+Laws vary by country, state, and specific circumstances. This is **not legal advice**. Consult qualified legal counsel in your jurisdiction before any activity involving this tool. Users are solely responsible for ensuring full compliance with all applicable local, national, and international laws.
+
+By accessing or using this repository, you acknowledge that you have read, understood, and agree to this disclaimer. Unauthorized or illegal use is strictly prohibited.
 
 ## Architecture
 
