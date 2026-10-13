@@ -2016,15 +2016,17 @@ KubeDagger includes a web-based operator dashboard for managing agents and dispa
 **Starting the Web UI:**
 
 ```shell
-# Start with default address (:8080)
-./bin/kubedagger-server -webui
+# Start alongside the C2 server (requires an address argument)
+./bin/kubedagger-server -key $KEY -webui 127.0.0.1:8080 -webui-token my-secret-token
 
 # Or programmatically:
 import "github.com/yasindce1998/KubeDagger/pkg/webui"
 
-server := webui.NewServer(":8080", "my-secret-token")
+server := webui.NewServer("127.0.0.1:8080", "my-secret-token")
 server.Start(ctx)
 ```
+
+When the server is started with `-events <file>`, the web UI additionally serves the campaign timeline (`/campaign`) and session replay (`/replay`) views — see [Campaign Web UI](#campaign-web-ui).
 
 **Features:**
 - Real-time agent status cards with heartbeat tracking (active/stale)
