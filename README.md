@@ -16,6 +16,18 @@ KubeDagger is a highly advanced, sophisticated offensive security research tool 
 
 Demonstrates 110+ offensive techniques including network discovery, file system monitoring, process hiding, container breakouts, cloud-native attacks, kernel-level covert channels, eBPF polymorphism, autonomous objective planning, and adversarial evasion of 17 cloud-native security products (cnative-sensor, cnative-probe, cnative-shield, cnative-audit, cnative-responder, cnative-mesh mTLS, cnative-certs, cnative-identity, cnative-policy, cnative-net, cnative-registry, cnative-signing, cnative-backup, cnative-secrets, cnative-control, cnative-serverless, cnative-workflow). Supports Linux (eBPF kernel-level), Windows, and macOS (userspace agent).
 
+**Purple-team platform capabilities:**
+
+- Purple-team detection-rule generation (`detection list` / `detection generate`) — 18 techniques with MITRE ATT&CK IDs, runtime-sensor + SIEM rules, and K8s audit patterns
+- Engagement reports from structured JSONL telemetry (`report generate`, markdown or self-contained HTML)
+- Structured event telemetry (`-events`) with web UI campaign timeline (`/campaign`) and session replay (`/replay`)
+- Scope enforcement (`-scope`) — out-of-scope tasks rejected with violation-listing errors
+- Malleable C2 profiles (`-malleable`) — server-driven beacon sleep + jitter
+- Agent dead-man switch (`-deadman`) and dry-run mode (`dryrun=true`) for safe tasking
+- New agent modules: `sandbox_detect`, `mesh` (P2P C2 relay), `hotload` (in-memory execution), `cloud_evasion action=clouddetect` (cloud metadata awareness)
+- VAP backdoor persistence via ValidatingAdmissionPolicy (`vap_backdoor`, Kubernetes >= 1.30)
+- kind-based test lab (`make lab-up` / `lab-test` / `lab-down`) — see [docs/LAB.md](docs/LAB.md)
+
 > [!CAUTION]
 > ## ⚠️ STRICT LEGAL DISCLAIMER & WARNING
 >

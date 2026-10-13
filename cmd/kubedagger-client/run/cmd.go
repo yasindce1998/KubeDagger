@@ -19,6 +19,10 @@ package run
 import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/detection"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/report"
+	"github.com/yasindce1998/KubeDagger/cmd/kubedagger-client/run/vap_backdoor"
 )
 
 // KUBEDaggerClient represents the base command of the kubeDaggerClient
@@ -90,7 +94,91 @@ var cmdMitre = &cobra.Command{
 	Long:  "mitre generates MITRE ATT&CK technique mappings for KubeDagger capabilities",
 }
 
+var cmdDetection = &cobra.Command{
+	Use:   "detection",
+	Short: "detection rule generation for executed techniques",
+	Long:  "detection generates Falco, Sigma, and Kubernetes audit detection rules for KubeDagger techniques",
+}
+
+var cmdDetectionList = &cobra.Command{
+	Use:   "list",
+	Short: "list detection catalog",
+	Long:  "list prints all catalog techniques with their MITRE ATT&CK IDs",
+	RunE:  detectionListCmd,
+}
+
+var cmdDetectionGenerate = &cobra.Command{
+	Use:   "generate",
+	Short: "generate detection coverage report",
+	Long:  "generate produces a markdown detection coverage report with Falco, Sigma, and audit rules for the given techniques",
+	RunE:  detectionGenerateCmd,
+}
+
+var cmdReport = &cobra.Command{
+	Use:   "report",
+	Short: "engagement report generation",
+	Long:  "report builds markdown or HTML engagement reports from recorded event JSONL files",
+}
+
+var cmdReportGenerate = &cobra.Command{
+	Use:   "generate",
+	Short: "generate engagement report",
+	Long:  "generate reads an events.jsonl file and renders a markdown or HTML engagement report",
+	RunE:  reportGenerateCmd,
+}
+
+var cmdVAPBackdoor = &cobra.Command{
+	Use:   "vap_backdoor",
+	Short: "ValidatingAdmissionPolicy backdoor",
+	Long:  "vap_backdoor deploys a ValidatingAdmissionPolicy that denies deletion of backdoor-labeled workloads (requires Kubernetes >= 1.30)",
+	RunE:  vapBackdoorCmd,
+}
+
 var options CLIOptions
+
+// Flag storage for the detection, report, and vap_backdoor commands.
+var (
+	detectionTechniques string
+	detectionOut        string
+	reportEvents        string
+	reportOut           string
+	reportHTML          bool
+	reportTitle         string
+	reportOperator      string
+	reportClientName    string
+	reportStart         string
+	reportEnd           string
+	reportScope         string
+	vapNamespace        string
+	vapLabel            string
+	vapKubeconfig       string
+	vapToken            string
+)
+
+func detectionListCmd(cmd *cobra.Command, args []string) error {
+	return detection.List("")
+}
+
+func detectionGenerateCmd(cmd *cobra.Command, args []string) error {
+	return detection.Generate(detectionTechniques, detectionOut)
+}
+
+func reportGenerateCmd(cmd *cobra.Command, args []string) error {
+	return report.Generate(
+		reportEvents,
+		reportOut,
+		reportHTML,
+		reportTitle,
+		reportOperator,
+		reportClientName,
+		reportStart,
+		reportEnd,
+		reportScope)
+}
+
+func vapBackdoorCmd(cmd *cobra.Command, args []string) error {
+	return vap_backdoor.Execute(vapKubeconfig, vapToken, vapNamespace, vapLabel)
+}
 
 func init() {
 	KUBEDaggerClient.PersistentFlags().VarP(
@@ -103,4 +191,88 @@ func init() {
 		"target",
 		"t",
 		"target application URL")
+
+	cmdDetectionGenerate.PersistentFlags().StringVar(
+		&detectionTechniques,
+		"techniques",
+		"all",
+		"comma-separated technique keys (default: all)")
+	cmdDetectionGenerate.PersistentFlags().StringVar(
+		&detectionOut,
+		"out",
+		"",
+		"output file path (stdout if not set)")
+	cmdDetection.AddCommand(cmdDetectionList)
+	cmdDetection.AddCommand(cmdDetectionGenerate)
+	KUBEDaggerClient.AddCommand(cmdDetection)
+
+	cmdReportGenerate.PersistentFlags().StringVar(
+		&reportEvents,
+		"events",
+		"",
+		"path to events.jsonl file (required)")
+	cmdReportGenerate.PersistentFlags().StringVar(
+		&reportOut,
+		"out",
+		"",
+		"output file path (stdout if not set)")
+	cmdReportGenerate.PersistentFlags().BoolVar(
+		&reportHTML,
+		"html",
+		false,
+		"generate HTML instead of markdown")
+	cmdReportGenerate.PersistentFlags().StringVar(
+		&reportTitle,
+		"title",
+		"",
+		"report title")
+	cmdReportGenerate.PersistentFlags().StringVar(
+		&reportOperator,
+		"operator",
+		"",
+		"operator name")
+	cmdReportGenerate.PersistentFlags().StringVar(
+		&reportClientName,
+		"client",
+		"",
+		"client name")
+	cmdReportGenerate.PersistentFlags().StringVar(
+		&reportStart,
+		"start",
+		"",
+		"engagement start date (free-form)")
+	cmdReportGenerate.PersistentFlags().StringVar(
+		&reportEnd,
+		"end",
+		"",
+		"engagement end date (free-form)")
+	cmdReportGenerate.PersistentFlags().StringVar(
+		&reportScope,
+		"scope",
+		"",
+		"engagement scope note")
+	cmdReport.AddCommand(cmdReportGenerate)
+	KUBEDaggerClient.AddCommand(cmdReport)
+
+	cmdVAPBackdoor.PersistentFlags().StringVar(
+		&vapNamespace,
+		"namespace",
+		"default",
+		"namespace to protect (or 'all' for cluster-wide)")
+	cmdVAPBackdoor.PersistentFlags().StringVar(
+		&vapLabel,
+		"label",
+		"kubedagger-backdoor=true",
+		"label key=value protecting resources from deletion")
+	cmdVAPBackdoor.PersistentFlags().StringVar(
+		&vapKubeconfig,
+		"kubeconfig",
+		"",
+		"path to kubeconfig file (in-cluster or ~/.kube/config if not set)")
+	cmdVAPBackdoor.PersistentFlags().StringVar(
+		&vapToken,
+		"token",
+		"",
+		"service account token (auto-detected if not specified)")
+	KUBEDaggerClient.AddCommand(cmdVAPBackdoor)
 }

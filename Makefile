@@ -89,3 +89,13 @@ lint-strict:
 
 install_client:
 	sudo cp ./bin/kubedagger-client /usr/bin/
+
+## Lab: local kind cluster seeded with detection stand-ins (see docs/LAB.md)
+lab-up:
+	./scripts/lab/lab.sh up
+
+lab-down:
+	./scripts/lab/lab.sh down
+
+lab-test:
+	./scripts/lab/lab.sh test

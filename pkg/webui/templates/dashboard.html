@@ -9,6 +9,9 @@
         body { font-family: 'Courier New', monospace; background: #0a0a0a; color: #00ff41; min-height: 100vh; }
         .header { background: #111; border-bottom: 1px solid #00ff41; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
         .header h1 { font-size: 20px; letter-spacing: 2px; }
+        .header .nav { display: flex; gap: 20px; }
+        .header .nav a { color: #888; text-decoration: none; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        .header .nav a:hover, .header .nav a.current { color: #00ff41; }
         .header .status { color: #00ff41; font-size: 12px; }
         .container { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; height: calc(100vh - 60px); }
         .panel { background: #111; border: 1px solid #333; border-radius: 4px; overflow: hidden; display: flex; flex-direction: column; }
@@ -40,6 +43,11 @@
 <body>
     <div class="header">
         <h1>KUBEDAGGER C2</h1>
+        <nav class="nav">
+            <a href="/" class="current">dashboard</a>
+            <a href="/campaign">campaign</a>
+            <a href="/replay">replay</a>
+        </nav>
         <div class="status">{{len .Agents}} agents | {{len .Commands}} commands</div>
     </div>
     <div class="container">

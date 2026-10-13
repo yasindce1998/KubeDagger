@@ -57,6 +57,18 @@ type TaskResponse struct {
 	Payload map[string]string `json:"payload"`
 }
 
+// SubmitRequest is the operator-facing API request for queuing a task.
+type SubmitRequest struct {
+	AgentID string            `json:"agent_id"`
+	Type    TaskType          `json:"type"`
+	Payload map[string]string `json:"payload,omitempty"`
+}
+
+// SubmitResponse acknowledges a queued task.
+type SubmitResponse struct {
+	TaskID string `json:"task_id"`
+}
+
 type ResultRequest struct {
 	AgentID string     `json:"agent_id"`
 	TaskID  string     `json:"task_id"`

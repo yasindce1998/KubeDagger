@@ -2,7 +2,7 @@
 set -uo pipefail
 
 COVERAGE_FILE="${1:-coverage.out}"
-THRESHOLD="${2:-15}"
+THRESHOLD="${2:-20}"
 
 if [ ! -f "$COVERAGE_FILE" ]; then
   echo "ERROR: coverage file not found: $COVERAGE_FILE"
@@ -22,7 +22,8 @@ echo "  Total coverage: ${TOTAL}%"
 echo "  Threshold:      ${THRESHOLD}%"
 echo ""
 
-PASS=$(python3 -c "print(1 if $TOTAL >= $THRESHOLD else 0)" 2>/dev/null || echo "1")
+# Integer comparison without python dependency; fails closed on parse errors.
+PASS=$(awk -v t="$TOTAL" -v th="$THRESHOLD" 'BEGIN { print (t+0 >= th+0) ? 1 : 0 }')
 
 if [ "$PASS" = "1" ]; then
   echo "PASS: coverage ${TOTAL}% >= ${THRESHOLD}%"

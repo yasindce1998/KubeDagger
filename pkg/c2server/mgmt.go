@@ -6,13 +6,32 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
+	"github.com/yasindce1998/KubeDagger/pkg/events"
 	"github.com/yasindce1998/KubeDagger/pkg/kubedagger/c2"
+	"github.com/yasindce1998/KubeDagger/pkg/scope"
 )
 
 type MgmtServer struct {
 	srv    *c2.Server
 	agents *AgentRegistry
 	tasks  *TaskQueue
+	events *events.Store
+	scope  *scope.Scope
+}
+
+// MgmtOption configures optional MgmtServer behaviour. All options are
+// nil-safe: a MgmtServer built without them behaves exactly like the legacy
+// deployment.
+type MgmtOption func(*MgmtServer)
+
+// WithMgmtEvents records task events into the given store.
+func WithMgmtEvents(store *events.Store) MgmtOption {
+	return func(m *MgmtServer) { m.events = store }
+}
+
+// WithMgmtScope enforces the given scope policy on task submission.
+func WithMgmtScope(s *scope.Scope) MgmtOption {
+	return func(m *MgmtServer) { m.scope = s }
 }
 
 type MgmtCommand struct {
@@ -29,10 +48,15 @@ type MgmtResponse struct {
 	Error  string      `json:"error,omitempty"`
 }
 
-func NewMgmtServer(key []byte, agents *AgentRegistry, tasks *TaskQueue) (*MgmtServer, error) {
+func NewMgmtServer(key []byte, agents *AgentRegistry, tasks *TaskQueue, opts ...MgmtOption) (*MgmtServer, error) {
 	mgmt := &MgmtServer{
 		agents: agents,
 		tasks:  tasks,
+	}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(mgmt)
+		}
 	}
 
 	srv, err := c2.NewServer(key, mgmt.handleCommand)
@@ -90,8 +114,44 @@ func (m *MgmtServer) queueTask(mc MgmtCommand) ([]byte, error) {
 		return marshalResponse(MgmtResponse{Status: "error", Error: "unknown agent"})
 	}
 
+	if err := m.checkScope(string(mc.Type), mc.Payload); err != nil {
+		return marshalResponse(MgmtResponse{Status: "error", Error: err.Error()})
+	}
+
 	task := m.tasks.Enqueue(mc.AgentID, mc.Type, mc.Payload)
+
+	m.recordEvent(events.Event{
+		Type:      events.TypeTaskSubmitted,
+		AgentID:   mc.AgentID,
+		TaskType:  string(mc.Type),
+		Technique: mc.Payload["name"],
+		Payload:   mc.Payload,
+	})
+
 	return marshalResponse(MgmtResponse{Status: "ok", Data: task})
+}
+
+// checkScope enforces the configured scope policy on a task submission. It
+// returns nil when no policy is configured.
+func (m *MgmtServer) checkScope(taskType string, payload map[string]string) error {
+	if m.scope == nil {
+		return nil
+	}
+	if err := m.scope.CheckTask(taskType, payload); err != nil {
+		return fmt.Errorf("task rejected by scope policy: %v", err)
+	}
+	return nil
+}
+
+// recordEvent appends an event to the configured store. Recording failures
+// are logged at warn level and never fatal.
+func (m *MgmtServer) recordEvent(e events.Event) {
+	if m.events == nil {
+		return
+	}
+	if err := m.events.Record(e); err != nil {
+		logrus.Warnf("failed to record %s event: %v", e.Type, err)
+	}
 }
 
 func (m *MgmtServer) taskStatus(mc MgmtCommand) ([]byte, error) {

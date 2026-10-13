@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KubeDagger C2 - Replay</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Courier New', monospace; background: #0a0a0a; color: #00ff41; min-height: 100vh; }
+        .header { background: #111; border-bottom: 1px solid #00ff41; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 20px; letter-spacing: 2px; }
+        .header .nav { display: flex; gap: 20px; }
+        .header .nav a { color: #888; text-decoration: none; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        .header .nav a:hover, .header .nav a.current { color: #00ff41; }
+        .header .status { color: #00ff41; font-size: 12px; }
+        .container { padding: 16px; }
+        .panel { background: #111; border: 1px solid #333; border-radius: 4px; overflow: hidden; }
+        .panel-header { background: #1a1a1a; padding: 8px 16px; border-bottom: 1px solid #333; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #888; }
+        .panel-body { padding: 12px; }
+        .replay-nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .replay-nav .position { color: #888; font-size: 12px; }
+        .btn { background: #00ff41; color: #0a0a0a; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold; font-size: 12px; text-decoration: none; display: inline-block; }
+        .btn:hover { background: #00cc33; }
+        .btn.disabled { background: #222; color: #555; cursor: default; }
+        .event-card { background: #1a1a1a; border: 1px solid #333; border-radius: 4px; padding: 12px; margin-bottom: 8px; }
+        .event-card-header { color: #00ff41; font-size: 13px; font-weight: bold; margin-bottom: 8px; }
+        .event-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px 16px; margin-bottom: 8px; }
+        .event-fields dt { display: inline-block; color: #888; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; min-width: 80px; }
+        .event-fields dd { display: inline; color: #ccc; font-size: 12px; }
+        .event-detail { background: #0a0a0a; border-radius: 3px; padding: 8px; color: #ccc; font-size: 11px; white-space: pre-wrap; margin-bottom: 8px; }
+        .payload-list { list-style: none; }
+        .payload-list li { font-size: 11px; color: #ccc; }
+        .payload-key { color: #ffaa00; }
+        .empty-state { color: #888; text-align: center; padding: 24px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>KUBEDAGGER C2</h1>
+        <nav class="nav">
+            <a href="/">dashboard</a>
+            <a href="/campaign">campaign</a>
+            <a href="/replay" class="current">replay</a>
+        </nav>
+        <div class="status">{{.Total}} events</div>
+    </div>
+    <div class="container">
+        <div class="panel">
+            <div class="panel-header">Session Replay</div>
+            <div class="panel-body">
+                <div class="replay-nav">
+                    {{if .HasNewer}}
+                    <a class="btn" href="/replay?offset={{.NewerOffset}}&amp;step={{.Step}}">&larr; Newer</a>
+                    {{else}}
+                    <span class="btn disabled">&larr; Newer</span>
+                    {{end}}
+                    <span class="position">showing {{.From}}&ndash;{{.To}} of {{.Total}}</span>
+                    {{if .HasOlder}}
+                    <a class="btn" href="/replay?offset={{.OlderOffset}}&amp;step={{.Step}}">Older &rarr;</a>
+                    {{else}}
+                    <span class="btn disabled">Older &rarr;</span>
+                    {{end}}
+                </div>
+                {{if .Events}}
+                {{range .Events}}
+                <div class="event-card">
+                    <div class="event-card-header">#{{.ID}} &middot; {{.Timestamp.Format "2006-01-02 15:04:05"}}</div>
+                    <dl class="event-fields">
+                        <div><dt>Agent</dt><dd>{{.AgentID}}</dd></div>
+                        <div><dt>Type</dt><dd>{{.Type}}</dd></div>
+                        <div><dt>Technique</dt><dd>{{.Technique}}</dd></div>
+                        <div><dt>Task Type</dt><dd>{{.TaskType}}</dd></div>
+                        <div><dt>Status</dt><dd>{{.Status}}</dd></div>
+                        <div><dt>MITRE</dt><dd>{{.MITRE}}</dd></div>
+                    </dl>
+                    {{if .Detail}}
+                    <div class="event-detail">{{.Detail}}</div>
+                    {{end}}
+                    {{if .PayloadPairs}}
+                    <ul class="payload-list">
+                        {{range .PayloadPairs}}
+                        <li><span class="payload-key">{{.Key}}</span>=<span class="payload-value">{{.Value}}</span></li>
+                        {{end}}
+                    </ul>
+                    {{end}}
+                </div>
+                {{end}}
+                {{else}}
+                <div class="empty-state">no events recorded yet</div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

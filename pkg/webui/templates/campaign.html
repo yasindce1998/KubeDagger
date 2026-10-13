@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KubeDagger C2 - Campaign</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Courier New', monospace; background: #0a0a0a; color: #00ff41; min-height: 100vh; }
+        .header { background: #111; border-bottom: 1px solid #00ff41; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 20px; letter-spacing: 2px; }
+        .header .nav { display: flex; gap: 20px; }
+        .header .nav a { color: #888; text-decoration: none; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        .header .nav a:hover, .header .nav a.current { color: #00ff41; }
+        .header .status { color: #00ff41; font-size: 12px; }
+        .container { padding: 16px; }
+        .panel { background: #111; border: 1px solid #333; border-radius: 4px; overflow: hidden; }
+        .panel-header { background: #1a1a1a; padding: 8px 16px; border-bottom: 1px solid #333; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #888; }
+        .panel-body { padding: 12px; }
+        .filter-form { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 16px; }
+        .form-group { margin-bottom: 0; }
+        .form-group label { display: block; font-size: 11px; color: #888; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
+        .form-group select, .form-group input { background: #1a1a1a; border: 1px solid #333; color: #00ff41; padding: 8px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 12px; }
+        .form-group select:focus, .form-group input:focus { outline: none; border-color: #00ff41; }
+        .btn { background: #00ff41; color: #0a0a0a; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold; font-size: 12px; }
+        .btn:hover { background: #00cc33; }
+        .table-note { color: #888; font-size: 11px; margin-bottom: 8px; }
+        .event-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .event-table th { text-align: left; background: #1a1a1a; color: #888; padding: 8px; border-bottom: 1px solid #333; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .event-table td { padding: 8px; border-bottom: 1px solid #222; vertical-align: top; }
+        .event-table tr:hover td { background: #141414; }
+        .event-table .evt-type { color: #ffaa00; }
+        .event-table .evt-status { color: #00ff41; }
+        .empty-state { color: #888; text-align: center; padding: 24px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>KUBEDAGGER C2</h1>
+        <nav class="nav">
+            <a href="/">dashboard</a>
+            <a href="/campaign" class="current">campaign</a>
+            <a href="/replay">replay</a>
+        </nav>
+        <div class="status">{{.Total}} events</div>
+    </div>
+    <div class="container">
+        <div class="panel">
+            <div class="panel-header">Campaign Timeline</div>
+            <div class="panel-body">
+                <form method="GET" action="/campaign" class="filter-form">
+                    <div class="form-group">
+                        <label>Agent</label>
+                        <input type="text" name="agent" value="{{.AgentFilter}}" placeholder="filter by agent ID">
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select name="type">
+                            {{range .TypeOptions}}
+                            <option value="{{.Value}}" {{if .Selected}}selected{{end}}>{{.Label}}</option>
+                            {{end}}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Limit</label>
+                        <input type="number" name="limit" value="{{.Limit}}" min="1" max="1000">
+                    </div>
+                    <button type="submit" class="btn">FILTER</button>
+                </form>
+                {{if .Events}}
+                <div class="table-note">showing {{.Shown}} of {{.Total}} events, chronological order</div>
+                <table class="event-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Agent</th>
+                            <th>Type</th>
+                            <th>Technique</th>
+                            <th>MITRE</th>
+                            <th>Status</th>
+                            <th>Detail</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .Events}}
+                        <tr>
+                            <td>{{.Timestamp.Format "2006-01-02 15:04:05"}}</td>
+                            <td>{{.AgentID}}</td>
+                            <td class="evt-type">{{.Type}}</td>
+                            <td>{{.Technique}}</td>
+                            <td>{{.MITRE}}</td>
+                            <td class="evt-status">{{.Status}}</td>
+                            <td title="{{.Detail}}">{{.DetailShort}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+                {{else if eq .Total 0}}
+                <div class="empty-state">no events recorded yet</div>
+                {{else}}
+                <div class="empty-state">no events match the current filters</div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

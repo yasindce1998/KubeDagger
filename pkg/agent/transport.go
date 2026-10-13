@@ -14,10 +14,10 @@ import (
 )
 
 type TransportConfig struct {
-	Endpoints  stealth.EndpointProfile
-	Obfuscate  bool
-	ObfuscKey  string
-	PSK        string
+	Endpoints stealth.EndpointProfile
+	Obfuscate bool
+	ObfuscKey string
+	PSK       string
 }
 
 type Transport struct {

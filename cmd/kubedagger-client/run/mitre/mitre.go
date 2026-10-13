@@ -408,6 +408,16 @@ var techniques = []Technique{
 		Color:       "#ff9900",
 		Enabled:     true,
 	},
+	{
+		ID:          "T1098",
+		Name:        "Account Manipulation",
+		Tactic:      "persistence",
+		Description: "ValidatingAdmissionPolicy backdoor — CEL admission policy denies deletion of backdoor-labeled workloads cluster-wide",
+		Score:       100,
+		Color:       "#ff6666",
+		Enabled:     true,
+		Comment:     "vap_backdoor",
+	},
 }
 
 // GetTechniques returns all mapped MITRE ATT&CK techniques

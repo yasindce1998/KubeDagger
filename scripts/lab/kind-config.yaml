@@ -1,0 +1,8 @@
+# kind configuration for the KubeDagger lab cluster (see docs/LAB.md).
+# Minimal single control-plane node cluster; the stand-in targets in
+# scripts/lab/manifests/targets.yaml are applied after creation.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: kubedagger-lab
+nodes:
+  - role: control-plane

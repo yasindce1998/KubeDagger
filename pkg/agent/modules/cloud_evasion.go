@@ -3,6 +3,8 @@ package modules
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"time"
 
 	"github.com/yasindce1998/KubeDagger/pkg/cloudevasion"
 	"k8s.io/client-go/dynamic"
@@ -58,6 +60,8 @@ func (m *CloudEvasion) Execute(ctx context.Context, args map[string]string) (*Re
 		return m.evadeCnativeResponder(ctx, args)
 	case "mesh_security":
 		return m.evadeServiceMesh(ctx, args)
+	case "clouddetect":
+		return m.cloudDetect(ctx)
 	case "cnative-certs":
 		return m.exploitCnativeCerts(ctx, args)
 	case "cnative-policy":
@@ -99,6 +103,17 @@ func (m *CloudEvasion) detect(ctx context.Context) (*Result, error) {
 	return &Result{
 		Success: true,
 		Output:  cloudevasion.FormatSystems(systems),
+	}, nil
+}
+
+// cloudDetect probes the AWS/Azure/GCP instance metadata services reachable
+// from this host and reports provider-side detection telemetry awareness.
+func (m *CloudEvasion) cloudDetect(ctx context.Context) (*Result, error) {
+	client := &http.Client{Timeout: 5 * time.Second}
+	systems := cloudevasion.DetectCloudSecurity(ctx, client, cloudevasion.CloudEndpoints{})
+	return &Result{
+		Success: true,
+		Output:  cloudevasion.FormatCloudDetections(systems),
 	}, nil
 }
 

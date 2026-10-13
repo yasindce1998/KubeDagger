@@ -135,6 +135,61 @@ func TestExecModule_MissingName(t *testing.T) {
 	}
 }
 
+func TestExecShell_DryRun(t *testing.T) {
+	e := NewExecutor()
+	ctx := context.Background()
+
+	task := &c2server.TaskResponse{
+		Type: c2server.TaskShell,
+		Payload: map[string]string{
+			"command": "rm -rf /",
+			"dryrun":  "true",
+		},
+	}
+
+	output, err := e.Execute(ctx, task)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "DRY-RUN: would execute shell command: rm -rf /") {
+		t.Errorf("expected dry-run summary, got %q", output)
+	}
+}
+
+func TestExecModule_DryRun(t *testing.T) {
+	e := NewExecutor()
+	ctx := context.Background()
+
+	task := &c2server.TaskResponse{
+		Type: c2server.TaskModule,
+		Payload: map[string]string{
+			"name":   "k8s_discovery",
+			"action": "enumerate",
+			"dryrun": "true",
+		},
+	}
+
+	output, err := e.Execute(ctx, task)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "DRY-RUN: would execute module k8s_discovery") {
+		t.Errorf("expected dry-run summary, got %q", output)
+	}
+	if !strings.Contains(output, runtime.GOOS) {
+		t.Errorf("expected platform %q in summary, got %q", runtime.GOOS, output)
+	}
+	if !strings.Contains(output, "platforms: linux, windows, darwin") {
+		t.Errorf("expected module platform list in summary, got %q", output)
+	}
+	if !strings.Contains(output, "action=enumerate") {
+		t.Errorf("expected sorted args in summary, got %q", output)
+	}
+	if strings.Contains(output, "dryrun=") {
+		t.Errorf("dryrun flag should not appear in args, got %q", output)
+	}
+}
+
 func TestExecConfig(t *testing.T) {
 	e := NewExecutor()
 	ctx := context.Background()
@@ -202,5 +257,67 @@ func TestAgent_Stop(t *testing.T) {
 	case <-a.stop:
 	default:
 		t.Error("expected stop channel to be closed")
+	}
+}
+
+func TestAgent_SelfDestruct(t *testing.T) {
+	cfg := Config{
+		ServerURL:      "https://127.0.0.1:9999",
+		AgentID:        "test-deadman",
+		BeaconJitter:   0.1,
+		MaxRetries:     1,
+		DeadmanTimeout: 50 * time.Millisecond,
+	}
+	a := New(cfg, nil)
+
+	a.selfDestruct()
+
+	select {
+	case <-a.stop:
+	default:
+		t.Fatal("expected stop channel to be closed after self-destruct")
+	}
+
+	err := a.getDeadmanErr()
+	if err == nil {
+		t.Fatal("expected dead-man error after self-destruct")
+	}
+	want := "dead-man switch triggered: no C2 contact in 50ms"
+	if err.Error() != want {
+		t.Errorf("expected error %q, got %q", want, err.Error())
+	}
+
+	// Stop after self-destruct must not panic (double close guard).
+	a.Stop()
+}
+
+func TestAgent_DeadmanWatchdog(t *testing.T) {
+	cfg := Config{
+		ServerURL:      "https://127.0.0.1:9999",
+		AgentID:        "test-deadman-watchdog",
+		BeaconJitter:   0.1,
+		MaxRetries:     1,
+		DeadmanTimeout: 10 * time.Millisecond,
+	}
+	a := New(cfg, nil)
+	// lastContact initialized to zero: watchdog must fire immediately.
+	a.lastContact.Store(time.Now().Add(-time.Minute).UnixNano())
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go a.deadmanWatchdog(ctx)
+
+	deadline := time.After(5 * time.Second)
+	for {
+		select {
+		case <-a.stop:
+			if err := a.getDeadmanErr(); err == nil {
+				t.Error("expected dead-man error from watchdog")
+			}
+			return
+		case <-deadline:
+			t.Fatal("watchdog did not fire dead-man switch")
+		case <-time.After(10 * time.Millisecond):
+		}
 	}
 }

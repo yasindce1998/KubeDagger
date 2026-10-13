@@ -10,16 +10,28 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/yasindce1998/KubeDagger/pkg/agent/stealth"
+	"github.com/yasindce1998/KubeDagger/pkg/events"
+	"github.com/yasindce1998/KubeDagger/pkg/malleable"
+	"github.com/yasindce1998/KubeDagger/pkg/scope"
 )
 
+// SubmitAPIPath is the operator-facing HTTP route for submitting tasks.
+const SubmitAPIPath = "/api/v1/tasks"
+
 type ServerConfig struct {
-	ListenAddr  string
-	TLSConfig   *tls.Config
-	Endpoints   stealth.EndpointProfile
-	PSK         string
-	RateLimit   float64
-	RateBurst   int
-	ObfuscKey   string
+	ListenAddr string
+	TLSConfig  *tls.Config
+	Endpoints  stealth.EndpointProfile
+	PSK        string
+	RateLimit  float64
+	RateBurst  int
+	ObfuscKey  string
+
+	// Optional integrations. All are nil-safe: the server behaves exactly
+	// like the legacy deployment when they are unset.
+	Events  *events.Store      // structured telemetry for checkins/tasks/results
+	Scope   *scope.Scope       // allow-list policy enforced on task submission
+	Profile *malleable.Profile // malleable profile driving sleep intervals
 }
 
 type Server struct {
@@ -34,7 +46,18 @@ type Server struct {
 func NewServer(cfg ServerConfig) *Server {
 	agents := NewAgentRegistry()
 	tasks := NewTaskQueue()
-	handlers := NewHandlers(agents, tasks)
+
+	var hopts []HandlersOption
+	if cfg.Events != nil {
+		hopts = append(hopts, WithEvents(cfg.Events))
+	}
+	if cfg.Scope != nil {
+		hopts = append(hopts, WithScope(cfg.Scope))
+	}
+	if cfg.Profile != nil {
+		hopts = append(hopts, WithProfile(cfg.Profile))
+	}
+	handlers := NewHandlers(agents, tasks, hopts...)
 
 	endpoints := cfg.Endpoints
 	if endpoints.Checkin == "" {
@@ -45,6 +68,7 @@ func NewServer(cfg ServerConfig) *Server {
 	mux.HandleFunc(endpoints.Checkin, handlers.HandleCheckin)
 	mux.HandleFunc(endpoints.Task, handlers.HandleTask)
 	mux.HandleFunc(endpoints.Result, handlers.HandleResult)
+	mux.HandleFunc(SubmitAPIPath, handlers.HandleSubmit)
 
 	var handler http.Handler = mux
 
@@ -92,6 +116,21 @@ func (s *Server) Agents() *AgentRegistry {
 
 func (s *Server) Tasks() *TaskQueue {
 	return s.tasks
+}
+
+// Events returns the configured event store, if any.
+func (s *Server) Events() *events.Store {
+	return s.config.Events
+}
+
+// Scope returns the configured scope policy, if any.
+func (s *Server) Scope() *scope.Scope {
+	return s.config.Scope
+}
+
+// Profile returns the configured malleable profile, if any.
+func (s *Server) Profile() *malleable.Profile {
+	return s.config.Profile
 }
 
 func (s *Server) Start() error {

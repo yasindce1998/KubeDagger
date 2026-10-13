@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os/exec"
 	"runtime"
+	"sort"
 	"strings"
 	"time"
 
@@ -48,6 +49,10 @@ func (e *Executor) execShell(ctx context.Context, payload map[string]string) (st
 	cmd := payload["command"]
 	if cmd == "" {
 		return "", fmt.Errorf("missing command in payload")
+	}
+
+	if payload["dryrun"] == "true" {
+		return fmt.Sprintf("DRY-RUN: would execute shell command: %s", cmd), nil
 	}
 
 	timeout := DefaultExecTimeout
@@ -94,6 +99,23 @@ func (e *Executor) execModule(ctx context.Context, payload map[string]string) (s
 	if !ok {
 		available := e.modules.List()
 		return "", fmt.Errorf("module %q not found (available: %s)", name, strings.Join(available, ", "))
+	}
+
+	if payload["dryrun"] == "true" {
+		keys := make([]string, 0, len(payload))
+		for k := range payload {
+			if k == "name" || k == "dryrun" {
+				continue
+			}
+			keys = append(keys, k+"="+payload[k])
+		}
+		sort.Strings(keys)
+		summary := fmt.Sprintf("DRY-RUN: would execute module %s on %s", name, runtime.GOOS)
+		if len(keys) > 0 {
+			summary += " with args " + strings.Join(keys, ", ")
+		}
+		summary += fmt.Sprintf(" (platforms: %s)", strings.Join(mod.Platform(), ", "))
+		return summary, nil
 	}
 
 	supported := false

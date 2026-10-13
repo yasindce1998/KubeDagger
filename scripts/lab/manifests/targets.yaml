@@ -1,0 +1,229 @@
+# KubeDagger lab stand-in targets.
+#
+# Each stand-in mimics the exact deployment signature (namespace + label
+# selector) that a pkg/cloudevasion detect* function matches, so detection
+# and evasion workflows can be exercised against a live kind cluster without
+# installing actual security products. Every stand-in is a lightweight busybox
+# pod running `sleep infinity` — no security product actually runs here.
+#
+# The generic detection name triggered by each block is noted in its comment.
+# See docs/LAB.md for the full resource -> detection mapping.
+
+---
+# cnative-sensor (detectCnativeSensor): namespace "falco", label app=falco
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: falco
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: falco-sensor-standin
+  namespace: falco
+  labels:
+    app: falco
+    kubedagger.lab/standin: "true"
+spec:
+  containers:
+    - name: standin
+      image: busybox:1.36
+      command: ["sleep", "infinity"]
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 100m
+          memory: 32Mi
+
+---
+# cnative-policy (detectCnativePolicy): namespace "kyverno", label app.kubernetes.io/name=kyverno
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kyverno
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kyverno-standin
+  namespace: kyverno
+  labels:
+    app.kubernetes.io/name: kyverno
+    kubedagger.lab/standin: "true"
+spec:
+  containers:
+    - name: standin
+      image: busybox:1.36
+      command: ["sleep", "infinity"]
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 100m
+          memory: 32Mi
+
+---
+# cnative-net (detectCnativeNet): namespace "cilium", label k8s-app=cilium
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cilium
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cilium-agent-standin
+  namespace: cilium
+  labels:
+    k8s-app: cilium
+    kubedagger.lab/standin: "true"
+spec:
+  containers:
+    - name: standin
+      image: busybox:1.36
+      command: ["sleep", "infinity"]
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 100m
+          memory: 32Mi
+
+---
+# cnative-probe (detectCnativeProbe): namespace "kube-system", label app.kubernetes.io/name=tetragon
+apiVersion: v1
+kind: Pod
+metadata:
+  name: tetragon-standin
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: tetragon
+    kubedagger.lab/standin: "true"
+spec:
+  containers:
+    - name: standin
+      image: busybox:1.36
+      command: ["sleep", "infinity"]
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 100m
+          memory: 32Mi
+
+---
+# cnative-registry (detectCnativeRegistry): namespace "harbor", label app=harbor
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: harbor
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: harbor-core-standin
+  namespace: harbor
+  labels:
+    app: harbor
+    kubedagger.lab/standin: "true"
+spec:
+  containers:
+    - name: standin
+      image: busybox:1.36
+      command: ["sleep", "infinity"]
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 100m
+          memory: 32Mi
+
+---
+# cnative-backup (detectCnativeBackup): namespace "velero", label component=velero
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: velero
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: velero-standin
+  namespace: velero
+  labels:
+    component: velero
+    kubedagger.lab/standin: "true"
+spec:
+  containers:
+    - name: standin
+      image: busybox:1.36
+      command: ["sleep", "infinity"]
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 100m
+          memory: 32Mi
+
+---
+# cnative-audit (detectCnativeAudit): namespace "kubescape", label app.kubernetes.io/name=kubescape
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubescape
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kubescape-standin
+  namespace: kubescape
+  labels:
+    app.kubernetes.io/name: kubescape
+    kubedagger.lab/standin: "true"
+spec:
+  containers:
+    - name: standin
+      image: busybox:1.36
+      command: ["sleep", "infinity"]
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 100m
+          memory: 32Mi
+
+---
+# cnative-scanner (detectCnativeScanner): namespace "trivy-system", label app.kubernetes.io/name=trivy-operator
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: trivy-system
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: trivy-operator-standin
+  namespace: trivy-system
+  labels:
+    app.kubernetes.io/name: trivy-operator
+    kubedagger.lab/standin: "true"
+spec:
+  containers:
+    - name: standin
+      image: busybox:1.36
+      command: ["sleep", "infinity"]
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 100m
+          memory: 32Mi
