@@ -97,8 +97,9 @@ func TestMesh_ListenRelayAndStop(t *testing.T) {
 	}
 
 	// After stop, a new relay can bind the same port and requests fail.
-	_, err = http.Get(relayURL)
+	resp, err = http.Get(relayURL)
 	if err == nil {
+		resp.Body.Close()
 		t.Error("expected request through stopped relay to fail")
 	}
 }

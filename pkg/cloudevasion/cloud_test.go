@@ -42,13 +42,13 @@ func TestDetectCloudSecurity_AllProviders(t *testing.T) {
 						return
 					}
 					w.Header().Set("Content-Type", "text/plain")
-					w.Write([]byte("test-imds-token"))
+					_, _ = w.Write([]byte("test-imds-token"))
 				case "/latest/meta-data/":
 					if r.Header.Get("X-aws-ec2-metadata-token") != "test-imds-token" {
 						http.Error(w, "missing token", http.StatusUnauthorized)
 						return
 					}
-					w.Write([]byte("ami-id\ninstance-id\n"))
+					_, _ = w.Write([]byte("ami-id\ninstance-id\n"))
 				default:
 					http.NotFound(w, r)
 				}
@@ -63,7 +63,7 @@ func TestDetectCloudSecurity_AllProviders(t *testing.T) {
 				case "/latest/api/token":
 					http.Error(w, "token disabled", http.StatusForbidden)
 				case "/latest/meta-data/":
-					w.Write([]byte("instance-id\n"))
+					_, _ = w.Write([]byte("instance-id\n"))
 				default:
 					http.NotFound(w, r)
 				}
@@ -119,7 +119,7 @@ func TestDetectCloudSecurity_Azure(t *testing.T) {
 			http.Error(w, "metadata header required", http.StatusBadRequest)
 			return
 		}
-		w.Write([]byte(`{"compute":{"azEnvironment":"AzurePublicCloud"}}`))
+		_, _ = w.Write([]byte(`{"compute":{"azEnvironment":"AzurePublicCloud"}}`))
 	}))
 	defer server.Close()
 
@@ -155,7 +155,7 @@ func TestDetectCloudSecurity_GCP(t *testing.T) {
 			http.Error(w, "flavor header required", http.StatusBadRequest)
 			return
 		}
-		w.Write([]byte("instance/\nproject/\n"))
+		_, _ = w.Write([]byte("instance/\nproject/\n"))
 	}))
 	defer server.Close()
 

@@ -21,13 +21,26 @@ limitations under the License.
 package malleable
 
 import (
+	cryptorand "crypto/rand"
+	"encoding/binary"
 	"fmt"
-	"math/rand/v2"
+	"math"
 	"os"
 	"time"
 
 	"sigs.k8s.io/yaml"
 )
+
+// randFloat returns a cryptographically secure pseudo-random float64 in [0, 1).
+// Beacon timing must not be predictable from process state, so math/rand is
+// deliberately avoided here.
+func randFloat() float64 {
+	var b [8]byte
+	if _, err := cryptorand.Read(b[:]); err != nil {
+		return 0
+	}
+	return float64(binary.LittleEndian.Uint64(b[:])) / float64(math.MaxUint64+1)
+}
 
 // Profile shapes the timing and HTTP fingerprint of agent beaconing.
 type Profile struct {
@@ -114,7 +127,7 @@ func (p *Profile) NextSleep() time.Duration {
 	}
 
 	jitter := time.Duration(float64(base) * float64(jitterPct) / 100.0)
-	sleep := base + time.Duration((rand.Float64()*2-1)*float64(jitter))
+	sleep := base + time.Duration((randFloat()*2-1)*float64(jitter))
 	if sleep < time.Second {
 		sleep = time.Second
 	}
@@ -127,5 +140,9 @@ func (p *Profile) NextUserAgent() string {
 	if p == nil || len(p.UserAgents) == 0 {
 		return ""
 	}
-	return p.UserAgents[rand.IntN(len(p.UserAgents))]
+	idx := int(randFloat() * float64(len(p.UserAgents)))
+	if idx >= len(p.UserAgents) {
+		idx = len(p.UserAgents) - 1
+	}
+	return p.UserAgents[idx]
 }

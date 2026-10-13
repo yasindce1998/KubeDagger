@@ -54,3 +54,6 @@ jobs:
         with:
           version: v1.64.8
           install-mode: goinstall
+          # The config schema fetch from golangci-lint.run is a network
+          # dependency outside our control; the config is stable and valid.
+          verify: false
