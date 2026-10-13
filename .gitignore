@@ -1,2 +1,3 @@
 bin/
-!pkg/assets/bin/coverage.out
+!pkg/assets/bin/
+coverage.out
