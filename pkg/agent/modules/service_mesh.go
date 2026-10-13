@@ -12,7 +12,7 @@ import (
 
 type ServiceMesh struct{}
 
-func (m *ServiceMesh) Name() string      { return "service_mesh" }
+func (m *ServiceMesh) Name() string       { return "service_mesh" }
 func (m *ServiceMesh) Platform() []string { return []string{"linux", "windows", "darwin"} }
 
 func (m *ServiceMesh) Execute(ctx context.Context, args map[string]string) (*Result, error) {
@@ -30,8 +30,8 @@ func (m *ServiceMesh) Execute(ctx context.Context, args map[string]string) (*Res
 		return m.extractCerts(ctx)
 	case "hijack":
 		return m.hijack(ctx, args)
-	case "envoy_dump":
-		return m.envoyDump(ctx, args)
+	case "mesh_dump":
+		return m.meshDump(ctx, args)
 	default:
 		return &Result{Success: false, Error: fmt.Sprintf("unknown action: %s", action)}, nil
 	}
@@ -125,13 +125,13 @@ func (m *ServiceMesh) hijack(ctx context.Context, args map[string]string) (*Resu
 	return &Result{Success: true, Output: output}, nil
 }
 
-func (m *ServiceMesh) envoyDump(ctx context.Context, args map[string]string) (*Result, error) {
+func (m *ServiceMesh) meshDump(ctx context.Context, args map[string]string) (*Result, error) {
 	podIP := args["pod_ip"]
 	if podIP == "" {
 		return &Result{Success: false, Error: "pod_ip required"}, nil
 	}
 
-	output, err := servicemesh.DumpEnvoyConfig(ctx, podIP)
+	output, err := servicemesh.DumpCnativeMeshConfig(ctx, podIP)
 	if err != nil {
 		return &Result{Success: false, Error: err.Error()}, nil
 	}
@@ -146,4 +146,3 @@ func getDynamicClient() (dynamic.Interface, error) {
 	}
 	return dynamic.NewForConfig(config)
 }
-

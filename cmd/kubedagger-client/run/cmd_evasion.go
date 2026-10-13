@@ -16,7 +16,7 @@ import (
 var cmdEvasion = &cobra.Command{
 	Use:   "evasion",
 	Short: "runtime security evasion",
-	Long:  "evasion enables techniques to evade Falco, Tetragon, and KubeArmor runtime security tools",
+	Long:  "evasion enables techniques to evade cnative-sensor, cnative-probe, and cnative-shield runtime security tools",
 	RunE:  evasionCmd,
 }
 
@@ -106,7 +106,7 @@ func init() {
 		&options.EvasionMode,
 		"mode",
 		"all",
-		"evasion mode: falco, tetragon, kubearmor, or all")
+		"evasion mode: cnative-sensor, cnative-probe, cnative-shield, or all")
 	cmdEvasion.PersistentFlags().StringVarP(
 		&options.Output,
 		"output",

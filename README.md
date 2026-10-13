@@ -14,7 +14,7 @@
 
 KubeDagger is a highly advanced, sophisticated offensive security research tool - one of the most comprehensive eBPF-based red team / adversarial simulation frameworks focused on Kubernetes and containerized environments.
 
-Demonstrates 110+ offensive techniques including network discovery, file system monitoring, process hiding, container breakouts, cloud-native attacks, kernel-level covert channels, eBPF polymorphism, autonomous objective planning, and adversarial evasion of 17 CNCF security products (Falco, Tetragon, KubeArmor, Kubescape, Falco Talon, service mesh mTLS, cert-manager, SPIFFE/SPIRE, Kyverno, Cilium, Harbor, Sigstore/Cosign, Velero, External Secrets Operator, Crossplane, Knative, Argo Workflows). Supports Linux (eBPF kernel-level), Windows, and macOS (userspace agent).
+Demonstrates 110+ offensive techniques including network discovery, file system monitoring, process hiding, container breakouts, cloud-native attacks, kernel-level covert channels, eBPF polymorphism, autonomous objective planning, and adversarial evasion of 17 cloud-native security products (cnative-sensor, cnative-probe, cnative-shield, cnative-audit, cnative-responder, cnative-mesh mTLS, cnative-certs, cnative-identity, cnative-policy, cnative-net, cnative-registry, cnative-signing, cnative-backup, cnative-secrets, cnative-control, cnative-serverless, cnative-workflow). Supports Linux (eBPF kernel-level), Windows, and macOS (userspace agent).
 
 > [!CAUTION]
 > ## ⚠️ STRICT LEGAL DISCLAIMER & WARNING
@@ -140,9 +140,9 @@ KEY=$(kubedagger-client c2 genkey)
 | `pkg/autonomy` | Autonomous objective engine with rule-based forward-chaining planner |
 | `pkg/multicluster` | Multi-cluster propagation via kubeconfig theft, federation, and service mesh |
 | `pkg/cloudexploit` | Cloud provider exploitation (AWS, GCP, Azure IAM/metadata attacks) |
-| `pkg/cicd` | CI/CD pipeline poisoning (Tekton, ArgoCD, Flux task/app injection) |
-| `pkg/servicemesh` | Service mesh deep attacks (Istio xDS injection, mTLS cert theft, traffic hijack) |
-| `pkg/cloudevasion` | Detection evasion for 17 CNCF products (Falco, Tetragon, KubeArmor, Kubescape, Falco Talon, service mesh, cert-manager, SPIFFE/SPIRE, Kyverno, Cilium, Harbor, Sigstore/Cosign, Velero, External Secrets, Crossplane, Knative, Argo Workflows) |
+| `pkg/cicd` | CI/CD pipeline poisoning (cnative-pipeline, cnative-gitops, cnative-sync task/app injection) |
+| `pkg/servicemesh` | Service mesh deep attacks (cnative-mesh xDS injection, mTLS cert theft, traffic hijack) |
+| `pkg/cloudevasion` | Detection evasion for 17 cloud-native security products (cnative-sensor, cnative-probe, cnative-shield, cnative-audit, cnative-responder, cnative-mesh, cnative-certs, cnative-identity, cnative-policy, cnative-net, cnative-registry, cnative-signing, cnative-backup, cnative-secrets, cnative-control, cnative-serverless, cnative-workflow) |
 | `pkg/webui` | Operator Web UI with real-time agent dashboard and command dispatch |
 
 ### Available client commands
@@ -157,7 +157,7 @@ KEY=$(kubedagger-client c2 genkey)
 | `k8s abuse` | Kubernetes privilege escalation |
 | `escape` | Container escape (privileged, socket, cgroup, nsenter) |
 | `secrets harvest` | Harvest secrets from env, K8s, cloud, Docker, Vault |
-| `evasion` | Runtime security evasion (Falco, Tetragon, KubeArmor) |
+| `evasion` | Runtime security evasion (cnative-sensor, cnative-probe, cnative-shield) |
 | `netbypass` | Network policy bypass (tunnel, spoof, encap, direct) |
 | `meshbypass` | Service mesh bypass (XDP, UID, raw, exclude) |
 | `obs-poison` | Observability poisoning (Prometheus, OTel, StatsD) |

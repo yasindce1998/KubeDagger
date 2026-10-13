@@ -47,7 +47,7 @@ func bypassXDP(serverTarget, meshTarget string) *MeshBypassResult {
 		Mode:   "xdp",
 		Target: meshTarget,
 		Status: status,
-		Detail: "XDP direct send bypasses iptables REDIRECT rules used by Istio/Envoy sidecar",
+		Detail: "XDP direct send bypasses iptables REDIRECT rules used by cnative-mesh sidecar",
 	}
 }
 
@@ -58,7 +58,7 @@ func bypassUID(serverTarget, meshTarget string) *MeshBypassResult {
 		Mode:   "uid",
 		Target: meshTarget,
 		Status: status,
-		Detail: "run process as UID 1337 (envoy) to bypass Istio iptables exclusion rules",
+		Detail: "run process as UID 1337 (cnative-mesh sidecar user) to bypass cnative-mesh iptables exclusion rules",
 	}
 }
 

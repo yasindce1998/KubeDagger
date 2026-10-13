@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-func TestDetectTekton(t *testing.T) {
+func TestDetectCnativePipeline(t *testing.T) {
 	t.Run("present", func(t *testing.T) {
 		client := fake.NewSimpleClientset()
 		_, err := client.CoreV1().Pods("tekton-pipelines").Create(context.Background(), &corev1.Pod{
@@ -24,9 +24,9 @@ func TestDetectTekton(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		result := detectTekton(context.Background(), client)
+		result := detectCnativePipeline(context.Background(), client)
 		if !result.Detected {
-			t.Error("expected tekton to be detected")
+			t.Error("expected cnative-pipeline to be detected")
 		}
 		if result.Namespace != "tekton-pipelines" {
 			t.Errorf("namespace = %q, want %q", result.Namespace, "tekton-pipelines")
@@ -38,14 +38,14 @@ func TestDetectTekton(t *testing.T) {
 
 	t.Run("absent", func(t *testing.T) {
 		client := fake.NewSimpleClientset()
-		result := detectTekton(context.Background(), client)
+		result := detectCnativePipeline(context.Background(), client)
 		if result.Detected {
-			t.Error("expected tekton not detected on empty cluster")
+			t.Error("expected cnative-pipeline not detected on empty cluster")
 		}
 	})
 }
 
-func TestDetectArgoCD(t *testing.T) {
+func TestDetectCnativeGitOps(t *testing.T) {
 	t.Run("present", func(t *testing.T) {
 		client := fake.NewSimpleClientset()
 		_, err := client.CoreV1().Pods("argocd").Create(context.Background(), &corev1.Pod{
@@ -59,9 +59,9 @@ func TestDetectArgoCD(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		result := detectArgoCD(context.Background(), client)
+		result := detectCnativeGitOps(context.Background(), client)
 		if !result.Detected {
-			t.Error("expected argocd to be detected")
+			t.Error("expected cnative-gitops to be detected")
 		}
 		if result.Namespace != "argocd" {
 			t.Errorf("namespace = %q, want %q", result.Namespace, "argocd")
@@ -73,14 +73,14 @@ func TestDetectArgoCD(t *testing.T) {
 
 	t.Run("absent", func(t *testing.T) {
 		client := fake.NewSimpleClientset()
-		result := detectArgoCD(context.Background(), client)
+		result := detectCnativeGitOps(context.Background(), client)
 		if result.Detected {
-			t.Error("expected argocd not detected on empty cluster")
+			t.Error("expected cnative-gitops not detected on empty cluster")
 		}
 	})
 }
 
-func TestDetectFlux(t *testing.T) {
+func TestDetectCnativeSync(t *testing.T) {
 	t.Run("present", func(t *testing.T) {
 		client := fake.NewSimpleClientset()
 		_, err := client.CoreV1().Pods("flux-system").Create(context.Background(), &corev1.Pod{
@@ -94,9 +94,9 @@ func TestDetectFlux(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		result := detectFlux(context.Background(), client)
+		result := detectCnativeSync(context.Background(), client)
 		if !result.Detected {
-			t.Error("expected flux to be detected")
+			t.Error("expected cnative-sync to be detected")
 		}
 		if result.Namespace != "flux-system" {
 			t.Errorf("namespace = %q, want %q", result.Namespace, "flux-system")
@@ -105,9 +105,9 @@ func TestDetectFlux(t *testing.T) {
 
 	t.Run("absent", func(t *testing.T) {
 		client := fake.NewSimpleClientset()
-		result := detectFlux(context.Background(), client)
+		result := detectCnativeSync(context.Background(), client)
 		if result.Detected {
-			t.Error("expected flux not detected on empty cluster")
+			t.Error("expected cnative-sync not detected on empty cluster")
 		}
 	})
 }
@@ -122,15 +122,15 @@ func TestFormatPlatforms(t *testing.T) {
 
 	t.Run("with platforms", func(t *testing.T) {
 		platforms := []Platform{
-			{Name: "tekton", Detected: true, Namespace: "tekton-pipelines", Controllers: []string{"controller-1"}},
-			{Name: "argocd", Detected: true, Namespace: "argocd", Controllers: []string{"server-1", "repo-server-1"}},
+			{Name: "cnative-pipeline", Detected: true, Namespace: "tekton-pipelines", Controllers: []string{"controller-1"}},
+			{Name: "cnative-gitops", Detected: true, Namespace: "argocd", Controllers: []string{"server-1", "repo-server-1"}},
 		}
 		out := FormatPlatforms(platforms)
-		if !strings.Contains(out, "[tekton]") {
-			t.Errorf("missing tekton in output: %q", out)
+		if !strings.Contains(out, "[cnative-pipeline]") {
+			t.Errorf("missing cnative-pipeline in output: %q", out)
 		}
-		if !strings.Contains(out, "[argocd]") {
-			t.Errorf("missing argocd in output: %q", out)
+		if !strings.Contains(out, "[cnative-gitops]") {
+			t.Errorf("missing cnative-gitops in output: %q", out)
 		}
 	})
 }

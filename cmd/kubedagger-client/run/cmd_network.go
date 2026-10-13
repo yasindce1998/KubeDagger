@@ -41,14 +41,14 @@ var cmdDNSExfil = &cobra.Command{
 var cmdNetBypass = &cobra.Command{
 	Use:   "netbypass",
 	Short: "network policy bypass",
-	Long:  "netbypass uses XDP-level packet manipulation to bypass Calico/Cilium network policies",
+	Long:  "netbypass uses XDP-level packet manipulation to bypass CNI/cnative-net network policies",
 	RunE:  netBypassCmd,
 }
 
 var cmdMeshBypass = &cobra.Command{
 	Use:   "meshbypass",
 	Short: "service mesh bypass",
-	Long:  "meshbypass uses XDP-level techniques to bypass Istio/Envoy sidecar proxies",
+	Long:  "meshbypass uses XDP-level techniques to bypass cnative-mesh sidecar proxies",
 	RunE:  meshBypassCmd,
 }
 

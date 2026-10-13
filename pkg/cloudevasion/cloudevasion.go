@@ -30,31 +30,31 @@ type EvasionResult struct {
 func DetectSystems(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) ([]DetectionSystem, error) {
 	var systems []DetectionSystem
 
-	systems = append(systems, detectFalco(ctx, client)...)
-	systems = append(systems, detectOPA(ctx, client)...)
-	systems = append(systems, detectKyverno(ctx, client)...)
-	systems = append(systems, detectTrivy(ctx, client)...)
-	systems = append(systems, detectSysdig(ctx, client)...)
-	systems = append(systems, detectTetragon(ctx, client)...)
-	systems = append(systems, detectKubeArmor(ctx, client)...)
-	systems = append(systems, detectKubescape(ctx, client)...)
-	systems = append(systems, detectFalcoTalon(ctx, client)...)
-	systems = append(systems, detectCertManager(ctx, client)...)
-	systems = append(systems, detectMeshSecurity(ctx, client, dynClient)...)
-	systems = append(systems, detectSPIFFE(ctx, client, dynClient)...)
-	systems = append(systems, detectCilium(ctx, client)...)
-	systems = append(systems, detectHarbor(ctx, client)...)
-	systems = append(systems, detectSigstore(ctx, client, dynClient)...)
-	systems = append(systems, detectVelero(ctx, client)...)
-	systems = append(systems, detectExternalSecrets(ctx, client)...)
-	systems = append(systems, detectCrossplane(ctx, client)...)
-	systems = append(systems, detectKnative(ctx, client)...)
-	systems = append(systems, detectArgoWorkflows(ctx, client)...)
+	systems = append(systems, detectCnativeSensor(ctx, client)...)
+	systems = append(systems, detectCnativeAuthz(ctx, client)...)
+	systems = append(systems, detectCnativePolicy(ctx, client)...)
+	systems = append(systems, detectCnativeScanner(ctx, client)...)
+	systems = append(systems, detectCnativeMonitor(ctx, client)...)
+	systems = append(systems, detectCnativeProbe(ctx, client)...)
+	systems = append(systems, detectCnativeShield(ctx, client)...)
+	systems = append(systems, detectCnativeAudit(ctx, client)...)
+	systems = append(systems, detectCnativeResponder(ctx, client)...)
+	systems = append(systems, detectCnativeCerts(ctx, client)...)
+	systems = append(systems, detectCnativeMesh(ctx, client, dynClient)...)
+	systems = append(systems, detectCnativeIdentity(ctx, client, dynClient)...)
+	systems = append(systems, detectCnativeNet(ctx, client)...)
+	systems = append(systems, detectCnativeRegistry(ctx, client)...)
+	systems = append(systems, detectCnativeSigning(ctx, client, dynClient)...)
+	systems = append(systems, detectCnativeBackup(ctx, client)...)
+	systems = append(systems, detectCnativeSecrets(ctx, client)...)
+	systems = append(systems, detectCnativeControl(ctx, client)...)
+	systems = append(systems, detectCnativeServerless(ctx, client)...)
+	systems = append(systems, detectCnativeWorkflow(ctx, client)...)
 
 	return systems, nil
 }
 
-func detectFalco(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
+func detectCnativeSensor(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
 	namespaces := []string{"falco", "falco-system", "security"}
 	for _, ns := range namespaces {
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
@@ -62,7 +62,7 @@ func detectFalco(ctx context.Context, client kubernetes.Interface) []DetectionSy
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "falco",
+				Name:      "cnative-sensor",
 				Detected:  true,
 				Namespace: ns,
 				Details:   fmt.Sprintf("%d pods running", len(pods.Items)),
@@ -75,7 +75,7 @@ func detectFalco(ctx context.Context, client kubernetes.Interface) []DetectionSy
 	})
 	if err == nil && len(pods.Items) > 0 {
 		return []DetectionSystem{{
-			Name:      "falco",
+			Name:      "cnative-sensor",
 			Detected:  true,
 			Namespace: pods.Items[0].Namespace,
 			Details:   fmt.Sprintf("%d pods across namespaces", len(pods.Items)),
@@ -85,7 +85,7 @@ func detectFalco(ctx context.Context, client kubernetes.Interface) []DetectionSy
 	return nil
 }
 
-func detectOPA(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
+func detectCnativeAuthz(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
 	namespaces := []string{"opa", "gatekeeper-system"}
 	for _, ns := range namespaces {
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{})
@@ -93,10 +93,10 @@ func detectOPA(ctx context.Context, client kubernetes.Interface) []DetectionSyst
 			for _, pod := range pods.Items {
 				if strings.Contains(pod.Name, "gatekeeper") || strings.Contains(pod.Name, "opa") {
 					return []DetectionSystem{{
-						Name:      "opa-gatekeeper",
+						Name:      "cnative-authz",
 						Detected:  true,
 						Namespace: ns,
-						Details:   "OPA Gatekeeper admission controller",
+						Details:   "cnative-authz admission controller",
 					}}
 				}
 			}
@@ -105,7 +105,7 @@ func detectOPA(ctx context.Context, client kubernetes.Interface) []DetectionSyst
 	return nil
 }
 
-func detectKyverno(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
+func detectCnativePolicy(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
 	namespaces := []string{"kyverno", "kyverno-system"}
 	for _, ns := range namespaces {
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
@@ -113,17 +113,17 @@ func detectKyverno(ctx context.Context, client kubernetes.Interface) []Detection
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "kyverno",
+				Name:      "cnative-policy",
 				Detected:  true,
 				Namespace: ns,
-				Details:   fmt.Sprintf("%d kyverno pods", len(pods.Items)),
+				Details:   fmt.Sprintf("%d cnative-policy pods", len(pods.Items)),
 			}}
 		}
 	}
 	return nil
 }
 
-func detectTrivy(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
+func detectCnativeScanner(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
 	namespaces := []string{"trivy-system", "trivy"}
 	for _, ns := range namespaces {
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
@@ -131,26 +131,26 @@ func detectTrivy(ctx context.Context, client kubernetes.Interface) []DetectionSy
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "trivy-operator",
+				Name:      "cnative-scanner",
 				Detected:  true,
 				Namespace: ns,
-				Details:   "Trivy vulnerability scanner operator",
+				Details:   "cnative-scanner vulnerability scanner operator",
 			}}
 		}
 	}
 	return nil
 }
 
-func detectSysdig(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
+func detectCnativeMonitor(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
 	pods, err := client.CoreV1().Pods("").List(ctx, metav1.ListOptions{
 		LabelSelector: "app=sysdig-agent",
 	})
 	if err == nil && len(pods.Items) > 0 {
 		return []DetectionSystem{{
-			Name:      "sysdig",
+			Name:      "cnative-monitor",
 			Detected:  true,
 			Namespace: pods.Items[0].Namespace,
-			Details:   fmt.Sprintf("%d sysdig agents (DaemonSet)", len(pods.Items)),
+			Details:   fmt.Sprintf("%d cnative-monitor agents (DaemonSet)", len(pods.Items)),
 		}}
 	}
 	return nil

@@ -44,26 +44,26 @@ func DetectPlatforms(ctx context.Context) ([]Platform, error) {
 
 	var platforms []Platform
 
-	tekton := detectTekton(ctx, client)
-	if tekton.Detected {
-		platforms = append(platforms, tekton)
+	pipelinePlatform := detectCnativePipeline(ctx, client)
+	if pipelinePlatform.Detected {
+		platforms = append(platforms, pipelinePlatform)
 	}
 
-	argo := detectArgoCD(ctx, client)
-	if argo.Detected {
-		platforms = append(platforms, argo)
+	gitops := detectCnativeGitOps(ctx, client)
+	if gitops.Detected {
+		platforms = append(platforms, gitops)
 	}
 
-	flux := detectFlux(ctx, client)
-	if flux.Detected {
-		platforms = append(platforms, flux)
+	sync := detectCnativeSync(ctx, client)
+	if sync.Detected {
+		platforms = append(platforms, sync)
 	}
 
 	return platforms, nil
 }
 
-func detectTekton(ctx context.Context, client kubernetes.Interface) Platform {
-	p := Platform{Name: "tekton"}
+func detectCnativePipeline(ctx context.Context, client kubernetes.Interface) Platform {
+	p := Platform{Name: "cnative-pipeline"}
 
 	namespaces := []string{"tekton-pipelines", "openshift-pipelines"}
 	for _, ns := range namespaces {
@@ -83,8 +83,8 @@ func detectTekton(ctx context.Context, client kubernetes.Interface) Platform {
 	return p
 }
 
-func detectArgoCD(ctx context.Context, client kubernetes.Interface) Platform {
-	p := Platform{Name: "argocd"}
+func detectCnativeGitOps(ctx context.Context, client kubernetes.Interface) Platform {
+	p := Platform{Name: "cnative-gitops"}
 
 	namespaces := []string{"argocd", "argo-cd"}
 	for _, ns := range namespaces {
@@ -104,8 +104,8 @@ func detectArgoCD(ctx context.Context, client kubernetes.Interface) Platform {
 	return p
 }
 
-func detectFlux(ctx context.Context, client kubernetes.Interface) Platform {
-	p := Platform{Name: "flux"}
+func detectCnativeSync(ctx context.Context, client kubernetes.Interface) Platform {
+	p := Platform{Name: "cnative-sync"}
 
 	namespaces := []string{"flux-system"}
 	for _, ns := range namespaces {

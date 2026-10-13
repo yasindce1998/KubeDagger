@@ -11,24 +11,24 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var knativeServiceGVR = schema.GroupVersionResource{
+var cnativeServerlessServiceGVR = schema.GroupVersionResource{
 	Group: "serving.knative.dev", Version: "v1", Resource: "services",
 }
 
-var knativeRevisionGVR = schema.GroupVersionResource{
+var cnativeServerlessRevisionGVR = schema.GroupVersionResource{
 	Group: "serving.knative.dev", Version: "v1", Resource: "revisions",
 }
 
-func detectKnative(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
+func detectCnativeServerless(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
 	namespaces := []string{"knative-serving", "knative-eventing"}
 	for _, ns := range namespaces {
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "knative",
+				Name:      "cnative-serverless",
 				Detected:  true,
 				Namespace: ns,
-				Details:   fmt.Sprintf("%d knative pods in %s", len(pods.Items), ns),
+				Details:   fmt.Sprintf("%d cnative-serverless pods in %s", len(pods.Items), ns),
 			}}
 		}
 	}
@@ -38,7 +38,7 @@ func detectKnative(ctx context.Context, client kubernetes.Interface) []Detection
 	})
 	if err == nil && len(pods.Items) > 0 {
 		return []DetectionSystem{{
-			Name:      "knative",
+			Name:      "cnative-serverless",
 			Detected:  true,
 			Namespace: pods.Items[0].Namespace,
 			Details:   fmt.Sprintf("queue-proxy sidecars detected (%d pods)", len(pods.Items)),
@@ -48,29 +48,29 @@ func detectKnative(ctx context.Context, client kubernetes.Interface) []Detection
 	return nil
 }
 
-// ExploitKnative executes the specified Knative serverless exploitation technique.
-func ExploitKnative(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
+// ExploitCnativeServerless executes the specified cnative-serverless exploitation technique.
+func ExploitCnativeServerless(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
 	switch technique {
 	case "enumerate":
-		return knativeEnumerate(ctx, client, dynClient)
+		return cnativeServerlessEnumerate(ctx, client, dynClient)
 	case "queue_proxy":
-		return knativeQueueProxy(ctx, client)
+		return cnativeServerlessQueueProxy(ctx, client)
 	case "autoscaler_abuse":
-		return knativeAutoscalerAbuse(ctx, client)
+		return cnativeServerlessAutoscalerAbuse(ctx, client)
 	case "revision_inject":
-		return knativeRevisionInject(ctx, dynClient)
+		return cnativeServerlessRevisionInject(ctx, dynClient)
 	default:
-		return knativeEnumerate(ctx, client, dynClient)
+		return cnativeServerlessEnumerate(ctx, client, dynClient)
 	}
 }
 
-func knativeEnumerate(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeServerlessEnumerate(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Knative Serverless Enumeration:\n\n")
+	sb.WriteString("cnative-serverless Enumeration:\n\n")
 
 	found := false
 
-	services, err := dynClient.Resource(knativeServiceGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	services, err := dynClient.Resource(cnativeServerlessServiceGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err == nil && len(services.Items) > 0 {
 		found = true
 		fmt.Fprintf(&sb, "  Knative Services (%d):\n", len(services.Items))
@@ -82,7 +82,7 @@ func knativeEnumerate(ctx context.Context, client kubernetes.Interface, dynClien
 		sb.WriteString("\n")
 	}
 
-	revisions, err := dynClient.Resource(knativeRevisionGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	revisions, err := dynClient.Resource(cnativeServerlessRevisionGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err == nil && len(revisions.Items) > 0 {
 		found = true
 		fmt.Fprintf(&sb, "  Revisions (%d):\n", len(revisions.Items))
@@ -112,7 +112,7 @@ func knativeEnumerate(ctx context.Context, client kubernetes.Interface, dynClien
 	}
 
 	if !found {
-		sb.WriteString("  No Knative resources detected\n")
+		sb.WriteString("  No cnative-serverless resources detected\n")
 	}
 
 	return &EvasionResult{
@@ -122,9 +122,9 @@ func knativeEnumerate(ctx context.Context, client kubernetes.Interface, dynClien
 	}, nil
 }
 
-func knativeQueueProxy(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeServerlessQueueProxy(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Knative Queue-Proxy Interception:\n\n")
+	sb.WriteString("cnative-serverless Queue-Proxy Interception:\n\n")
 
 	sb.WriteString("  Queue-proxy is a sidecar injected into every Knative Service pod.\n")
 	sb.WriteString("  It proxies all inbound traffic — intercepting it gives full request visibility.\n\n")
@@ -187,11 +187,11 @@ func knativeQueueProxy(ctx context.Context, client kubernetes.Interface) (*Evasi
 	}, nil
 }
 
-func knativeAutoscalerAbuse(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeServerlessAutoscalerAbuse(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Knative Autoscaler Abuse:\n\n")
+	sb.WriteString("cnative-serverless Autoscaler Abuse:\n\n")
 
-	sb.WriteString("  Knative autoscaler scales pods based on request concurrency/RPS.\n")
+	sb.WriteString("  cnative-serverless autoscaler scales pods based on request concurrency/RPS.\n")
 	sb.WriteString("  Manipulating autoscaler config enables resource exhaustion attacks.\n\n")
 
 	configMaps, err := client.CoreV1().ConfigMaps("knative-serving").List(ctx, metav1.ListOptions{})
@@ -243,14 +243,14 @@ func knativeAutoscalerAbuse(ctx context.Context, client kubernetes.Interface) (*
 	}, nil
 }
 
-func knativeRevisionInject(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeServerlessRevisionInject(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Knative Revision Template Injection:\n\n")
+	sb.WriteString("cnative-serverless Revision Template Injection:\n\n")
 
 	sb.WriteString("  Knative Service spec.template defines the container for new Revisions.\n")
 	sb.WriteString("  Modifying the template changes what code runs when the service is invoked.\n\n")
 
-	services, err := dynClient.Resource(knativeServiceGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	services, err := dynClient.Resource(cnativeServerlessServiceGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot list Knative Services: %v\n", err)
 		return &EvasionResult{Technique: "revision_inject", Success: false, Output: sb.String()}, nil

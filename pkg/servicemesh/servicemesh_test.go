@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-func TestDetectIstio(t *testing.T) {
+func TestDetectCnativeMesh(t *testing.T) {
 	client := fake.NewSimpleClientset()
 	_, err := client.CoreV1().Pods("istio-system").Create(context.Background(), &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -33,12 +33,12 @@ func TestDetectIstio(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	info := detectIstio(context.Background(), client)
+	info := detectCnativeMesh(context.Background(), client)
 	if info == nil {
-		t.Fatal("expected istio to be detected")
+		t.Fatal("expected cnative-mesh to be detected")
 	}
-	if info.Type != MeshIstio {
-		t.Errorf("type = %q, want %q", info.Type, MeshIstio)
+	if info.Type != MeshCnativeMesh {
+		t.Errorf("type = %q, want %q", info.Type, MeshCnativeMesh)
 	}
 	if info.Namespace != "istio-system" {
 		t.Errorf("namespace = %q, want %q", info.Namespace, "istio-system")
@@ -51,15 +51,15 @@ func TestDetectIstio(t *testing.T) {
 	}
 }
 
-func TestDetectIstioNotPresent(t *testing.T) {
+func TestDetectCnativeMeshNotPresent(t *testing.T) {
 	client := fake.NewSimpleClientset()
-	info := detectIstio(context.Background(), client)
+	info := detectCnativeMesh(context.Background(), client)
 	if info != nil {
 		t.Errorf("expected nil for empty cluster, got %+v", info)
 	}
 }
 
-func TestDetectLinkerd(t *testing.T) {
+func TestDetectCnativeMeshAlt(t *testing.T) {
 	client := fake.NewSimpleClientset()
 	_, err := client.CoreV1().Pods("linkerd").Create(context.Background(), &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -72,21 +72,21 @@ func TestDetectLinkerd(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	info := detectLinkerd(context.Background(), client)
+	info := detectCnativeMeshAlt(context.Background(), client)
 	if info == nil {
-		t.Fatal("expected linkerd to be detected")
+		t.Fatal("expected cnative-mesh-alt to be detected")
 	}
-	if info.Type != MeshLinkerd {
-		t.Errorf("type = %q, want %q", info.Type, MeshLinkerd)
+	if info.Type != MeshCnativeMeshAlt {
+		t.Errorf("type = %q, want %q", info.Type, MeshCnativeMeshAlt)
 	}
 	if info.Namespace != "linkerd" {
 		t.Errorf("namespace = %q, want %q", info.Namespace, "linkerd")
 	}
 }
 
-func TestDetectLinkerdNotPresent(t *testing.T) {
+func TestDetectCnativeMeshAltNotPresent(t *testing.T) {
 	client := fake.NewSimpleClientset()
-	info := detectLinkerd(context.Background(), client)
+	info := detectCnativeMeshAlt(context.Background(), client)
 	if info != nil {
 		t.Errorf("expected nil for empty cluster, got %+v", info)
 	}
@@ -104,14 +104,14 @@ func TestFormatMeshInfo(t *testing.T) {
 			contains: "no service mesh detected",
 		},
 		{
-			name: "istio info",
+			name: "cnative-mesh info",
 			info: &MeshInfo{
-				Type:       MeshIstio,
+				Type:       MeshCnativeMesh,
 				Namespace:  "istio-system",
 				Version:    "1.20",
 				Components: []string{"istiod-abc", "istio-ingressgateway-xyz"},
 			},
-			contains: "istio",
+			contains: "cnative-mesh",
 		},
 	}
 

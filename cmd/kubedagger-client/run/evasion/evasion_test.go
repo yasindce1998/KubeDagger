@@ -9,7 +9,7 @@ import (
 
 func TestEvasionResultJSON(t *testing.T) {
 	result := &EvasionResult{
-		Mode: "falco",
+		Mode: "cnative-sensor",
 		Actions: []shared.ActionInfo{
 			{Name: "suppress_execve_audit", Status: "enabled", Detail: "filter execve"},
 			{Name: "hide_network_connections", Status: "error: timeout", Detail: "mask /proc/net/tcp"},
@@ -27,8 +27,8 @@ func TestEvasionResultJSON(t *testing.T) {
 		t.Fatalf("unmarshal: %v", err)
 	}
 
-	if decoded.Mode != "falco" {
-		t.Errorf("mode = %q, want falco", decoded.Mode)
+	if decoded.Mode != "cnative-sensor" {
+		t.Errorf("mode = %q, want cnative-sensor", decoded.Mode)
 	}
 	if decoded.Success {
 		t.Error("expected success = false")
@@ -94,10 +94,10 @@ func TestEnableInvalidMode(t *testing.T) {
 	}
 }
 
-func TestEnableFalcoEvasionStructure(t *testing.T) {
-	result := enableFalcoEvasion("http://unreachable:9999")
-	if result.Mode != "falco" {
-		t.Errorf("mode = %q, want falco", result.Mode)
+func TestEnableCnativeSensorEvasionStructure(t *testing.T) {
+	result := enableCnativeSensorEvasion("http://unreachable:9999")
+	if result.Mode != "cnative-sensor" {
+		t.Errorf("mode = %q, want cnative-sensor", result.Mode)
 	}
 	if len(result.Actions) != 3 {
 		t.Fatalf("actions count = %d, want 3", len(result.Actions))
@@ -111,20 +111,20 @@ func TestEnableFalcoEvasionStructure(t *testing.T) {
 	}
 }
 
-func TestEnableTetragonEvasionStructure(t *testing.T) {
-	result := enableTetragonEvasion("http://unreachable:9999")
-	if result.Mode != "tetragon" {
-		t.Errorf("mode = %q, want tetragon", result.Mode)
+func TestEnableCnativeProbeEvasionStructure(t *testing.T) {
+	result := enableCnativeProbeEvasion("http://unreachable:9999")
+	if result.Mode != "cnative-probe" {
+		t.Errorf("mode = %q, want cnative-probe", result.Mode)
 	}
 	if len(result.Actions) != 3 {
 		t.Fatalf("actions count = %d, want 3", len(result.Actions))
 	}
 }
 
-func TestEnableKubeArmorEvasionStructure(t *testing.T) {
-	result := enableKubeArmorEvasion("http://unreachable:9999")
-	if result.Mode != "kubearmor" {
-		t.Errorf("mode = %q, want kubearmor", result.Mode)
+func TestEnableCnativeShieldEvasionStructure(t *testing.T) {
+	result := enableCnativeShieldEvasion("http://unreachable:9999")
+	if result.Mode != "cnative-shield" {
+		t.Errorf("mode = %q, want cnative-shield", result.Mode)
 	}
 	if len(result.Actions) != 2 {
 		t.Fatalf("actions count = %d, want 2", len(result.Actions))
@@ -136,7 +136,7 @@ func TestEnableAllEvasionStructure(t *testing.T) {
 	if result.Mode != "all" {
 		t.Errorf("mode = %q, want all", result.Mode)
 	}
-	// 3 (falco) + 3 (tetragon) + 2 (kubearmor) = 8
+	// 3 (cnative-sensor) + 3 (cnative-probe) + 2 (cnative-shield) = 8
 	if len(result.Actions) != 8 {
 		t.Fatalf("actions count = %d, want 8", len(result.Actions))
 	}

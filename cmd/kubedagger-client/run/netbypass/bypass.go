@@ -10,11 +10,11 @@ import (
 )
 
 type BypassResult struct {
-	Mode    string     `json:"mode"`
-	DestIP  string     `json:"dest_ip"`
-	DestPort string    `json:"dest_port"`
-	Status  string     `json:"status"`
-	Detail  string     `json:"detail"`
+	Mode     string `json:"mode"`
+	DestIP   string `json:"dest_ip"`
+	DestPort string `json:"dest_port"`
+	Status   string `json:"status"`
+	Detail   string `json:"detail"`
 }
 
 func Execute(target, mode, destIP, destPort, output string) error {
@@ -85,7 +85,7 @@ func configureDirect(target, destIP, destPort string) *BypassResult {
 		DestIP:   destIP,
 		DestPort: destPort,
 		Status:   status,
-		Detail:   "XDP direct forwarding bypasses TC-layer Calico/Cilium enforcement",
+		Detail:   "XDP direct forwarding bypasses TC-layer CNI/cnative-net enforcement",
 	}
 }
 

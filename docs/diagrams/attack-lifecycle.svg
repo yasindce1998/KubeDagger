@@ -94,9 +94,9 @@
   <!-- 6. EVASION -->
   <rect x="60" y="675" width="200" height="80" rx="6" fill="#161b22" stroke="#ff00e4" stroke-width="2" filter="url(#neonPink)"/>
   <text x="160" y="700" text-anchor="middle" fill="#ff00e4" font-family="monospace" font-size="13" font-weight="bold">6. EVASION</text>
-  <text x="160" y="720" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="9">cloud_evasion (falco/tetragon)</text>
-  <text x="160" y="735" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="9">antiforensics, polymorph</text>
-  <text x="160" y="750" text-anchor="middle" fill="#e6edf3" font-family="monospace" font-size="9">log-tamper, audit-filter</text>
+  <text x="160" y="720" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="9">cloud_evasion (cnative-sensor,</text>
+  <text x="160" y="735" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="9">cnative-probe, antiforensics,</text>
+  <text x="160" y="750" text-anchor="middle" fill="#e6edf3" font-family="monospace" font-size="9">polymorph, log-tamper, audit-filter</text>
   <line x1="160" y1="755" x2="160" y2="785" stroke="#ff00e4" stroke-width="2"/>
   <polygon points="155,780 160,790 165,780" fill="#ff00e4"/>
 

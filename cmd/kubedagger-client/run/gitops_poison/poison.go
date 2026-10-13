@@ -10,7 +10,7 @@ import (
 
 type PoisonResult struct {
 	Actions []shared.ActionInfo `json:"actions"`
-	Success bool               `json:"success"`
+	Success bool                `json:"success"`
 }
 
 func Execute(target, repo, targetPath, injectImage, output string) error {
@@ -21,7 +21,7 @@ func Execute(target, repo, targetPath, injectImage, output string) error {
 		detail string
 		cmd    string
 	}{
-		{"discover_sync", "identify GitOps controller (ArgoCD/Flux) and tracked repositories", "gitops_discover"},
+		{"discover_sync", "identify GitOps controller (cnative-gitops/cnative-sync) and tracked repositories", "gitops_discover"},
 		{"clone_intercept", "intercept git clone/fetch operations via kprobe on connect() to repo", "gitops_intercept"},
 		{"modify_manifest", "inject malicious container image into target deployment manifest", "gitops_modify"},
 		{"forge_commit", "create commit with spoofed author matching legitimate committer", "gitops_commit"},

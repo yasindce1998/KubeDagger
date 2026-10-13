@@ -55,12 +55,12 @@ type Filters struct {
 }
 
 type Layout struct {
-	Layout       string `json:"layout"`
-	AggregateF   string `json:"aggregateFunction"`
-	ShowID       bool   `json:"showID"`
-	ShowName     bool   `json:"showName"`
-	ShowAggreg   bool   `json:"showAggregateScores"`
-	CountUnscor  bool   `json:"countUnscored"`
+	Layout      string `json:"layout"`
+	AggregateF  string `json:"aggregateFunction"`
+	ShowID      bool   `json:"showID"`
+	ShowName    bool   `json:"showName"`
+	ShowAggreg  bool   `json:"showAggregateScores"`
+	CountUnscor bool   `json:"countUnscored"`
 }
 
 type Gradient struct {
@@ -205,7 +205,7 @@ var techniques = []Technique{
 		ID:          "T1562.001",
 		Name:        "Impair Defenses: Disable or Modify Tools",
 		Tactic:      "defense-evasion",
-		Description: "Runtime evasion — hides from Falco/Tetragon/KubeArmor, blocks kmsg readers",
+		Description: "Runtime evasion — hides from cnative-sensor/cnative-probe/cnative-shield, blocks kmsg readers",
 		Score:       100,
 		Color:       "#ff6666",
 		Enabled:     true,
@@ -259,7 +259,7 @@ var techniques = []Technique{
 		ID:          "T1599.001",
 		Name:        "Network Boundary Bridging: Network Address Translation Traversal",
 		Tactic:      "defense-evasion",
-		Description: "XDP-level packet rewriting bypasses CNI network policies (Calico/Cilium TC enforcement)",
+		Description: "XDP-level packet rewriting bypasses CNI network policies (CNI TC enforcement)",
 		Score:       100,
 		Color:       "#ff6666",
 		Enabled:     true,
@@ -268,7 +268,7 @@ var techniques = []Technique{
 		ID:          "T1090.004",
 		Name:        "Proxy: Domain Fronting",
 		Tactic:      "command-and-control",
-		Description: "Service mesh bypass — XDP direct send skips Istio/Envoy sidecar redirect",
+		Description: "Service mesh bypass — XDP direct send skips cnative-mesh sidecar redirect",
 		Score:       100,
 		Color:       "#ff6666",
 		Enabled:     true,
@@ -403,7 +403,7 @@ var techniques = []Technique{
 		ID:          "T1553.006",
 		Name:        "Code Signing Policy Modification",
 		Tactic:      "defense-evasion",
-		Description: "Bypass Sigstore/Cosign image signature verification via policy modification or signature injection",
+		Description: "Bypass cnative-signing image signature verification via policy modification or signature injection",
 		Score:       80,
 		Color:       "#ff9900",
 		Enabled:     true,

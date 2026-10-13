@@ -11,35 +11,35 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var kyvernoClusterPolicyGVR = schema.GroupVersionResource{
+var cnativePolicyClusterPolicyGVR = schema.GroupVersionResource{
 	Group: "kyverno.io", Version: "v1", Resource: "clusterpolicies",
 }
 
-var kyvernoPolicyGVR = schema.GroupVersionResource{
+var cnativePolicyPolicyGVR = schema.GroupVersionResource{
 	Group: "kyverno.io", Version: "v1", Resource: "policies",
 }
 
-// EvadeKyverno executes the specified Kyverno policy engine evasion technique.
-func EvadeKyverno(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
+// EvadeCnativePolicy executes the specified cnative-policy engine evasion technique.
+func EvadeCnativePolicy(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface, technique string) (*EvasionResult, error) {
 	switch technique {
 	case "policy_gaps":
-		return kyvernoPolicyGaps(ctx, client, dynClient)
+		return cnativePolicyPolicyGaps(ctx, client, dynClient)
 	case "background_bypass":
-		return kyvernoBackgroundBypass(ctx, dynClient)
+		return cnativePolicyBackgroundBypass(ctx, dynClient)
 	case "webhook_race":
-		return kyvernoWebhookRace(ctx, client)
+		return cnativePolicyWebhookRace(ctx, client)
 	case "mutate_exploit":
-		return kyvernoMutateExploit(ctx, dynClient)
+		return cnativePolicyMutateExploit(ctx, dynClient)
 	default:
-		return kyvernoPolicyGaps(ctx, client, dynClient)
+		return cnativePolicyPolicyGaps(ctx, client, dynClient)
 	}
 }
 
-func kyvernoPolicyGaps(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativePolicyPolicyGaps(ctx context.Context, client kubernetes.Interface, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Kyverno Policy Gap Analysis:\n\n")
+	sb.WriteString("cnative-policy Policy Gap Analysis:\n\n")
 
-	clusterPolicies, err := dynClient.Resource(kyvernoClusterPolicyGVR).List(ctx, metav1.ListOptions{})
+	clusterPolicies, err := dynClient.Resource(cnativePolicyClusterPolicyGVR).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot list ClusterPolicies: %v\n", err)
 		return &EvasionResult{Technique: "policy_gaps", Success: false, Output: sb.String()}, nil
@@ -76,7 +76,7 @@ func kyvernoPolicyGaps(ctx context.Context, client kubernetes.Interface, dynClie
 		}
 	}
 
-	policies, err := dynClient.Resource(kyvernoPolicyGVR).Namespace("").List(ctx, metav1.ListOptions{})
+	policies, err := dynClient.Resource(cnativePolicyPolicyGVR).Namespace("").List(ctx, metav1.ListOptions{})
 	if err == nil {
 		fmt.Fprintf(&sb, "\n  Namespace Policies (%d):\n", len(policies.Items))
 		for _, policy := range policies.Items {
@@ -123,14 +123,14 @@ func kyvernoPolicyGaps(ctx context.Context, client kubernetes.Interface, dynClie
 	}, nil
 }
 
-func kyvernoBackgroundBypass(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativePolicyBackgroundBypass(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Kyverno Background Scan Bypass:\n\n")
+	sb.WriteString("cnative-policy Background Scan Bypass:\n\n")
 
 	sb.WriteString("  Policies with background=false only validate NEW requests.\n")
 	sb.WriteString("  Existing resources that violate policy are never flagged.\n\n")
 
-	clusterPolicies, err := dynClient.Resource(kyvernoClusterPolicyGVR).List(ctx, metav1.ListOptions{})
+	clusterPolicies, err := dynClient.Resource(cnativePolicyClusterPolicyGVR).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot list ClusterPolicies: %v\n", err)
 		return &EvasionResult{Technique: "background_bypass", Success: false, Output: sb.String()}, nil
@@ -164,7 +164,7 @@ func kyvernoBackgroundBypass(ctx context.Context, dynClient dynamic.Interface) (
 	sb.WriteString("\n  Exploitation:\n")
 	sb.WriteString("    1. Directly modify existing resources (bypasses background=false)\n")
 	sb.WriteString("    2. Use kubectl edit/patch instead of delete+create\n")
-	sb.WriteString("    3. Modify resources during Kyverno controller restart window\n")
+	sb.WriteString("    3. Modify resources during cnative-policy controller restart window\n")
 	sb.WriteString("    4. Audit-mode policies only log — deploy anything and check later\n")
 	sb.WriteString("    5. Use subresources (status, scale) which bypass validation\n")
 
@@ -175,9 +175,9 @@ func kyvernoBackgroundBypass(ctx context.Context, dynClient dynamic.Interface) (
 	}, nil
 }
 
-func kyvernoWebhookRace(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
+func cnativePolicyWebhookRace(ctx context.Context, client kubernetes.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Kyverno Webhook Race Condition:\n\n")
+	sb.WriteString("cnative-policy Webhook Race Condition:\n\n")
 
 	webhooks, err := client.AdmissionregistrationV1().ValidatingWebhookConfigurations().List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -197,7 +197,7 @@ func kyvernoWebhookRace(ctx context.Context, client kubernetes.Interface) (*Evas
 			if webhook.FailurePolicy != nil {
 				fmt.Fprintf(&sb, "    FailurePolicy: %s\n", *webhook.FailurePolicy)
 				if string(*webhook.FailurePolicy) == "Ignore" {
-					sb.WriteString("    [CRITICAL] FailurePolicy=Ignore — bypass by killing Kyverno!\n")
+					sb.WriteString("    [CRITICAL] FailurePolicy=Ignore — bypass by killing cnative-policy!\n")
 				}
 			}
 			if webhook.TimeoutSeconds != nil {
@@ -225,15 +225,15 @@ func kyvernoWebhookRace(ctx context.Context, client kubernetes.Interface) (*Evas
 	}
 
 	if !found {
-		sb.WriteString("  No Kyverno webhooks found\n")
+		sb.WriteString("  No cnative-policy webhooks found\n")
 	}
 
 	sb.WriteString("\n  Race/bypass strategies:\n")
-	sb.WriteString("    1. If FailurePolicy=Ignore: crash Kyverno pods → all requests pass\n")
+	sb.WriteString("    1. If FailurePolicy=Ignore: crash cnative-policy pods → all requests pass\n")
 	sb.WriteString("    2. Exhaust webhook timeout (flood API server with requests)\n")
-	sb.WriteString("    3. Deploy resource during Kyverno rolling update window\n")
+	sb.WriteString("    3. Deploy resource during cnative-policy rolling update window\n")
 	sb.WriteString("    4. Use namespaces excluded by namespaceSelector\n")
-	sb.WriteString("    5. Scale Kyverno to 0 replicas, deploy, then restore\n")
+	sb.WriteString("    5. Scale cnative-policy to 0 replicas, deploy, then restore\n")
 	sb.WriteString("    6. Delete the ValidatingWebhookConfiguration directly\n")
 
 	return &EvasionResult{
@@ -243,14 +243,14 @@ func kyvernoWebhookRace(ctx context.Context, client kubernetes.Interface) (*Evas
 	}, nil
 }
 
-func kyvernoMutateExploit(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
+func cnativePolicyMutateExploit(ctx context.Context, dynClient dynamic.Interface) (*EvasionResult, error) {
 	var sb strings.Builder
-	sb.WriteString("Kyverno Mutate Rule Exploitation:\n\n")
+	sb.WriteString("cnative-policy Mutate Rule Exploitation:\n\n")
 
-	sb.WriteString("  Kyverno mutate rules modify resources on admission.\n")
+	sb.WriteString("  cnative-policy mutate rules modify resources on admission.\n")
 	sb.WriteString("  If we can influence mutate inputs, we control the mutation output.\n\n")
 
-	clusterPolicies, err := dynClient.Resource(kyvernoClusterPolicyGVR).List(ctx, metav1.ListOptions{})
+	clusterPolicies, err := dynClient.Resource(cnativePolicyClusterPolicyGVR).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Fprintf(&sb, "  Cannot list ClusterPolicies: %v\n", err)
 		return &EvasionResult{Technique: "mutate_exploit", Success: false, Output: sb.String()}, nil

@@ -96,7 +96,7 @@ func filelessExecution(_ context.Context) (*EvasionResult, error) {
 
 	_ = os.Remove(shmPath)
 	sb.WriteString("  Payload removed — only existed in RAM\n\n")
-	sb.WriteString("  No file write events for Falco to trigger on\n")
+	sb.WriteString("  No file write events for cnative-sensor to trigger on\n")
 	sb.WriteString("  No disk forensics artifacts\n")
 
 	return &EvasionResult{

@@ -35,14 +35,14 @@ var cmdSupplyChain = &cobra.Command{
 var cmdGitOpsPoison = &cobra.Command{
 	Use:   "gitops-poison",
 	Short: "GitOps repository poisoning",
-	Long:  "gitops-poison targets ArgoCD/Flux sync mechanisms to inject malicious manifests into GitOps repos",
+	Long:  "gitops-poison targets cnative-gitops/cnative-sync sync mechanisms to inject malicious manifests into GitOps repos",
 	RunE:  gitOpsPoisonCmd,
 }
 
 var cmdSigBypass = &cobra.Command{
 	Use:   "sig-bypass",
 	Short: "Image signature verification bypass",
-	Long:  "sig-bypass bypasses Sigstore/Cosign verification by injecting trusted signatures or disabling admission",
+	Long:  "sig-bypass bypasses cnative-signing verification by injecting trusted signatures or disabling admission",
 	RunE:  sigBypassCmd,
 }
 
