@@ -20,6 +20,7 @@
 - [Use Case 9: Autonomous Objective Campaigns](#use-case-9-autonomous-objective-campaigns)
 - [Use Case 10: Cloud Provider Exploitation Testing](#use-case-10-cloud-provider-exploitation-testing)
 - [Use Case 11: Cloud-Native Security Product Evasion Testing](#use-case-11-cloud-native-security-product-evasion-testing)
+- [Use Case 12: Purple-Team Validation Engagement](#use-case-12-purple-team-validation-engagement)
 - [Architecture Deep Dive](#architecture-deep-dive)
 - [MITRE ATT&CK Coverage](#mitre-attck-coverage)
 - [Deployment Scenarios](#deployment-scenarios)
@@ -995,6 +996,98 @@ A security team deploys multiple cloud-native security products (cnative-probe, 
 | cnative-responder response race viable | Reduce cnative-responder polling interval, use synchronous admission webhooks |
 | Host networking bypasses mesh | Enforce PodSecurity with restricted hostNetwork=false |
 | CA key accessible | Restrict cnative-certs secrets to cnative-certs namespace only |
+
+---
+
+## Use Case 12: Purple-Team Validation Engagement
+
+### Scenario
+A purple team conducts an authorized, scope-bounded engagement: simulate adversary techniques against a lab cluster, monitor execution live, and produce deliverables for both sides from the same event data — a red-team engagement report and a blue-team detection rule pack. The platform's guardrails (scope enforcement, dry-run, dead-man switch) keep the engagement contained and reversible.
+
+### How-To: Scope-Bounded Engagement Setup
+
+```shell
+# scope.yaml — only these namespaces/domains/CIDRs may be touched
+cat > scope.yaml <<'EOF'
+namespaces: ["staging", "purple-lab"]
+domains: [".lab.example.com"]
+cidrs: ["10.0.0.0/8"]
+EOF
+
+# Start the server with telemetry, scope enforcement, and the web UI
+./bin/kubedagger-server -key $KEY \
+  -events events.jsonl \
+  -scope scope.yaml \
+  -webui 127.0.0.1:8080 -webui-token <tok>
+
+# Out-of-scope tasks are rejected with a violation list
+./bin/kubedagger-operator -key $KEY module <agent-id> daemonset namespace=production
+# -> task rejected by scope policy: namespace "production" not allowed
+```
+
+**Assessment criteria:**
+- Are shell and module tasks both checked against the scope policy?
+- Do rejections list every violation (namespace, host, IP) rather than a generic denial?
+
+### How-To: Safe Rehearsal (Dry-Run + Sandbox Detection)
+
+```shell
+# Fingerprint the execution environment first (gVisor/Kata/containers)
+./bin/kubedagger-operator -key $KEY module <agent-id> sandbox_detect
+
+# Rehearse module execution without side effects
+./bin/kubedagger-operator -key $KEY module <agent-id> cloud_evasion action=cnative-sensor dryrun=true
+# -> DRY-RUN: would execute module cloud_evasion on linux with args ...
+```
+
+**Assessment criteria:**
+- Does the dry-run summary list the exact arguments that would be used?
+- Does sandbox detection correctly classify the runtime (e.g. gVisor) before escape techniques are attempted?
+
+### How-To: Live Monitoring and After-Action Review
+
+```shell
+# Campaign timeline — filter by agent and event type
+open http://127.0.0.1:8080/campaign
+
+# Step-through replay of recorded events
+open "http://127.0.0.1:8080/replay?offset=0&step=5"
+```
+
+**Assessment criteria:**
+- Do checkins, task submissions, and results all appear in the timeline?
+- Can an reviewer reconstruct the execution order from the replay view?
+
+### How-To: Deliverables for Both Sides
+
+```shell
+# Red-team deliverable: engagement report (markdown or HTML)
+./bin/kubedagger-client report generate --events events.jsonl --out report.md \
+  --title "Q4 purple-team validation" --operator "research team" --html
+
+# Blue-team deliverable: detection rules for every executed technique
+./bin/kubedagger-client detection generate --out detections.md
+```
+
+**Assessment criteria:**
+- Does the report include the technique summary with MITRE mapping and per-agent statistics?
+- Can the blue team import the generated rules and trigger them by replaying the engagement?
+
+### How-To: Repeatable Validation in the Lab
+
+```shell
+make lab-up     # kind cluster with 8 signature-matching stand-ins
+make lab-test   # asserts all 8 generic detections fire
+make lab-down
+```
+
+**Assessment criteria:**
+- Does `lab-test` report 8/8 active detections against a fresh cluster?
+- Can the full workflow (detect → evade → report) be re-run end-to-end from a clean lab?
+
+### Containment Notes
+- Agents started with `-deadman 24h` exit (and best-effort remove their binary) if the C2 server is unreachable for the configured window — useful for engagements that must self-terminate if control is lost.
+- The event log (`-events`) is the authoritative record of what was executed; archive it with the engagement report.
 
 ---
 

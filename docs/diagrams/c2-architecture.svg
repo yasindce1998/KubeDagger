@@ -24,6 +24,14 @@
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
+    <filter id="neonGold" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 1  0 1 0 0 0.84  0 0 0 0 0  0 0 0 1 0" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
 
   <!-- Background -->
@@ -38,6 +46,7 @@
   <text x="90" y="135" fill="#e6edf3" font-family="monospace" font-size="13">- Agent registry</text>
   <text x="90" y="160" fill="#e6edf3" font-family="monospace" font-size="13">- Task queue (FIFO)</text>
   <text x="90" y="185" fill="#e6edf3" font-family="monospace" font-size="13">- Mgmt port (9443)</text>
+  <text x="90" y="210" fill="#e6edf3" font-family="monospace" font-size="13">- Event telemetry (JSONL)</text>
 
   <!-- Agent Box -->
   <rect x="560" y="40" width="280" height="180" rx="8" fill="#161b22" stroke="#39ff14" stroke-width="2" filter="url(#neonGreen)"/>
@@ -73,4 +82,30 @@
   <text x="90" y="415" fill="#e6edf3" font-family="monospace" font-size="13">- agents / shell</text>
   <text x="90" y="440" fill="#e6edf3" font-family="monospace" font-size="13">- module / tasks</text>
   <text x="90" y="465" fill="#e6edf3" font-family="monospace" font-size="13">- status</text>
+
+  <!-- Connection line Agent -> Mesh Relay -->
+  <line x1="700" y1="220" x2="700" y2="242" stroke="#39ff14" stroke-width="2" stroke-dasharray="4,3"/>
+  <polygon points="695,238 700,248 705,238" fill="#39ff14"/>
+  <text x="712" y="236" fill="#39ff14" font-family="monospace" font-size="9">C2 relay</text>
+
+  <!-- Mesh Relay Box -->
+  <rect x="560" y="250" width="280" height="85" rx="8" fill="#161b22" stroke="#39ff14" stroke-width="1.5"/>
+  <text x="700" y="276" text-anchor="middle" fill="#39ff14" font-family="monospace" font-size="14" font-weight="bold">P2P Mesh Relay</text>
+  <text x="700" y="294" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="10">(agent module: mesh)</text>
+  <text x="590" y="316" fill="#e6edf3" font-family="monospace" font-size="11">- child agents route egress via parent</text>
+
+  <!-- Connection line Server -> Web UI (event stream) -->
+  <line x1="340" y1="195" x2="560" y2="395" stroke="#ffd45a" stroke-width="2" stroke-dasharray="6,3"/>
+  <polygon points="560,395 548,391 554,383" fill="#ffd45a"/>
+  <text x="455" y="272" fill="#ffd45a" font-family="monospace" font-size="10" font-weight="bold">event stream</text>
+  <text x="455" y="287" fill="#8b949e" font-family="monospace" font-size="9">(events.jsonl)</text>
+
+  <!-- Web UI Box -->
+  <rect x="560" y="355" width="280" height="130" rx="8" fill="#161b22" stroke="#ffd45a" stroke-width="2" filter="url(#neonGold)"/>
+  <text x="700" y="383" text-anchor="middle" fill="#ffd45a" font-family="monospace" font-size="16" font-weight="bold">Web UI</text>
+  <text x="700" y="401" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="12">(kubedagger-server -webui)</text>
+  <line x1="590" y1="412" x2="810" y2="412" stroke="#21262d" stroke-width="1"/>
+  <text x="590" y="434" fill="#e6edf3" font-family="monospace" font-size="12">- /campaign timeline</text>
+  <text x="590" y="456" fill="#e6edf3" font-family="monospace" font-size="12">- /replay step-through</text>
+  <text x="590" y="478" fill="#e6edf3" font-family="monospace" font-size="12">- dashboard + commands</text>
 </svg>
