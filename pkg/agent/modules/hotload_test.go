@@ -111,7 +111,7 @@ func TestHotload_ExecuteMemfd(t *testing.T) {
 		t.Fatal("expected result")
 	}
 	if !result.Success {
-		t.Fatalf("expected success, got error: %s", result.Error)
+		t.Fatalf("expected success, got error: %s; result:\n%s", result.Error, result.Output)
 	}
 	if !strings.Contains(result.Output, "hello-hotload") {
 		t.Errorf("expected captured output to contain 'hello-hotload', got:\n%s", result.Output)

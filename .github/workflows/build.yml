@@ -37,6 +37,12 @@ jobs:
       - name: Vet
         run: go vet ./...
 
+      - name: Runner environment info
+        run: |
+          uname -a
+          cat /proc/sys/vm/memfd_noexec 2>/dev/null || echo "vm.memfd_noexec: not present"
+          sysctl kernel.unprivileged_userns_clone 2>/dev/null || true
+
       - name: Test (race detector)
         run: go test -race -count=1 -timeout 120s ./...
 

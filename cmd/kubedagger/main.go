@@ -22,11 +22,15 @@ import (
 	"github.com/yasindce1998/KubeDagger/cmd/kubedagger/run"
 )
 
+// version is set at build time via -ldflags "-X main.version=..."
+var version = "dev"
+
 func main() {
 	logrus.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp:          true,
 		TimestampFormat:        "2006-01-02T15:04:05Z",
 		DisableLevelTruncation: true,
 	})
+	run.KUBEDagger.Version = version
 	_ = run.KUBEDagger.Execute()
 }

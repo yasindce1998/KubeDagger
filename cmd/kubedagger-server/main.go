@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -16,6 +17,9 @@ import (
 	"github.com/yasindce1998/KubeDagger/pkg/scope"
 	"github.com/yasindce1998/KubeDagger/pkg/webui"
 )
+
+// version is set at build time via -ldflags "-X main.version=..."
+var version = "dev"
 
 func main() {
 	var (
@@ -37,8 +41,14 @@ func main() {
 		mallPath   = flag.String("malleable", "", "path to malleable C2 profile YAML (beacon sleep/jitter/User-Agent)")
 		webuiAddr  = flag.String("webui", "", "start the web UI (campaign timeline + replay) on this address (e.g. 127.0.0.1:8080; empty = disabled)")
 		webuiToken = flag.String("webui-token", "kubedagger", "web UI authentication token")
+		showVer    = flag.Bool("version", false, "print version and exit")
 	)
 	flag.Parse()
+
+	if *showVer {
+		fmt.Printf("kubedagger-server %s\n", version)
+		return
+	}
 
 	level, err := logrus.ParseLevel(*logLevel)
 	if err != nil {

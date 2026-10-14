@@ -106,10 +106,11 @@ func (m *Hotload) Execute(ctx context.Context, args map[string]string) (*Result,
 		}
 	}
 
-	return &Result{
-		Success: exitCode == 0,
-		Output:  sb.String(),
-	}, nil
+	res := &Result{Success: exitCode == 0, Output: sb.String()}
+	if exitCode != 0 {
+		res.Error = fmt.Sprintf("payload exited with code %d (negative = killed by signal)", exitCode)
+	}
+	return res, nil
 }
 
 // runMemfdPayload executes the payload through the memfd injector and

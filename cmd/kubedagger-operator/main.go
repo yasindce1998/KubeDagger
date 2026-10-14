@@ -14,13 +14,22 @@ import (
 	"github.com/yasindce1998/KubeDagger/pkg/kubedagger/c2"
 )
 
+// version is set at build time via -ldflags "-X main.version=..."
+var version = "dev"
+
 func main() {
 	var (
-		mgmtAddr = flag.String("addr", "127.0.0.1:9443", "management server address")
-		key      = flag.String("key", "", "encryption key (hex or passphrase)")
-		logLevel = flag.String("log-level", "warn", "log level")
+		mgmtAddr  = flag.String("addr", "127.0.0.1:9443", "management server address")
+		key       = flag.String("key", "", "encryption key (hex or passphrase)")
+		logLevel  = flag.String("log-level", "warn", "log level")
+		showVer   = flag.Bool("version", false, "print version and exit")
 	)
 	flag.Parse()
+
+	if *showVer {
+		fmt.Printf("kubedagger-operator %s\n", version)
+		return
+	}
 
 	level, err := logrus.ParseLevel(*logLevel)
 	if err != nil {

@@ -16,6 +16,9 @@ import (
 	"github.com/yasindce1998/KubeDagger/pkg/c2server"
 )
 
+// version is set at build time via -ldflags "-X main.version=..."
+var version = "dev"
+
 func main() {
 	var (
 		serverURL    = flag.String("server", "https://127.0.0.1:443", "C2 server URL")
@@ -32,8 +35,14 @@ func main() {
 		maxOutput    = flag.Int("max-output", 1<<20, "max command output size in bytes")
 		initialDelay = flag.Duration("initial-delay", 30*time.Second, "random initial delay before first checkin")
 		deadman      = flag.Duration("deadman", 0, "dead-man switch: self-destruct if no C2 checkin succeeds within this duration (e.g. 24h, 0 disables)")
+		showVer      = flag.Bool("version", false, "print version and exit")
 	)
 	flag.Parse()
+
+	if *showVer {
+		fmt.Printf("kubedagger-agent %s\n", version)
+		return
+	}
 
 	level, err := logrus.ParseLevel(*logLevel)
 	if err != nil {
