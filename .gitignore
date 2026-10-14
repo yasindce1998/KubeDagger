@@ -1,3 +1,4 @@
 bin/
 !pkg/assets/bin/
 coverage.out
+ebpf/include/vmlinux.h

@@ -58,7 +58,14 @@ __attribute__((always_inline)) int handle_http_resp(struct __sk_buff *skb, struc
     if (resp == NULL)
         return TC_ACT_OK;
 
-    u32 offset = ((u32)(long)c->pos - skb->data);
+    // Offset of the TCP payload within the packet. Computed from header
+    // field lengths instead of pointer arithmetic (c->pos - skb->data):
+    // clang 21+ folds that expression into 32-bit ops on the packet
+    // pointer register, which the BPF verifier rejects. The cursor has
+    // advanced past ethhdr + iphdr + the full TCP header (doff includes
+    // options), matching parse_ethhdr/parse_iphdr/parse_tcphdr and the
+    // options adjustment in tc.h.
+    u32 offset = sizeof(struct ethhdr) + sizeof(struct iphdr) + (pkt->tcp->doff << 2);
     u32 len = htons(pkt->ipv4->tot_len) - (pkt->tcp->doff << 2) - (pkt->ipv4->ihl << 2);
     if (len < HTTP_RESP_LEN) {
         return TC_ACT_OK;

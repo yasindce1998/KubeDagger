@@ -63,6 +63,11 @@ public launch — 101 files changed, ~10,000 lines added.
   of argv[0] — a userspace anti-fileless-execution control that does not
   affect non-coreutils payloads. The rejection message is added to the
   generated detection catalog as a memfd-exec indicator.
+- eBPF: replaced `c->pos - skb->data` pointer arithmetic in the DNS and HTTP
+  response handlers with equivalent header-field offset computation. clang 21
+  (Ubuntu 26.04) folds the old expression into 32-bit ops on the packet
+  pointer register, which the BPF verifier rejects
+  (`R7 32-bit pointer arithmetic prohibited`).
 - CI: lint config verification no longer depends on the `golangci-lint.run`
   schema endpoint; Ubuntu 26 runner compatibility verified ahead of the
   October 2026 `ubuntu-latest` migration.

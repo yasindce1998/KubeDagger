@@ -81,7 +81,11 @@ struct bpf_map_def SEC("maps/dns_request_cache") dns_request_cache = {
 
 __attribute__((always_inline)) int handle_dns_req(struct __sk_buff *skb, struct cursor *c, struct pkt_ctx_t *pkt) {
     struct dnshdr header = {};
-    u32 offset = ((u32)(long)c->pos - skb->data);
+    // Offset of the DNS query within the packet. Computed from header
+    // field lengths instead of pointer arithmetic (c->pos - skb->data):
+    // clang 21+ folds that expression into 32-bit ops on the packet
+    // pointer register, which the BPF verifier rejects.
+    u32 offset = sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct udphdr);
 
     if (bpf_skb_load_bytes(skb, offset, &header, sizeof(header)) < 0) {
         return TC_ACT_OK;
