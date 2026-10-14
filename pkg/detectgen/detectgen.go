@@ -442,6 +442,7 @@ tags:
 		AuditEvents: []string{
 			"auditd syscall=execveat fd points to memfd: backing",
 			"auditd syscall=memfd_create followed by execveat same process",
+			"coreutils Security violation log: Requested utility does not match executable name /memfd: (deleted)",
 		},
 	},
 	{

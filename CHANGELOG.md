@@ -36,7 +36,7 @@ public launch — 101 files changed, ~10,000 lines added.
   without side effects.
 - **New agent modules**: `sandbox_detect` (gVisor/Kata/container
   fingerprinting), `mesh` (P2P relay — child agents route egress via a parent),
-  `hotload` (execute in-memory payloads).
+  `hotload` (execute in-memory payloads, with operator-controlled `argv0`).
 - **Cloud metadata awareness**: `cloud_evasion` gains cloud provider
   detection (IMDSv2, Azure/GCP endpoints) to inform technique selection.
 - **New client technique — `vap_backdoor`**: persistent admission via
@@ -55,6 +55,14 @@ public launch — 101 files changed, ~10,000 lines added.
 - Binaries now report their version: `-version` (server, operator, agent) and
   `--version` (kubedagger, kubedagger-client). Release builds are stamped via
   ldflags; previously the stamp was silently dropped.
+- `hotload` module: operator-controlled `argv0` argument (plausible process
+  name in `ps` output), and non-zero payload exit codes are now reported in
+  the task error instead of an empty string.
+- Research finding: coreutils on Ubuntu 26.04+ rejects execution from memfd
+  (`Security violation: Requested utility ... /memfd: (deleted)`) regardless
+  of argv[0] — a userspace anti-fileless-execution control that does not
+  affect non-coreutils payloads. The rejection message is added to the
+  generated detection catalog as a memfd-exec indicator.
 - CI: lint config verification no longer depends on the `golangci-lint.run`
   schema endpoint; Ubuntu 26 runner compatibility verified ahead of the
   October 2026 `ubuntu-latest` migration.

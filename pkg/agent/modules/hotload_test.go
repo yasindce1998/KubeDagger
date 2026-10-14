@@ -84,24 +84,28 @@ func TestHotload_ExecuteMemfd(t *testing.T) {
 		t.Skip("memfd execution only supported on linux")
 	}
 
-	// Use a small real ELF binary from the system so the test exercises the
-	// full in-memory exec path.
-	echoPath := "/bin/echo"
-	if _, err := os.Stat(echoPath); err != nil {
-		echoPath = "/usr/bin/echo"
-		if _, err := os.Stat(echoPath); err != nil {
-			t.Skip("no /bin/echo or /usr/bin/echo available for memfd exec test")
+	// Use grep so the test exercises the full in-memory exec path portably:
+	// coreutils binaries on Ubuntu 26.04+ validate argv[0] against
+	// /proc/self/exe and refuse to run from a memfd ("Security violation:
+	// Requested utility ... /memfd: (deleted)") regardless of the argv[0]
+	// value passed, while non-coreutils programs (grep, dash) execute fine.
+	grepPath := "/bin/grep"
+	if _, err := os.Stat(grepPath); err != nil {
+		grepPath = "/usr/bin/grep"
+		if _, err := os.Stat(grepPath); err != nil {
+			t.Skip("no /bin/grep or /usr/bin/grep available for memfd exec test")
 		}
 	}
-	bin, err := os.ReadFile(echoPath)
+	bin, err := os.ReadFile(grepPath)
 	if err != nil {
-		t.Skipf("cannot read %s: %v", echoPath, err)
+		t.Skipf("cannot read %s: %v", grepPath, err)
 	}
 
 	m := &Hotload{}
 	result, err := m.Execute(context.Background(), map[string]string{
 		"exec_b64": base64.StdEncoding.EncodeToString(bin),
-		"args_str": "hello-hotload",
+		"argv0":    "memfd-test",
+		"args_str": "--version",
 		"timeout":  "30s",
 	})
 	if err != nil {
@@ -113,8 +117,8 @@ func TestHotload_ExecuteMemfd(t *testing.T) {
 	if !result.Success {
 		t.Fatalf("expected success, got error: %s; result:\n%s", result.Error, result.Output)
 	}
-	if !strings.Contains(result.Output, "hello-hotload") {
-		t.Errorf("expected captured output to contain 'hello-hotload', got:\n%s", result.Output)
+	if !strings.Contains(result.Output, "grep") {
+		t.Errorf("expected captured output to contain 'grep', got:\n%s", result.Output)
 	}
 	if !strings.Contains(result.Output, "exit code 0") {
 		t.Errorf("expected exit code 0 in output, got:\n%s", result.Output)
