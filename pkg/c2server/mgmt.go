@@ -9,6 +9,7 @@ import (
 	"github.com/yasindce1998/KubeDagger/pkg/events"
 	"github.com/yasindce1998/KubeDagger/pkg/kubedagger/c2"
 	"github.com/yasindce1998/KubeDagger/pkg/scope"
+	"github.com/yasindce1998/KubeDagger/pkg/taskpolicy"
 )
 
 type MgmtServer struct {
@@ -103,55 +104,19 @@ func (m *MgmtServer) listAgents() ([]byte, error) {
 }
 
 func (m *MgmtServer) queueTask(mc MgmtCommand) ([]byte, error) {
-	if mc.AgentID == "" {
-		return marshalResponse(MgmtResponse{Status: "error", Error: "missing agent_id"})
-	}
-	if mc.Type == "" {
-		return marshalResponse(MgmtResponse{Status: "error", Error: "missing type"})
+	policy := taskpolicy.Policy{Scope: m.scope, Events: m.events}
+	if err := policy.Check(mc.AgentID, string(mc.Type), mc.Payload); err != nil {
+		return marshalResponse(MgmtResponse{Status: "error", Error: err.Error()})
 	}
 
 	if _, ok := m.agents.Get(mc.AgentID); !ok {
 		return marshalResponse(MgmtResponse{Status: "error", Error: "unknown agent"})
 	}
 
-	if err := m.checkScope(string(mc.Type), mc.Payload); err != nil {
-		return marshalResponse(MgmtResponse{Status: "error", Error: err.Error()})
-	}
-
 	task := m.tasks.Enqueue(mc.AgentID, mc.Type, mc.Payload)
-
-	m.recordEvent(events.Event{
-		Type:      events.TypeTaskSubmitted,
-		AgentID:   mc.AgentID,
-		TaskType:  string(mc.Type),
-		Technique: mc.Payload["name"],
-		Payload:   mc.Payload,
-	})
+	policy.RecordSubmitted(mc.AgentID, string(mc.Type), mc.Payload)
 
 	return marshalResponse(MgmtResponse{Status: "ok", Data: task})
-}
-
-// checkScope enforces the configured scope policy on a task submission. It
-// returns nil when no policy is configured.
-func (m *MgmtServer) checkScope(taskType string, payload map[string]string) error {
-	if m.scope == nil {
-		return nil
-	}
-	if err := m.scope.CheckTask(taskType, payload); err != nil {
-		return fmt.Errorf("task rejected by scope policy: %v", err)
-	}
-	return nil
-}
-
-// recordEvent appends an event to the configured store. Recording failures
-// are logged at warn level and never fatal.
-func (m *MgmtServer) recordEvent(e events.Event) {
-	if m.events == nil {
-		return
-	}
-	if err := m.events.Record(e); err != nil {
-		logrus.Warnf("failed to record %s event: %v", e.Type, err)
-	}
 }
 
 func (m *MgmtServer) taskStatus(mc MgmtCommand) ([]byte, error) {

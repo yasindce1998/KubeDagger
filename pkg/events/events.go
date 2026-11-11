@@ -33,6 +33,7 @@ import (
 const (
 	TypeAgentCheckin  = "agent_checkin"
 	TypeTaskSubmitted = "task_submitted"
+	TypeTaskRejected  = "task_rejected"
 	TypeTaskResult    = "task_result"
 )
 
@@ -61,8 +62,8 @@ type Store struct {
 }
 
 // NewStore creates an event store. If path is non-empty, events are appended
-// to that file as JSON lines (created if missing, parent directories are NOT
-// created). If path is empty, the store is memory-only.
+// to that file as JSON lines (created if missing, with private parent
+// directories). If path is empty, the store is memory-only.
 func NewStore(path string) (*Store, error) {
 	s := &Store{max: 10000}
 	if path == "" {

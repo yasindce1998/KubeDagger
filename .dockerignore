@@ -1,0 +1,6 @@
+.git
+.github
+bin
+coverage.out
+*.jsonl
+# Keep the host-generated ebpf/include/vmlinux.h and embedded eBPF objects.

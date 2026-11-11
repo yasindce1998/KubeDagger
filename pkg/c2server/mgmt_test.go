@@ -84,7 +84,8 @@ func TestMgmtQueueTask(t *testing.T) {
 
 func TestMgmtQueueTask_ScopeRejected(t *testing.T) {
 	scp := &scope.Scope{Namespaces: []string{"allowed-ns"}}
-	m, agents, tasks := newTestMgmt(t, WithMgmtScope(scp))
+	store := newTestStore(t)
+	m, agents, tasks := newTestMgmt(t, WithMgmtScope(scp), WithMgmtEvents(store))
 	agents.Checkin(CheckinRequest{AgentID: "agent-1", Hostname: "h1", OS: OSLinux, Arch: "amd64"})
 
 	resp := mgmtCommand(t, m, MgmtCommand{
@@ -105,6 +106,10 @@ func TestMgmtQueueTask_ScopeRejected(t *testing.T) {
 	}
 	if tasks.HasPending("agent-1") {
 		t.Error("rejected task must not be queued")
+	}
+	evs := store.List(0, 0)
+	if len(evs) != 1 || evs[0].Type != events.TypeTaskRejected {
+		t.Fatalf("expected rejection audit event, got %+v", evs)
 	}
 }
 

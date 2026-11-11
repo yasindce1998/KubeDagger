@@ -10,6 +10,7 @@ import (
 	"github.com/yasindce1998/KubeDagger/pkg/events"
 	"github.com/yasindce1998/KubeDagger/pkg/malleable"
 	"github.com/yasindce1998/KubeDagger/pkg/scope"
+	"github.com/yasindce1998/KubeDagger/pkg/taskpolicy"
 )
 
 // maxResultDetail truncates task output recorded in task_result events.
@@ -166,13 +167,9 @@ func (h *Handlers) HandleSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.AgentID == "" {
-		http.Error(w, "missing agent_id", http.StatusBadRequest)
-		return
-	}
-
-	if req.Type == "" {
-		http.Error(w, "missing type", http.StatusBadRequest)
+	policy := taskpolicy.Policy{Scope: h.scope, Events: h.events}
+	if err := policy.Check(req.AgentID, string(req.Type), req.Payload); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -181,21 +178,10 @@ func (h *Handlers) HandleSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.checkScope(string(req.Type), req.Payload); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
 	task := h.tasks.Enqueue(req.AgentID, req.Type, req.Payload)
 	logrus.Debugf("task %s (%s) submitted for agent %s", task.ID, task.Type, req.AgentID)
 
-	h.recordEvent(events.Event{
-		Type:      events.TypeTaskSubmitted,
-		AgentID:   req.AgentID,
-		TaskType:  string(req.Type),
-		Technique: req.Payload["name"],
-		Payload:   req.Payload,
-	})
+	policy.RecordSubmitted(req.AgentID, string(req.Type), req.Payload)
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(SubmitResponse{TaskID: task.ID})
@@ -250,18 +236,6 @@ func (h *Handlers) HandleResult(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(ResultResponse{Ack: true})
-}
-
-// checkScope enforces the configured scope policy on a task submission. It
-// returns nil when no policy is configured.
-func (h *Handlers) checkScope(taskType string, payload map[string]string) error {
-	if h.scope == nil {
-		return nil
-	}
-	if err := h.scope.CheckTask(taskType, payload); err != nil {
-		return fmt.Errorf("task rejected by scope policy: %v", err)
-	}
-	return nil
 }
 
 // recordEvent appends an event to the configured store. Recording failures

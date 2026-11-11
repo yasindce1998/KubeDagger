@@ -1,4 +1,9 @@
-all: build-ebpf build-webapp build-rootkit build-client build-server build-operator build-pause
+.PHONY: all rootkit rootkit-aws generate-vmlinux build-ebpf build-ebpf-aws build-webapp build-rootkit build-client build-server build-operator build-agent build-pause static run test test-race test-cover test-c2 lint lint-strict install_client lab-up lab-down lab-test
+
+COVERAGE_THRESHOLD ?= 20
+VMLINUX_BTF ?= /sys/kernel/btf/vmlinux
+
+all: build-ebpf build-webapp build-rootkit build-client build-server build-operator build-agent build-pause
 
 rootkit: build-ebpf build-rootkit
 
@@ -20,9 +25,13 @@ compile = clang -target bpf \
 		-c $(1) -o $(2)
 
 generate-vmlinux:
-	bpftool btf dump file /sys/kernel/btf/vmlinux format c > ebpf/include/vmlinux.h
+	bpftool btf dump file $(VMLINUX_BTF) format c > ebpf/include/vmlinux.h.tmp
+	mv ebpf/include/vmlinux.h.tmp ebpf/include/vmlinux.h
 
-build-ebpf: generate-vmlinux
+ebpf/include/vmlinux.h:
+	$(MAKE) generate-vmlinux
+
+build-ebpf: ebpf/include/vmlinux.h
 	mkdir -p pkg/assets/bin
 	$(call compile,ebpf/bootstrap.c,pkg/assets/bin/bootstrap.o,)
 	$(call compile,ebpf/main.c,pkg/assets/bin/main.o,)
@@ -75,8 +84,7 @@ test-race:
 
 test-cover:
 	go test -race -coverprofile=coverage.out -covermode=atomic ./...
-	chmod +x scripts/check-coverage.sh
-	./scripts/check-coverage.sh coverage.out 15
+	bash scripts/check-coverage.sh coverage.out $(COVERAGE_THRESHOLD)
 
 test-c2:
 	go test ./pkg/c2server/... ./pkg/agent/...

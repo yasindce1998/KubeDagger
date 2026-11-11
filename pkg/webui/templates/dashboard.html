@@ -84,7 +84,6 @@
                     <div class="form-group">
                         <label>Target Agent</label>
                         <select id="cmd-agent">
-                            <option value="*">All Agents</option>
                             {{range .Agents}}
                             <option value="{{.ID}}">{{.ID}} ({{.Hostname}})</option>
                             {{end}}
@@ -159,7 +158,17 @@
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({agent_id: agentId, module: module, args: args})
-            }).then(r => r.json()).then(() => location.reload());
+            }).then(async r => {
+                if (!r.ok) throw new Error(await r.text());
+                location.reload();
+            }).catch(err => alert(err.message));
+        }
+
+        // Agent metadata is untrusted; never interpolate it into HTML directly.
+        function escapeHTML(value) {
+            const el = document.createElement('span');
+            el.textContent = value == null ? '' : String(value);
+            return el.innerHTML;
         }
 
         setInterval(() => {
@@ -168,16 +177,16 @@
                 if (agents && agents.length > 0) {
                     el.innerHTML = agents.map(a => `
                         <div class="agent-card ${a.status === 'active' ? 'active' : 'stale'}">
-                            <div class="agent-id">${a.id}</div>
+                            <div class="agent-id">${escapeHTML(a.id)}</div>
                             <div class="agent-meta">
-                                <span>${a.hostname}</span>
-                                <span>${a.ip}</span>
-                                <span>${a.os}/${a.arch}</span>
+                                <span>${escapeHTML(a.hostname)}</span>
+                                <span>${escapeHTML(a.ip)}</span>
+                                <span>${escapeHTML(a.os)}/${escapeHTML(a.arch)}</span>
                             </div>
                             <div class="agent-meta">
-                                <span>cluster: ${a.cluster}</span>
-                                <span>ns: ${a.namespace}</span>
-                                <span>pod: ${a.pod}</span>
+                                <span>cluster: ${escapeHTML(a.cluster)}</span>
+                                <span>ns: ${escapeHTML(a.namespace)}</span>
+                                <span>pod: ${escapeHTML(a.pod)}</span>
                             </div>
                         </div>
                     `).join('');

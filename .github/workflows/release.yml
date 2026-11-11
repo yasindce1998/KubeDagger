@@ -18,10 +18,8 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang llvm build-essential libelf-dev
-          git clone --depth 1 --recurse-submodules https://github.com/libbpf/bpftool.git /tmp/bpftool
-          make -C /tmp/bpftool/src -j$(nproc)
-          sudo make -C /tmp/bpftool/src install
+          sudo apt-get install -y clang llvm build-essential libelf-dev zlib1g-dev
+          sudo bash scripts/install-bpftool.sh
 
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
