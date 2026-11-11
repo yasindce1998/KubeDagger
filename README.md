@@ -18,7 +18,7 @@ Demonstrates 110+ offensive techniques including network discovery, file system 
 
 **Purple-team platform capabilities:**
 
-- Purple-team detection-rule generation (`detection list` / `detection generate`) — 18 techniques with MITRE ATT&CK IDs, runtime-sensor + SIEM rules, and K8s audit patterns
+- Purple-team detection-rule generation (`detection list` / `detection generate`) — 18 experimental mappings with MITRE ATT&CK IDs, Falco/Sigma compiler checks, and event fixtures; see [validation and limitations](docs/DETECTIONS.md)
 - Engagement reports from structured JSONL telemetry (`report generate`, markdown or self-contained HTML)
 - Structured event telemetry (`-events`) with web UI campaign timeline (`/campaign`) and session replay (`/replay`)
 - Scope enforcement (`-scope`) — out-of-scope tasks rejected with violation-listing errors

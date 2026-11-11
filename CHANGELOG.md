@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Detection validation
+
+- Correct Kubernetes audit resource/subresource and user fields; declare Falco
+  sources and audit stages explicitly.
+- Replace obsolete Sigma aggregation expressions with clearly described
+  single-event hunting predicates; fix CI/CD filename/directory OR logic and
+  remove `nsenter` from syscall lists.
+- Correct Falco memfd, signal-target, filesystem and container-field assumptions;
+  retain experimental status and document differences between telemetry sources.
+- Add `make test-detections` and independent CI: parse/convert all 18 Sigma
+  rules and execute 76 event fixtures; compile all 18 Falco rules without
+  warnings and replay 24 Kubernetes audit events through the real plugin.
+- Document required enrichment and compiler-only syscall validation in
+  `docs/DETECTIONS.md`; no offensive techniques or live kernel probes are run.
+
 ### Safety and compatibility
 
 - Web UI startup requires an explicit token; empty tokens no longer disable

@@ -2392,7 +2392,9 @@ Output is captured (64KB cap) and the exit code is reported in the task result.
 
 ### Detection Rule Generation
 
-The `detection` client command produces the defensive half of the purple-team loop: the detection rules that would catch each KubeDagger technique.
+The `detection` client command produces experimental hunting rules associated
+with KubeDagger techniques. They are a starting point for defenders, not a
+guarantee that a technique will be detected.
 
 ```shell
 # List the detection-rule catalog (18 techniques with MITRE ATT&CK IDs)
@@ -2412,7 +2414,14 @@ kubedagger-client detection generate --techniques sa_token,k8s_discovery --out d
 | `--techniques` | `all` | Comma-separated technique keys from the catalog |
 | `--out` | stdout | Output file path |
 
-Each catalog entry (e.g. `sa_token`, `escape`, `daemonset`, `memexec`) maps the technique to its MITRE ATT&CK ID, a runtime-sensor rule (cnative-sensor rule format), a Sigma-format SIEM rule, and the Kubernetes audit event patterns that would detect it — ready to hand to defenders.
+Each entry maps a technique to a MITRE ATT&CK ID, Falco and Sigma rules, and
+additional telemetry/hunting ideas (not executable predicates). All 18 rules
+are checked with real compiler/parser tooling and Sigma fixtures; the six
+Kubernetes audit rules additionally have real Falco plugin replay tests.
+Syscall Falco rules are compiler-checked only. Collector normalization and
+enrichment are required for many Sigma fields. See
+[docs/DETECTIONS.md](docs/DETECTIONS.md) for prerequisites, source differences,
+blind spots, and `make test-detections` instructions. All rules remain experimental.
 
 ### Engagement Reports
 

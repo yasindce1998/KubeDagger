@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 // Package detectgen provides a purple-team catalog that maps KubeDagger
-// techniques to the detection artifacts that would catch them: Falco rules,
+// techniques to experimental detection artifacts: Falco rules,
 // Sigma rules, and Kubernetes audit event descriptions. Technique keys match
 // events.Event.Technique values emitted by the C2 server.
 package detectgen
@@ -36,11 +36,13 @@ type Detection struct {
 	Name string
 	// Description explains what the detection looks for.
 	Description string
-	// FalcoRule is a complete, valid Falco rule (YAML).
+	// FalcoRule is a standalone rule (YAML), with an explicit event source.
 	FalcoRule string
-	// SigmaRule is a complete, valid Sigma rule (YAML).
+	// SigmaRule is an experimental Sigma rule. Non-audit sources require the
+	// normalized/enriched fields documented in docs/DETECTIONS.md.
 	SigmaRule string
-	// AuditEvents lists Kubernetes audit event descriptions.
+	// AuditEvents lists additional telemetry/hunting ideas, not implemented
+	// predicates. These include non-Kubernetes sources for some techniques.
 	AuditEvents []string
 }
 
@@ -54,8 +56,9 @@ var catalog = []Detection{
 		Description: "Detects minting of Kubernetes service account tokens via the token request API, used for credential theft and pod identity impersonation.",
 		FalcoRule: `- rule: KubeDagger ServiceAccount Token Minting
   desc: Detect creation of service account tokens via the token request API
-  condition: ka.verb=create and ka.target.resource=serviceaccounts/token
-  output: "ServiceAccount token minted (user=%ka.user.name object=%ka.target.name namespace=%ka.target.namespace)"
+  source: k8s_audit
+  condition: ka.stage=ResponseComplete and ka.verb=create and ka.target.resource=serviceaccounts and ka.target.subresource=token
+  output: "ServiceAccount token requested (auditid=%ka.auditid user=%ka.user.name object=%ka.target.name namespace=%ka.target.namespace)"
   priority: WARNING
   tags: [k8s, credential_access, T1552.001]
 `,
@@ -64,7 +67,8 @@ id: 3a1c7d92-4b8e-4f2a-9c6d-1e2f3a4b5c6d
 status: experimental
 description: Detects creation of service account tokens via the token request API
 author: KubeDagger
-date: 2026/10/13
+date: '2026-10-13'
+modified: '2026-11-11'
 references:
   - https://attack.mitre.org/techniques/T1552/001/
 logsource:
@@ -73,8 +77,10 @@ logsource:
   service: audit
 detection:
   selection:
+    stage: ResponseComplete
     verb: create
-    objectRef.resource: serviceaccounts/token
+    objectRef.resource: serviceaccounts
+    objectRef.subresource: token
   condition: selection
 falsepositives:
   - Legitimate CI/CD pipelines requesting short-lived tokens
@@ -85,7 +91,7 @@ tags:
   - attack.execution
 `,
 		AuditEvents: []string{
-			"verb=create resource=serviceaccounts/token user!=system:apiserver",
+			"stage=ResponseComplete verb=create objectRef.resource=serviceaccounts objectRef.subresource=token",
 			"verb=create resource=pods volumeMounts contains serviceaccount-token projected=true",
 		},
 	},
@@ -93,20 +99,22 @@ tags:
 		Technique:   "k8s_discovery",
 		MITRE:       "T1613",
 		Name:        "Kubernetes Cluster Discovery",
-		Description: "Detects broad enumeration of pods, secrets, nodes, and namespaces that precedes targeting decisions.",
+		Description: "Flags individual list/watch requests for sensitive resources. It does not measure broad enumeration or distinguish legitimate controllers from reconnaissance.",
 		FalcoRule: `- rule: KubeDagger Kubernetes Cluster Discovery
-  desc: Detect bulk enumeration of cluster resources
-  condition: (ka.verb=list or ka.verb=watch) and ka.target.resource in (pods, secrets, nodes, namespaces, serviceaccounts)
-  output: "Cluster resource enumeration (user=%ka.user.name verb=%ka.verb resource=%ka.target.resource)"
+  desc: Detect individual list/watch requests for sensitive cluster resources; not a volume threshold
+  source: k8s_audit
+  condition: ka.stage in (ResponseComplete, ResponseStarted) and ka.verb in (list, watch) and ka.target.resource in (pods, secrets, nodes, namespaces, serviceaccounts)
+  output: "Cluster resource enumeration (auditid=%ka.auditid user=%ka.user.name verb=%ka.verb resource=%ka.target.resource)"
   priority: NOTICE
   tags: [k8s, discovery, T1613]
 `,
 		SigmaRule: `title: Kubernetes Cluster Resource Enumeration
 id: 5b2d8e13-6c9f-4a3b-8d7e-2f3a4b5c6d7e
 status: experimental
-description: Detects bulk listing or watching of sensitive cluster resources
+description: Detects individual list/watch requests for sensitive cluster resources; does not count requests
 author: KubeDagger
-date: 2026/10/13
+date: '2026-10-13'
+modified: '2026-11-11'
 references:
   - https://attack.mitre.org/techniques/T1613/
 logsource:
@@ -115,6 +123,9 @@ logsource:
   service: audit
 detection:
   selection:
+    stage:
+      - ResponseComplete
+      - ResponseStarted
     verb:
       - list
       - watch
@@ -141,10 +152,11 @@ tags:
 		Technique:   "escape",
 		MITRE:       "T1611",
 		Name:        "Container Escape to Host",
-		Description: "Detects namespace/syscall escape primitives executed from inside a container (nsenter, setns, unshare, privileged mounts).",
+		Description: "Detects successful setns/unshare calls from containers. nsenter is a userspace command that can issue setns, not a syscall. These events indicate namespace manipulation, not proof of an escape.",
 		FalcoRule: `- rule: KubeDagger Container Escape Attempt
   desc: Detect container breakout primitives executed inside a container
-  condition: container and evt.type in (nsenter, setns, unshare)
+  source: syscall
+  condition: evt.type in (setns, unshare) and evt.rawres=0 and container.id != host
   output: "Container escape primitive used (proc=%proc.name exe=%proc.exepath type=%evt.type user=%user.name)"
   priority: CRITICAL
   tags: [container, privilege_escalation, T1611]
@@ -152,9 +164,10 @@ tags:
 		SigmaRule: `title: Linux Container Escape Syscalls
 id: 7c3e9f24-8d1a-4b5c-9e8f-3a4b5c6d7e8f
 status: experimental
-description: Detects nsenter, setns, or unshare syscalls executed inside a container
+description: Detects successful setns or unshare calls in normalized audit records enriched with container identity; nsenter is not a syscall
 author: KubeDagger
-date: 2026/10/13
+date: '2026-10-13'
+modified: '2026-11-11'
 references:
   - https://attack.mitre.org/techniques/T1611/
 logsource:
@@ -163,9 +176,9 @@ logsource:
 detection:
   selection:
     syscall:
-      - nsenter
       - setns
       - unshare
+    success: true
     container: "true"
   condition: selection
 falsepositives:
@@ -186,9 +199,10 @@ tags:
 		Name:        "Malicious DaemonSet Deployment",
 		Description: "Detects creation of DaemonSets, which schedule a pod on every node and are commonly abused for cluster-wide rootkit droppers.",
 		FalcoRule: `- rule: KubeDagger Malicious DaemonSet Deployment
-  desc: Detect DaemonSet creation outside of expected system namespaces or users
-  condition: ka.verb=create and ka.target.resource=daemonsets and not ka.target.namespace in (kube-system, cattle-system)
-  output: "DaemonSet created (user=%ka.user.name object=%ka.target.name namespace=%ka.target.namespace)"
+  desc: Detect DaemonSet creation outside of expected system namespaces
+  source: k8s_audit
+  condition: ka.stage=ResponseComplete and ka.verb=create and ka.target.resource=daemonsets and not ka.target.namespace in (kube-system, cattle-system)
+  output: "DaemonSet creation request (auditid=%ka.auditid user=%ka.user.name object=%ka.target.name namespace=%ka.target.namespace)"
   priority: WARNING
   tags: [k8s, persistence, T1610]
 `,
@@ -197,7 +211,8 @@ id: 9d4f1a35-2e6b-4c7d-8f9a-4b5c6d7e8f9a
 status: experimental
 description: Detects creation of a DaemonSet outside expected system namespaces
 author: KubeDagger
-date: 2026/10/13
+date: '2026-10-13'
+modified: '2026-11-11'
 references:
   - https://attack.mitre.org/techniques/T1610/
 logsource:
@@ -208,6 +223,7 @@ detection:
   selection:
     verb: create
     objectRef.resource: daemonsets
+    stage: ResponseComplete
   filter:
     objectRef.namespace:
       - kube-system
@@ -232,8 +248,9 @@ tags:
 		Description: "Detects creation or modification of mutating/validating webhook configurations, which can inject containers into new pods.",
 		FalcoRule: `- rule: KubeDagger Admission Webhook Modification
   desc: Detect creation or modification of admission webhook configurations
-  condition: (ka.verb=create or ka.verb=update or ka.verb=patch) and ka.target.resource in (mutatingwebhookconfigurations, validatingwebhookconfigurations)
-  output: "Admission webhook configuration modified (user=%ka.user.name object=%ka.target.name resource=%ka.target.resource)"
+  source: k8s_audit
+  condition: ka.stage=ResponseComplete and ka.verb in (create, update, patch) and ka.target.resource in (mutatingwebhookconfigurations, validatingwebhookconfigurations)
+  output: "Admission webhook change request (auditid=%ka.auditid user=%ka.user.name object=%ka.target.name resource=%ka.target.resource)"
   priority: CRITICAL
   tags: [k8s, persistence, T1098]
 `,
@@ -242,7 +259,8 @@ id: 1e5a2b46-3f7c-4d8e-9a0b-5c6d7e8f9a0b
 status: experimental
 description: Detects creation or modification of mutating or validating webhook configurations
 author: KubeDagger
-date: 2026/10/13
+date: '2026-10-13'
+modified: '2026-11-11'
 references:
   - https://attack.mitre.org/techniques/T1098/
 logsource:
@@ -258,6 +276,7 @@ detection:
     objectRef.resource:
       - mutatingwebhookconfigurations
       - validatingwebhookconfigurations
+    stage: ResponseComplete
   condition: selection
 falsepositives:
   - Platform operators installing admission controllers
@@ -276,11 +295,12 @@ tags:
 		Technique:   "crd_backdoor",
 		MITRE:       "T1098",
 		Name:        "CRD-Based Persistence",
-		Description: "Detects registration of custom resource definitions with controller deployments, a persistence mechanism that executes payloads on custom resource events.",
+		Description: "Flags CRD creation requests. It does not inspect the custom API group, RBAC, or associated controller deployment, so ordinary operator installation also matches.",
 		FalcoRule: `- rule: KubeDagger Custom Resource Definition Backdoor
-  desc: Detect CRD creation with unusual group names or broad RBAC
-  condition: ka.verb=create and ka.target.resource=customresourcedefinitions
-  output: "CustomResourceDefinition created (user=%ka.user.name object=%ka.target.name group=%ka.target.name)"
+  desc: Detect CRD creation; does not inspect controller behavior or RBAC
+  source: k8s_audit
+  condition: ka.stage=ResponseComplete and ka.verb=create and ka.target.resource=customresourcedefinitions
+  output: "CustomResourceDefinition creation request (auditid=%ka.auditid user=%ka.user.name object=%ka.target.name)"
   priority: WARNING
   tags: [k8s, persistence, T1098]
 `,
@@ -289,7 +309,8 @@ id: 2f6b3c57-4a8d-4e9f-0b1c-6d7e8f9a0b1c
 status: experimental
 description: Detects registration of new custom resource definitions that may host backdoor controllers
 author: KubeDagger
-date: 2026/10/13
+date: '2026-10-13'
+modified: '2026-11-11'
 references:
   - https://attack.mitre.org/techniques/T1098/
 logsource:
@@ -300,6 +321,7 @@ detection:
   selection:
     verb: create
     objectRef.resource: customresourcedefinitions
+    stage: ResponseComplete
   condition: selection
 falsepositives:
   - Operators deploying new CRDs for legitimate controllers
@@ -317,20 +339,22 @@ tags:
 		Technique:   "dns_exfil",
 		MITRE:       "T1048.003",
 		Name:        "DNS Exfiltration",
-		Description: "Detects unusually large or high-volume DNS traffic from containers, indicating data encoded in query names.",
+		Description: "Flags DNS-related container activity for investigation. The Sigma rule selects long query names in normalized DNS logs; the Falco rule only observes sends to DNS ports. Neither rule counts traffic or proves exfiltration.",
 		FalcoRule: `- rule: KubeDagger DNS Exfiltration
-  desc: Detect high-volume DNS traffic from containers
-  condition: evt.type in (sendto, sendmsg) and fd.rport in (53, 5353) and container
+  desc: Observe sends to DNS ports from containers; no query-length or volume inspection
+  source: syscall
+  condition: evt.type in (sendto, sendmsg) and evt.rawres>=0 and fd.rport in (53, 5353) and container.id != host
   output: "DNS traffic from container (proc=%proc.name container=%container.name rip=%fd.rip rport=%fd.rport)"
   priority: WARNING
   tags: [network, exfiltration, T1048.003]
 `,
-		SigmaRule: `title: High Volume DNS Queries From Container
+		SigmaRule: `title: Long DNS Query From Container
 id: 3a7c4d68-5b9e-4f0a-1c2d-7e8f9a0b1c2d
 status: experimental
-description: Detects unusually frequent or large DNS queries originating from container workloads
+description: Selects long DNS query names in normalized logs enriched with query_length and source_type; no aggregation
 author: KubeDagger
-date: 2026/10/13
+date: '2026-10-13'
+modified: '2026-11-11'
 references:
   - https://attack.mitre.org/techniques/T1048/003/
 logsource:
@@ -340,7 +364,7 @@ detection:
   selection:
     query_length|gte: 60
     source_type: container
-  condition: selection | count(source_ip) > 100 in 1m
+  condition: selection
 falsepositives:
   - Service discovery traffic in large microservice deployments
 level: medium
@@ -357,20 +381,22 @@ tags:
 		Technique:   "k8s_c2",
 		MITRE:       "T1071.004",
 		Name:        "Kubernetes Event C2 Beaconing",
-		Description: "Detects beacons hidden in Kubernetes events, configmaps, or container logs used as a DNS/application-layer C2 channel.",
+		Description: "Flags individual event/configmap writes by non-system users as a hunting signal. It does not detect beacon cadence, inspect container logs, or establish that a write carries C2 data.",
 		FalcoRule: `- rule: KubeDagger Kubernetes Event C2 Beacon
-  desc: Detect non-system users repeatedly patching events or configmaps
-  condition: (ka.verb=create or ka.verb=patch) and ka.target.resource in (events, configmaps) and not ka.user.name startswith system
-  output: "Possible C2 over k8s API objects (user=%ka.user.name verb=%ka.verb object=%ka.target.name resource=%ka.target.resource)"
+  desc: Detect individual create/patch requests on events or configmaps by non-system users
+  source: k8s_audit
+  condition: ka.stage=ResponseComplete and ka.verb in (create, patch) and ka.target.resource in (events, configmaps) and ka.user.name exists and not ka.user.name startswith "system:"
+  output: "Possible C2 over k8s API objects (auditid=%ka.auditid user=%ka.user.name verb=%ka.verb object=%ka.target.name resource=%ka.target.resource)"
   priority: WARNING
   tags: [k8s, command_and_control, T1071.004]
 `,
 		SigmaRule: `title: Kubernetes API Object C2 Beaconing
 id: 4b8d5e79-6c0f-4a1b-2d3e-8f9a0b1c2d3e
 status: experimental
-description: Detects repeated create or patch operations on events or configmaps by non-system users
+description: Selects individual event/configmap writes by non-system users; does not aggregate or establish beaconing
 author: KubeDagger
-date: 2026/10/13
+date: '2026-10-13'
+modified: '2026-11-11'
 references:
   - https://attack.mitre.org/techniques/T1071/004/
 logsource:
@@ -385,10 +411,11 @@ detection:
     objectRef.resource:
       - events
       - configmaps
+    stage: ResponseComplete
+    user.username|exists: true
   filter:
-    user:
-      - system:*
-  condition: selection and not filter | count(user) > 30 in 5m
+    user.username|startswith: 'system:'
+  condition: selection and not filter
 falsepositives:
   - Operators and controllers frequently updating configmaps
 level: medium
@@ -405,10 +432,11 @@ tags:
 		Technique:   "memexec",
 		MITRE:       "T1055",
 		Name:        "Fileless Execution via memfd",
-		Description: "Detects anonymous-memory execution using memfd_create and execveat, which leaves no disk artifact.",
+		Description: "Detects successful execution whose executable path is memfd-backed. It does not correlate memfd_create with a later exec or cover all forms of fileless execution.",
 		FalcoRule: `- rule: KubeDagger Fileless Execution via memfd
-  desc: Detect execveat targeting memfd-backed file descriptors
-  condition: 'evt.type in (memfd_create, execveat) and (fd.name startswith memfd: or proc.exepath contains memfd:)'
+  desc: Detect successful exec of a memfd-backed executable
+  source: syscall
+  condition: 'evt.type in (execve, execveat) and evt.rawres=0 and proc.is_exe_from_memfd=true'
   output: "Fileless execution (proc=%proc.name exe=%proc.exepath parent=%proc.pname user=%user.name)"
   priority: CRITICAL
   tags: [process, defense_evasion, T1055]
@@ -416,9 +444,10 @@ tags:
 		SigmaRule: `title: Linux memfd_create Fileless Execution
 id: 5c9e6f8a-7d1a-4b2c-3e4f-9a0b1c2d3e4f
 status: experimental
-description: Detects memfd_create followed by execveat, indicating execution from anonymous memory
+description: Detects successful execve/execveat with a memfd-backed exe in normalized audit records; does not correlate syscall sequences
 author: KubeDagger
-date: 2026/10/13
+date: '2026-10-13'
+modified: '2026-11-11'
 references:
   - https://attack.mitre.org/techniques/T1055/
 logsource:
@@ -427,8 +456,9 @@ logsource:
 detection:
   selection:
     syscall:
-      - memfd_create
+      - execve
       - execveat
+    success: true
     exe|contains: "memfd:"
   condition: selection
 falsepositives:
@@ -449,10 +479,11 @@ tags:
 		Technique:   "log_tamper",
 		MITRE:       "T1070.002",
 		Name:        "Log Tampering",
-		Description: "Detects writes, truncation, or deletion of system and container log files to destroy forensic evidence.",
+		Description: "Flags log-file activity by unexpected processes. Falco selects successful write-capable opens, not all writes or deletions; Sigma requires normalized file-change events. Neither proves evidence destruction.",
 		FalcoRule: `- rule: KubeDagger System Log Tampering
   desc: Detect writes or truncation of system log files
-  condition: evt.is_open_write=true and (fd.name startswith /var/log or fd.name startswith /var/lib/docker/containers) and not proc.name in (rsyslogd, journald, docker, containerd)
+  source: syscall
+  condition: evt.type in (open, openat, openat2, creat) and evt.rawres>=0 and evt.is_open_write=true and (fd.name startswith /var/log/ or fd.name startswith /var/lib/docker/containers/) and not proc.name in (rsyslogd, systemd-journal, journald, docker, containerd)
   output: "Log file tampering (proc=%proc.name file=%fd.name user=%user.name)"
   priority: CRITICAL
   tags: [filesystem, defense_evasion, T1070.002]
@@ -462,7 +493,8 @@ id: 6d0f7a9b-8e2b-4c3d-4f5a-0b1c2d3e4f5a
 status: experimental
 description: Detects writes to system or container log files by unexpected processes
 author: KubeDagger
-date: 2026/10/13
+date: '2026-10-13'
+modified: '2026-11-11'
 references:
   - https://attack.mitre.org/techniques/T1070/002/
 logsource:
@@ -476,6 +508,7 @@ detection:
   filter:
     process_name:
       - rsyslogd
+      - systemd-journal
       - journald
       - docker
       - containerd
@@ -496,11 +529,12 @@ tags:
 		Technique:   "antiforensics",
 		MITRE:       "T1070",
 		Name:        "Anti-Forensics Activity",
-		Description: "Detects timestamp manipulation and evidence removal such as unlink, rename, and utimensat against artifacts.",
+		Description: "Flags file deletion/rename by shell utilities. The Sigma rule additionally covers successful timestamp syscalls in normalized audit logs; the Falco rule does not cover timestamp manipulation because those generic events lack the required result/path fields.",
 		FalcoRule: `- rule: KubeDagger Anti-Forensics Artifact Removal
-  desc: Detect deletion or timestamp manipulation of files by shell processes
-  condition: (evt.type in (unlink, unlinkat, rename, renameat, utimes, utimensat)) and proc.name in (bash, sh, zsh, rm, mv, touch)
-  output: "Possible anti-forensics (proc=%proc.name type=%evt.type file=%fd.name user=%user.name)"
+  desc: Detect deletion or rename by shell utilities; timestamp syscalls need a separate audit source
+  source: syscall
+  condition: evt.type in (unlink, unlinkat, rename, renameat) and evt.rawres=0 and proc.name in (bash, sh, zsh, rm, mv, touch)
+  output: "Possible anti-forensics (proc=%proc.name type=%evt.type file=%fs.path.name user=%user.name)"
   priority: WARNING
   tags: [filesystem, defense_evasion, T1070]
 `,
@@ -509,7 +543,8 @@ id: 7e1a8b0c-9f3c-4d4e-5a6b-1c2d3e4f5a6b
 status: experimental
 description: Detects unlink, rename, or timestamp-changing syscalls issued by shell utilities
 author: KubeDagger
-date: 2026/10/13
+date: '2026-10-13'
+modified: '2026-11-11'
 references:
   - https://attack.mitre.org/techniques/T1070/
 logsource:
@@ -522,7 +557,9 @@ detection:
       - unlinkat
       - rename
       - renameat
+      - utimes
       - utimensat
+    success: true
     process_name:
       - bash
       - sh
@@ -547,10 +584,11 @@ tags:
 		Technique:   "honeypot_detect",
 		MITRE:       "T1580",
 		Name:        "Honeypot / Deception Fingerprinting",
-		Description: "Detects reconnaissance of deception infrastructure such as kubelet read-only port probes and canary token access.",
+		Description: "Flags kubelet-port connections; Falco also selects reads of paths containing canary. This is a hunting signal, not proof of deception fingerprinting, and the two rules have different exclusions.",
 		FalcoRule: `- rule: KubeDagger Honeypot Reconnaissance
   desc: Detect connections to kubelet ports and canary token paths
-  condition: (evt.type=connect and fd.rport in (10250, 10255)) or (evt.is_open_read=true and fd.name contains canary)
+  source: syscall
+  condition: (evt.type=connect and evt.rawres>=0 and fd.rport in (10250, 10255)) or (evt.type in (open, openat, openat2) and evt.rawres>=0 and evt.is_open_read=true and fd.name contains canary)
   output: "Possible deception-layer recon (proc=%proc.name rip=%fd.rip rport=%fd.rport file=%fd.name)"
   priority: NOTICE
   tags: [network, reconnaissance, T1580]
@@ -560,7 +598,8 @@ id: 8f2b9c1d-0a4d-4e5f-6b7c-2d3e4f5a6b7c
 status: experimental
 description: Detects connections to kubelet ports from unexpected sources, typical of honeypot or cluster fingerprinting
 author: KubeDagger
-date: 2026/10/13
+date: '2026-10-13'
+modified: '2026-11-11'
 references:
   - https://attack.mitre.org/techniques/T1580/
 logsource:
@@ -591,10 +630,11 @@ tags:
 		Technique:   "cloud_metadata",
 		MITRE:       "T1552.005",
 		Name:        "Cloud Metadata Credential Access",
-		Description: "Detects access to the cloud instance metadata service (IMDS) at 169.254.169.254 from workloads.",
+		Description: "Flags cloud metadata access. Falco selects successful connections to IPv4/IPv6 IMDS addresses; Sigma selects credential-related URL paths in proxy logs. Neither is restricted to containers or proves credentials were returned.",
 		FalcoRule: `- rule: KubeDagger Cloud Metadata Access
   desc: Detect connections to the cloud instance metadata service
-  condition: evt.type=connect and (fd.rip=169.254.169.254 or fd.rip=fd00:ec2::254)
+  source: syscall
+  condition: evt.type=connect and evt.rawres>=0 and fd.rip in (169.254.169.254, "fd00:ec2::254")
   output: "IMDS access (proc=%proc.name container=%container.name rip=%fd.rip user=%user.name)"
   priority: CRITICAL
   tags: [network, credential_access, T1552.005]
@@ -602,16 +642,19 @@ tags:
 		SigmaRule: `title: Cloud Instance Metadata Service Access
 id: 9a3c0d2e-1b5e-4f6a-7c8d-3e4f5a6b7c8d
 status: experimental
-description: Detects HTTP requests to the cloud metadata endpoint 169.254.169.254
+description: Selects credential-related metadata paths at IPv4/IPv6 IMDS addresses in normalized proxy logs
 author: KubeDagger
-date: 2026/10/13
+date: '2026-10-13'
+modified: '2026-11-11'
 references:
   - https://attack.mitre.org/techniques/T1552/005/
 logsource:
   category: proxy
 detection:
   selection:
-    dst_ip: 169.254.169.254
+    dst_ip:
+      - 169.254.169.254
+      - 'fd00:ec2::254'
     c-uri|startswith:
       - /latest/meta-data/iam/
       - /computeMetadata/v1/instance/service-accounts/
@@ -633,20 +676,22 @@ tags:
 		Technique:   "cloud_evasion",
 		MITRE:       "T1562.001",
 		Name:        "Security Tool Impairment",
-		Description: "Detects termination or signal attacks against runtime security agents (sensors, probes, shields).",
+		Description: "Flags security-agent signal activity. Falco observes a security process exiting due to SIGKILL/SIGTERM; Sigma selects successful signal syscalls with target_process enrichment. These are different telemetry views, and a successful signal alone does not prove termination.",
 		FalcoRule: `- rule: KubeDagger Security Agent Kill
-  desc: Detect kill signals sent to runtime security agent processes
-  condition: evt.type in (kill, tkill, tgkill) and evt.arg.sig in (9, 15) and (proc.name contains sensor or proc.name contains probe or proc.name contains shield or proc.name contains falco)
-  output: "Security agent killed (proc=%proc.name target=%proc.exepath sig=%evt.arg.sig user=%user.name)"
+  desc: Detect runtime security processes exiting due to SIGKILL or SIGTERM
+  source: syscall
+  condition: evt.type=procexit and evt.arg.sig in (SIGKILL, SIGTERM) and (proc.name contains sensor or proc.name contains probe or proc.name contains shield or proc.name contains falco)
+  output: "Security agent exited on signal (target=%proc.name exe=%proc.exepath sig=%evt.arg.sig user=%user.name)"
   priority: CRITICAL
   tags: [process, defense_evasion, T1562.001]
 `,
 		SigmaRule: `title: Linux Security Agent Process Termination
 id: 0b4d1e3f-2c6a-4a7b-8d9e-4f5a6b7c8d9e
 status: experimental
-description: Detects SIGKILL or SIGTERM sent to runtime security sensor processes
+description: Selects successful SIGKILL/SIGTERM syscalls with enriched target_process identity; does not prove termination
 author: KubeDagger
-date: 2026/10/13
+date: '2026-10-13'
+modified: '2026-11-11'
 references:
   - https://attack.mitre.org/techniques/T1562/001/
 logsource:
@@ -658,6 +703,7 @@ detection:
       - kill
       - tkill
       - tgkill
+    success: true
     signal:
       - 9
       - 15
@@ -683,10 +729,11 @@ tags:
 		Technique:   "cicd_poison",
 		MITRE:       "T1195",
 		Name:        "CI/CD Pipeline Poisoning",
-		Description: "Detects modifications to build files, workflows, and supply chain manifests that hijack pipeline execution.",
+		Description: "Flags file activity affecting workflow/build definitions. Falco selects write-capable opens and Sigma selects normalized file-change events; ordinary developer changes also match and do not establish pipeline poisoning.",
 		FalcoRule: `- rule: KubeDagger CI/CD Pipeline Poisoning
   desc: Detect writes to CI/CD workflow and build definition files
-  condition: evt.is_open_write=true and (fd.name endswith .gitlab-ci.yml or fd.name contains .github/workflows or fd.name endswith Dockerfile or fd.name endswith Jenkinsfile)
+  source: syscall
+  condition: evt.type in (open, openat, openat2, creat) and evt.rawres>=0 and evt.is_open_write=true and (fd.name endswith /.gitlab-ci.yml or fd.name contains /.github/workflows/ or fd.name endswith /Dockerfile or fd.name endswith /Jenkinsfile)
   output: "CI/CD definition modified (proc=%proc.name file=%fd.name user=%user.name)"
   priority: WARNING
   tags: [filesystem, initial_access, T1195]
@@ -696,23 +743,22 @@ id: 1c5e2f4a-3d7b-4b8c-9e0f-5a6b7c8d9e0f
 status: experimental
 description: Detects writes to CI/CD workflow or container build definition files
 author: KubeDagger
-date: 2026/10/13
+date: '2026-10-13'
+modified: '2026-11-11'
 references:
   - https://attack.mitre.org/techniques/T1195/
 logsource:
   category: file_event
   product: linux
 detection:
-  selection:
-    file.name|endswith:
-      - .gitlab-ci.yml
-      - Dockerfile
-      - Jenkinsfile
-    file.path|contains:
-      - .github/workflows
-      - .argo
-      - flux
-  condition: selection
+  selection_filename:
+    file.path|endswith:
+      - /.gitlab-ci.yml
+      - /Dockerfile
+      - /Jenkinsfile
+  selection_workflow:
+    file.path|contains: /.github/workflows/
+  condition: selection_filename or selection_workflow
 falsepositives:
   - Developers committing legitimate build definition changes
 level: medium
@@ -733,7 +779,8 @@ tags:
 		Description: "Detects direct access to mesh sidecar admin ports or impersonation of mesh service identities.",
 		FalcoRule: `- rule: KubeDagger Service Mesh Sidecar Abuse
   desc: Detect connections to service mesh sidecar admin and inbound ports
-  condition: evt.type=connect and fd.rport in (15000, 15001, 15006, 15020, 15090) and container and not proc.name in (envoy, istio-proxy, pilot-agent)
+  source: syscall
+  condition: evt.type=connect and evt.rawres>=0 and fd.rport in (15000, 15001, 15006, 15020, 15090) and container.id != host and not proc.name in (envoy, istio-proxy, pilot-agent)
   output: "Mesh sidecar port accessed (proc=%proc.name container=%container.name rport=%fd.rport rip=%fd.rip)"
   priority: WARNING
   tags: [network, credential_access, T1550]
@@ -743,7 +790,8 @@ id: 2d6f3a5b-4e8c-4c9d-0f1a-6b7c8d9e0f1a
 status: experimental
 description: Detects connections to Envoy/Istio sidecar admin and inbound ports from unexpected processes
 author: KubeDagger
-date: 2026/10/13
+date: '2026-10-13'
+modified: '2026-11-11'
 references:
   - https://attack.mitre.org/techniques/T1550/
 logsource:
@@ -755,7 +803,9 @@ detection:
       - 15000
       - 15001
       - 15006
+      - 15020
       - 15090
+    source_type: container
   filter:
     process_name:
       - envoy
@@ -779,10 +829,11 @@ tags:
 		Technique:   "covert_channel",
 		MITRE:       "T1095",
 		Name:        "Non-Application Layer Covert Channel",
-		Description: "Detects ICMP messaging and other raw-IP encodings (IP ID, TTL, TCP urgent pointer) used for C2.",
+		Description: "Flags container ICMP traffic. It does not decode payloads, inspect TTL/IP ID/TCP fields, measure traffic rate, or distinguish diagnostics from a covert channel.",
 		FalcoRule: `- rule: KubeDagger ICMP Covert Channel
   desc: Detect ICMP echo traffic from containers
-  condition: evt.type in (sendto, sendmsg) and fd.l4proto=icmp and container
+  source: syscall
+  condition: evt.type in (sendto, sendmsg) and evt.rawres>=0 and fd.l4proto=icmp and container.id != host
   output: "ICMP from container (proc=%proc.name container=%container.name rip=%fd.rip)"
   priority: WARNING
   tags: [network, command_and_control, T1095]
@@ -792,7 +843,8 @@ id: 3e7a4b6c-5f9d-4d0e-1a2b-7c8d9e0f1a2b
 status: experimental
 description: Detects ICMP echo requests originating from container workloads, often abused as a covert C2 channel
 author: KubeDagger
-date: 2026/10/13
+date: '2026-10-13'
+modified: '2026-11-11'
 references:
   - https://attack.mitre.org/techniques/T1095/
 logsource:
@@ -818,10 +870,11 @@ tags:
 		Technique:   "polymorph",
 		MITRE:       "T1027",
 		Name:        "BPF Polymorphism",
-		Description: "Detects direct bpf() syscalls and repeated BPF program loads from containers, indicating runtime code mutation to evade signatures.",
+		Description: "Flags successful bpf() calls from containers. It does not filter BPF_PROG_LOAD, count repeated loads, inspect bytecode, or establish polymorphism/signature evasion.",
 		FalcoRule: `- rule: KubeDagger Direct BPF Syscall From Container
   desc: Detect raw bpf syscalls issued inside containers
-  condition: evt.type=bpf and container
+  source: syscall
+  condition: evt.type=bpf and evt.rawres>=0 and container.id != host
   output: "Raw bpf syscall from container (proc=%proc.name container=%container.name cmd=%evt.args)"
   priority: CRITICAL
   tags: [syscall, defense_evasion, T1027]
@@ -831,7 +884,8 @@ id: 4f8b5c7d-6a0e-4e1f-2b3c-8d9e0f1a2b3c
 status: experimental
 description: Detects direct use of the bpf syscall from inside a container, indicating eBPF loading outside the runtime
 author: KubeDagger
-date: 2026/10/13
+date: '2026-10-13'
+modified: '2026-11-11'
 references:
   - https://attack.mitre.org/techniques/T1027/
 logsource:
@@ -840,6 +894,7 @@ logsource:
 detection:
   selection:
     syscall: bpf
+    success: true
     container: "true"
   condition: selection
 falsepositives:
@@ -895,6 +950,7 @@ func Generate(techniques []string) (string, error) {
 	var b strings.Builder
 	b.WriteString("# KubeDagger Detection Coverage Report\n\n")
 	b.WriteString("Purple-team mapping of executed techniques to Falco, Sigma, and Kubernetes audit detections.\n\n")
+	b.WriteString("**Status: experimental.** Parser/compiler checks and synthetic fixtures do not establish production detection effectiveness. See docs/DETECTIONS.md for telemetry requirements, validation, and blind spots.\n\n")
 
 	b.WriteString("## Summary\n\n")
 	b.WriteString("| Technique | MITRE | Detection |\n")
@@ -932,7 +988,7 @@ func Generate(techniques []string) (string, error) {
 		b.WriteString("```\n\n")
 
 		if len(d.AuditEvents) > 0 {
-			b.WriteString("### Kubernetes audit events\n\n")
+			b.WriteString("### Additional telemetry / hunting ideas\n\n")
 			for _, a := range d.AuditEvents {
 				b.WriteString(fmt.Sprintf("- %s\n", a))
 			}
