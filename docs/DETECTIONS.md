@@ -24,6 +24,9 @@ validator, but the Falco containers themselves drop all capabilities, disable
 network access, and mount only generated rules, fixtures, plugin, config and
 a temporary results directory. They run as the invoking user's UID/GID.
 Artifact downloads happen before those containers start.
+Transient registry/HTTP failures (including HTTP 429) are retried up to three
+times with bounded exponential backoff. Permanent errors, signature/checksum
+failures, rule compilation, and fixture assertions are not retried or skipped.
 
 ### What is checked
 
