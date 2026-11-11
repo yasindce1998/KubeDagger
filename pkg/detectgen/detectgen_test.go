@@ -17,6 +17,8 @@ limitations under the License.
 package detectgen
 
 import (
+	"encoding/json"
+	"os"
 	"strings"
 	"testing"
 
@@ -95,16 +97,25 @@ func TestRuleYAMLValidity(t *testing.T) {
 			continue
 		}
 		rule := falcoRules[0]
-		for _, field := range []string{"rule", "desc", "condition", "output", "priority", "tags"} {
+		for _, field := range []string{"rule", "desc", "source", "condition", "output", "priority", "tags"} {
 			if _, ok := rule[field]; !ok {
 				t.Errorf("technique %q: Falco rule missing field %q", d.Technique, field)
 			}
+		}
+		if source := rule["source"]; source != "syscall" && source != "k8s_audit" {
+			t.Errorf("technique %q: unsupported Falco source %v", d.Technique, source)
+		}
+		if condition, _ := rule["condition"].(string); strings.Contains(condition, "evt.dir") {
+			t.Errorf("technique %q: deprecated evt.dir condition", d.Technique)
 		}
 
 		var sigmaRule map[string]interface{}
 		if err := yaml.Unmarshal([]byte(d.SigmaRule), &sigmaRule); err != nil {
 			t.Errorf("technique %q: invalid Sigma rule YAML: %v", d.Technique, err)
 			continue
+		}
+		if sigmaRule["status"] != "experimental" {
+			t.Errorf("technique %q: synthetic fixtures must not promote rule status", d.Technique)
 		}
 		for _, field := range []string{"title", "id", "status", "description", "logsource", "detection", "level", "tags"} {
 			if _, ok := sigmaRule[field]; !ok {
@@ -194,8 +205,11 @@ func TestGenerate(t *testing.T) {
 	if !strings.Contains(md, "```yaml") {
 		t.Error("missing fenced YAML code blocks")
 	}
-	if !strings.Contains(md, "serviceaccounts/token") {
-		t.Error("missing Falco/Sigma rule content for sa_token")
+	if !strings.Contains(md, "objectRef.subresource: token") {
+		t.Error("missing real Kubernetes audit subresource field for sa_token")
+	}
+	if !strings.Contains(md, "Status: experimental") || !strings.Contains(md, "docs/DETECTIONS.md") {
+		t.Error("report must state validation limits and telemetry requirements")
 	}
 	if !strings.Contains(md, "## Detection gaps") {
 		t.Error("missing gaps section for unknown technique")
@@ -205,6 +219,39 @@ func TestGenerate(t *testing.T) {
 	}
 	if !strings.Contains(md, "no detection mapping") {
 		t.Error("summary does not mark unknown technique as no detection mapping")
+	}
+}
+
+func TestFixtureCoverage(t *testing.T) {
+	data, err := os.ReadFile("testdata/events.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fixtures map[string][]struct {
+		Name  string         `json:"name"`
+		Match bool           `json:"match"`
+		Event map[string]any `json:"event"`
+	}
+	if err := json.Unmarshal(data, &fixtures); err != nil {
+		t.Fatal(err)
+	}
+	if len(fixtures) != len(Catalog()) {
+		t.Fatal("fixtures must exactly cover the public catalog")
+	}
+	for _, d := range Catalog() {
+		positive, negative := false, false
+		seen := make(map[string]bool)
+		for _, fixture := range fixtures[d.Technique] {
+			if fixture.Name == "" || seen[fixture.Name] || len(fixture.Event) == 0 {
+				t.Errorf("%s: empty/duplicate fixture %q", d.Technique, fixture.Name)
+			}
+			seen[fixture.Name] = true
+			positive = positive || fixture.Match
+			negative = negative || !fixture.Match
+		}
+		if !positive || !negative {
+			t.Errorf("%s: require positive and negative event fixtures", d.Technique)
+		}
 	}
 }
 

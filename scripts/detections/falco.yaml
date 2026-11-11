@@ -1,0 +1,28 @@
+# Offline validation only. No driver, host mounts, or runtime sockets required.
+engine:
+  kind: nodriver
+plugins_hostinfo: false
+load_plugins: [k8saudit, container]
+plugins:
+  - name: container
+    library_path: /usr/share/falco/plugins/libcontainer.so
+  - name: k8saudit
+    library_path: /plugins/libk8saudit.so
+    init_config:
+      useAsync: false
+    open_params: /rules/audit-events.jsonl
+webserver:
+  enabled: false
+stdout_output:
+  enabled: false
+file_output:
+  enabled: true
+  keep_alive: false
+  filename: /results/alerts.jsonl
+buffered_outputs: false
+syslog_output:
+  enabled: false
+log_syslog: false
+log_stderr: true
+json_output: true
+rule_matching: all

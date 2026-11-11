@@ -1,0 +1,114 @@
+{
+  "sa_token": [
+    {"name":"token-subresource","match":true,"event":{"stage":"ResponseComplete","verb":"create","objectRef":{"resource":"serviceaccounts","subresource":"token","namespace":"lab","name":"example"},"user":{"username":"tester"}}},
+    {"name":"account-not-token","match":false,"event":{"stage":"ResponseComplete","verb":"create","objectRef":{"resource":"serviceaccounts"}}},
+    {"name":"legacy-combined-resource","match":false,"event":{"stage":"ResponseComplete","verb":"create","objectRef":{"resource":"serviceaccounts/token"}}},
+    {"name":"request-stage","match":false,"event":{"stage":"RequestReceived","verb":"create","objectRef":{"resource":"serviceaccounts","subresource":"token"}}},
+    {"name":"wrong-verb","match":false,"event":{"stage":"ResponseComplete","verb":"get","objectRef":{"resource":"serviceaccounts","subresource":"token"}}}
+  ],
+  "k8s_discovery": [
+    {"name":"list-pods","match":true,"event":{"stage":"ResponseComplete","verb":"list","objectRef":{"resource":"pods"}}},
+    {"name":"watch-secrets","match":true,"event":{"stage":"ResponseStarted","verb":"watch","objectRef":{"resource":"secrets"}}},
+    {"name":"single-get","match":false,"event":{"stage":"ResponseComplete","verb":"get","objectRef":{"resource":"pods"}}},
+    {"name":"unrelated-resource","match":false,"event":{"stage":"ResponseComplete","verb":"list","objectRef":{"resource":"services"}}}
+  ],
+  "escape": [
+    {"name":"setns","match":true,"event":{"syscall":"setns","success":true,"container":"true"}},
+    {"name":"unshare","match":true,"event":{"syscall":"unshare","success":true,"container":"true"}},
+    {"name":"userspace-not-syscall","match":false,"event":{"syscall":"nsenter","success":true,"container":"true"}},
+    {"name":"failed-call","match":false,"event":{"syscall":"setns","success":false,"container":"true"}},
+    {"name":"host-call","match":false,"event":{"syscall":"setns","success":true,"container":"false"}},
+    {"name":"missing-enrichment","match":false,"event":{"syscall":"setns","success":true}}
+  ],
+  "daemonset": [
+    {"name":"lab-creation","match":true,"event":{"stage":"ResponseComplete","verb":"create","objectRef":{"resource":"daemonsets","namespace":"lab"}}},
+    {"name":"system-exclusion","match":false,"event":{"stage":"ResponseComplete","verb":"create","objectRef":{"resource":"daemonsets","namespace":"kube-system"}}},
+    {"name":"get-not-create","match":false,"event":{"stage":"ResponseComplete","verb":"get","objectRef":{"resource":"daemonsets","namespace":"lab"}}}
+  ],
+  "webhook_deploy": [
+    {"name":"create-mutating","match":true,"event":{"stage":"ResponseComplete","verb":"create","objectRef":{"resource":"mutatingwebhookconfigurations"}}},
+    {"name":"patch-validating","match":true,"event":{"stage":"ResponseComplete","verb":"patch","objectRef":{"resource":"validatingwebhookconfigurations"}}},
+    {"name":"read-only","match":false,"event":{"stage":"ResponseComplete","verb":"get","objectRef":{"resource":"mutatingwebhookconfigurations"}}},
+    {"name":"wrong-resource","match":false,"event":{"stage":"ResponseComplete","verb":"patch","objectRef":{"resource":"services"}}}
+  ],
+  "crd_backdoor": [
+    {"name":"create-crd","match":true,"event":{"stage":"ResponseComplete","verb":"create","objectRef":{"resource":"customresourcedefinitions"}}},
+    {"name":"read-crd","match":false,"event":{"stage":"ResponseComplete","verb":"get","objectRef":{"resource":"customresourcedefinitions"}}}
+  ],
+  "dns_exfil": [
+    {"name":"threshold","match":true,"event":{"query_length":60,"source_type":"container"}},
+    {"name":"below-threshold","match":false,"event":{"query_length":59,"source_type":"container"}},
+    {"name":"host-query","match":false,"event":{"query_length":100,"source_type":"host"}},
+    {"name":"missing-length","match":false,"event":{"source_type":"container"}}
+  ],
+  "k8s_c2": [
+    {"name":"patch-configmap","match":true,"event":{"stage":"ResponseComplete","verb":"patch","objectRef":{"resource":"configmaps"},"user":{"username":"tester"}}},
+    {"name":"create-event","match":true,"event":{"stage":"ResponseComplete","verb":"create","objectRef":{"resource":"events"},"user":{"username":"tester"}}},
+    {"name":"exact-system-prefix","match":false,"event":{"stage":"ResponseComplete","verb":"patch","objectRef":{"resource":"configmaps"},"user":{"username":"system:serviceaccount:lab:example"}}},
+    {"name":"not-a-system-principal","match":true,"event":{"stage":"ResponseComplete","verb":"patch","objectRef":{"resource":"configmaps"},"user":{"username":"systematic-user"}}},
+    {"name":"missing-identity","match":false,"event":{"stage":"ResponseComplete","verb":"patch","objectRef":{"resource":"configmaps"}}},
+    {"name":"read-not-write","match":false,"event":{"stage":"ResponseComplete","verb":"get","objectRef":{"resource":"configmaps"},"user":{"username":"tester"}}}
+  ],
+  "memexec": [
+    {"name":"memfd-execveat","match":true,"event":{"syscall":"execveat","success":true,"exe":"/memfd:example (deleted)"}},
+    {"name":"memfd-execve","match":true,"event":{"syscall":"execve","success":true,"exe":"/memfd:example (deleted)"}},
+    {"name":"creation-not-execution","match":false,"event":{"syscall":"memfd_create","success":true,"exe":"/usr/bin/example"}},
+    {"name":"disk-execution","match":false,"event":{"syscall":"execveat","success":true,"exe":"/usr/bin/example"}},
+    {"name":"failed-execution","match":false,"event":{"syscall":"execveat","success":false,"exe":"/memfd:example (deleted)"}}
+  ],
+  "log_tamper": [
+    {"name":"log-open","match":true,"event":{"file":{"path":"/var/log/example.log"},"process_name":"example"}},
+    {"name":"expected-writer","match":false,"event":{"file":{"path":"/var/log/example.log"},"process_name":"rsyslogd"}},
+    {"name":"journald-writer","match":false,"event":{"file":{"path":"/var/log/journal/example"},"process_name":"systemd-journal"}},
+    {"name":"path-boundary","match":false,"event":{"file":{"path":"/var/log-backup/example"},"process_name":"example"}}
+  ],
+  "antiforensics": [
+    {"name":"unlink","match":true,"event":{"syscall":"unlinkat","process_name":"rm","success":true}},
+    {"name":"timestamp","match":true,"event":{"syscall":"utimensat","process_name":"touch","success":true}},
+    {"name":"failed-operation","match":false,"event":{"syscall":"unlinkat","process_name":"rm","success":false}},
+    {"name":"other-process","match":false,"event":{"syscall":"unlinkat","process_name":"example","success":true}}
+  ],
+  "honeypot_detect": [
+    {"name":"kubelet-port","match":true,"event":{"destination_port":10255,"source_namespace":"lab"}},
+    {"name":"monitoring-exclusion","match":false,"event":{"destination_port":10255,"source_namespace":"kube-system"}},
+    {"name":"unrelated-port","match":false,"event":{"destination_port":443,"source_namespace":"lab"}}
+  ],
+  "cloud_metadata": [
+    {"name":"aws-ipv4","match":true,"event":{"dst_ip":"169.254.169.254","c-uri":"/latest/meta-data/iam/security-credentials/example"}},
+    {"name":"aws-ipv6","match":true,"event":{"dst_ip":"fd00:ec2::254","c-uri":"/latest/meta-data/iam/security-credentials/example"}},
+    {"name":"gcp","match":true,"event":{"dst_ip":"169.254.169.254","c-uri":"/computeMetadata/v1/instance/service-accounts/default"}},
+    {"name":"wrong-address","match":false,"event":{"dst_ip":"192.0.2.1","c-uri":"/latest/meta-data/iam/example"}},
+    {"name":"noncredential-path","match":false,"event":{"dst_ip":"169.254.169.254","c-uri":"/latest/meta-data/hostname"}}
+  ],
+  "cloud_evasion": [
+    {"name":"target-enrichment","match":true,"event":{"syscall":"kill","success":true,"signal":9,"process_name":"example","target_process":"falco"}},
+    {"name":"caller-is-not-target","match":false,"event":{"syscall":"kill","success":true,"signal":9,"process_name":"falco","target_process":"example"}},
+    {"name":"not-termination-signal","match":false,"event":{"syscall":"kill","success":true,"signal":10,"target_process":"falco"}},
+    {"name":"missing-target","match":false,"event":{"syscall":"kill","success":true,"signal":9,"process_name":"falco"}},
+    {"name":"failed-signal","match":false,"event":{"syscall":"kill","success":false,"signal":9,"target_process":"falco"}}
+  ],
+  "cicd_poison": [
+    {"name":"dockerfile-alone","match":true,"event":{"file":{"path":"/workspace/Dockerfile"}}},
+    {"name":"workflow-alone","match":true,"event":{"file":{"path":"/workspace/.github/workflows/check.yml"}}},
+    {"name":"gitlab-alone","match":true,"event":{"file":{"path":"/workspace/.gitlab-ci.yml"}}},
+    {"name":"readme","match":false,"event":{"file":{"path":"/workspace/README.md"}}},
+    {"name":"directory-boundary","match":false,"event":{"file":{"path":"/workspace/.github/workflows-backup/check.yml"}}}
+  ],
+  "service_mesh": [
+    {"name":"sidecar-admin","match":true,"event":{"destination_port":15000,"source_type":"container","process_name":"example"}},
+    {"name":"status-port","match":true,"event":{"destination_port":15020,"source_type":"container","process_name":"example"}},
+    {"name":"expected-sidecar","match":false,"event":{"destination_port":15000,"source_type":"container","process_name":"envoy"}},
+    {"name":"host-process","match":false,"event":{"destination_port":15000,"source_type":"host","process_name":"example"}}
+  ],
+  "covert_channel": [
+    {"name":"container-icmp","match":true,"event":{"protocol":"icmp","source_type":"container"}},
+    {"name":"container-tcp","match":false,"event":{"protocol":"tcp","source_type":"container"}},
+    {"name":"host-icmp","match":false,"event":{"protocol":"icmp","source_type":"host"}}
+  ],
+  "polymorph": [
+    {"name":"container-bpf","match":true,"event":{"syscall":"bpf","success":true,"container":"true"}},
+    {"name":"host-bpf","match":false,"event":{"syscall":"bpf","success":true,"container":"false"}},
+    {"name":"failed-bpf","match":false,"event":{"syscall":"bpf","success":false,"container":"true"}},
+    {"name":"missing-container","match":false,"event":{"syscall":"bpf","success":true}}
+  ]
+}

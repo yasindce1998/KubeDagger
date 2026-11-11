@@ -1,4 +1,4 @@
-.PHONY: all rootkit rootkit-aws generate-vmlinux build-ebpf build-ebpf-aws build-webapp build-rootkit build-client build-server build-operator build-agent build-pause static run test test-race test-cover test-c2 lint lint-strict install_client lab-up lab-down lab-test
+.PHONY: all rootkit rootkit-aws generate-vmlinux build-ebpf build-ebpf-aws build-webapp build-rootkit build-client build-server build-operator build-agent build-pause static run test test-race test-cover test-c2 test-detections lint lint-strict install_client lab-up lab-down lab-test
 
 COVERAGE_THRESHOLD ?= 20
 VMLINUX_BTF ?= /sys/kernel/btf/vmlinux
@@ -88,6 +88,9 @@ test-cover:
 
 test-c2:
 	go test ./pkg/c2server/... ./pkg/agent/...
+
+test-detections:
+	bash scripts/detections/validate.sh
 
 lint:
 	golangci-lint run ./...

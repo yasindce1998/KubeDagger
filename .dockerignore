@@ -3,4 +3,6 @@
 bin
 coverage.out
 *.jsonl
+.venv-detections
+**/__pycache__
 # Keep the host-generated ebpf/include/vmlinux.h and embedded eBPF objects.

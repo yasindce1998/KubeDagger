@@ -1,0 +1,4 @@
+pysigma==2.1.0
+pysigma-backend-sqlite==2.1.1
+PyYAML==6.0.3
+jsonschema==4.26.0
