@@ -15,10 +15,8 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang llvm build-essential libelf-dev
-          git clone --depth 1 --recurse-submodules https://github.com/libbpf/bpftool.git /tmp/bpftool
-          make -C /tmp/bpftool/src -j$(nproc)
-          sudo make -C /tmp/bpftool/src install
+          sudo apt-get install -y clang llvm build-essential libelf-dev libssl-dev zlib1g-dev
+          sudo bash scripts/install-bpftool.sh
           bpftool version
 
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
@@ -34,6 +32,9 @@ jobs:
           make build-client
           make build-webapp
 
+      - name: Check Docker build
+        run: docker build --tag kubedagger:ci .
+
       - name: Vet
         run: go vet ./...
 
@@ -47,10 +48,7 @@ jobs:
         run: go test -race -count=1 -timeout 120s ./...
 
       - name: Test with coverage
-        run: |
-          go test -race -coverprofile=coverage.out -covermode=atomic ./...
-          chmod +x scripts/check-coverage.sh
-          ./scripts/check-coverage.sh coverage.out 20
+        run: make test-cover
 
       - name: Integration Test
         run: sudo $(which go) test -tags integration -v -count=1 -timeout 60s ./pkg/kubedagger/

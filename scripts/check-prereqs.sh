@@ -199,41 +199,25 @@ fi
 echo ""
 
 # --- Go ---
-echo "[*] Go Compiler (1.22+ required)"
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+REQUIRED_GO=$(awk '$1 == "go" { print $2; exit }' "$SCRIPT_DIR/../go.mod")
+REQUIRED_GO_MAJOR=${REQUIRED_GO%%.*}
+REQUIRED_GO_REST=${REQUIRED_GO#*.}
+REQUIRED_GO_MINOR=${REQUIRED_GO_REST%%.*}
+echo "[*] Go Compiler ($REQUIRED_GO+ required)"
 if command -v go &>/dev/null; then
     GO_VER=$(go version | grep -oP '\d+\.\d+' | head -1)
     GO_MAJOR=$(echo "$GO_VER" | cut -d. -f1)
     GO_MINOR=$(echo "$GO_VER" | cut -d. -f2)
-    if [ "$GO_MAJOR" -gt 1 ] || { [ "$GO_MAJOR" -eq 1 ] && [ "$GO_MINOR" -ge 22 ]; }; then
-        pass "Go $GO_VER >= 1.22 ($(go env GOROOT))"
+    if [ "$GO_MAJOR" -gt "$REQUIRED_GO_MAJOR" ] || { [ "$GO_MAJOR" -eq "$REQUIRED_GO_MAJOR" ] && [ "$GO_MINOR" -ge "$REQUIRED_GO_MINOR" ]; }; then
+        pass "Go $GO_VER >= $REQUIRED_GO ($(go env GOROOT))"
     else
-        fail "Go $GO_VER < 1.22 (upgrade required)"
-        if [ "$INSTALL_MODE" = true ]; then
-            info "Downloading Go 1.22..."
-            curl -sL https://go.dev/dl/go1.22.0.linux-amd64.tar.gz -o /tmp/go1.22.tar.gz
-            sudo rm -rf /usr/local/go
-            sudo tar -C /usr/local -xzf /tmp/go1.22.tar.gz
-            rm /tmp/go1.22.tar.gz
-            export PATH=/usr/local/go/bin:$PATH
-            pass "Go 1.22 installed to /usr/local/go (add to PATH)"
-        fi
+        fail "Go $GO_VER < $REQUIRED_GO (upgrade required)"
+        info "Install Go $REQUIRED_GO or newer from https://go.dev/dl/ (existing toolchains are not replaced automatically)"
     fi
 else
     fail "Go not found in PATH"
-    if [ "$INSTALL_MODE" = true ]; then
-        info "Downloading Go 1.22..."
-        curl -sL https://go.dev/dl/go1.22.0.linux-amd64.tar.gz -o /tmp/go1.22.tar.gz
-        sudo rm -rf /usr/local/go
-        sudo tar -C /usr/local -xzf /tmp/go1.22.tar.gz
-        rm /tmp/go1.22.tar.gz
-        export PATH=/usr/local/go/bin:$PATH
-        if command -v go &>/dev/null; then
-            pass "Go installed to /usr/local/go"
-            info "Add to your shell: export PATH=/usr/local/go/bin:\$PATH"
-        else
-            fail "Go installation failed"
-        fi
-    fi
+    info "Install Go $REQUIRED_GO or newer from https://go.dev/dl/"
 fi
 echo ""
 
@@ -273,6 +257,13 @@ echo ""
 
 # --- Build Tools ---
 echo "[*] Build Tools"
+if command -v bpftool &>/dev/null; then
+    pass "bpftool found"
+else
+    fail "bpftool not found (required for BTF header generation)"
+    info "Install bpftool using your distribution's packages"
+fi
+
 if command -v make &>/dev/null; then
     pass "make found ($(make --version | head -1))"
 else

@@ -52,7 +52,7 @@ func Load(path string) (*Scope, error) {
 	}
 
 	var s Scope
-	if err := yaml.Unmarshal(data, &s); err != nil {
+	if err := yaml.UnmarshalStrict(data, &s); err != nil {
 		return nil, fmt.Errorf("scope: parse %s: %w", path, err)
 	}
 
@@ -170,7 +170,9 @@ func (s *Scope) CheckTask(taskType string, payload map[string]string) error {
 				violations = append(violations, fmt.Sprintf("namespace %q not in allowed namespaces", value))
 			}
 		case "host", "target", "domain":
-			if !s.AllowsHost(value) {
+			if net.ParseIP(normalizeHost(value)) != nil && !s.AllowsIP(value) {
+				violations = append(violations, fmt.Sprintf("ip %q not in allowed cidrs", value))
+			} else if !s.AllowsHost(value) {
 				violations = append(violations, fmt.Sprintf("host %q not in allowed domains", value))
 			}
 		case "ip", "addr":
@@ -183,7 +185,8 @@ func (s *Scope) CheckTask(taskType string, payload map[string]string) error {
 				violations = append(violations, fmt.Sprintf("url %q is invalid", value))
 				continue
 			}
-			if u.Host == "" {
+			if u.Hostname() == "" || u.Scheme == "" {
+				violations = append(violations, fmt.Sprintf("url %q must be absolute with a host", value))
 				continue
 			}
 			host := u.Hostname()

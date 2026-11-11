@@ -2,6 +2,7 @@ package webui
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -11,16 +12,20 @@ import (
 	"testing"
 
 	"github.com/yasindce1998/KubeDagger/pkg/events"
+	"github.com/yasindce1998/KubeDagger/pkg/scope"
 )
 
 func newTestServer(token string) *Server {
 	return NewServer(":0", token)
 }
 
-func TestNewServerNoAuth(t *testing.T) {
+func TestNewServerMissingToken(t *testing.T) {
 	s := newTestServer("")
-	if s.auth.Enabled {
-		t.Error("auth should be disabled with empty token")
+	if !s.auth.Enabled {
+		t.Error("empty token must not disable authentication")
+	}
+	if err := s.Start(context.Background()); err == nil {
+		t.Fatal("server must reject missing credentials before listening")
 	}
 }
 
@@ -103,6 +108,7 @@ func TestHandleAgents(t *testing.T) {
 
 func TestHandleNewCommand(t *testing.T) {
 	s := newTestServer("")
+	s.agents.agents["agent-1"] = &AgentInfo{ID: "agent-1"}
 
 	body := `{"agent_id":"agent-1","module":"recon","args":{"target":"default"}}`
 	req := httptest.NewRequest(http.MethodPost, "/api/commands/new", strings.NewReader(body))
@@ -239,7 +245,7 @@ func TestHandleCommandResultFailed(t *testing.T) {
 	}
 }
 
-func TestAuthMiddlewareDisabled(t *testing.T) {
+func TestAuthMiddlewareMissingTokenFailsClosed(t *testing.T) {
 	s := newTestServer("")
 	called := false
 	handler := s.authMiddleware(func(w http.ResponseWriter, r *http.Request) {
@@ -251,8 +257,8 @@ func TestAuthMiddlewareDisabled(t *testing.T) {
 	w := httptest.NewRecorder()
 	handler(w, req)
 
-	if !called {
-		t.Error("handler not called when auth is disabled")
+	if called || w.Code != http.StatusServiceUnavailable {
+		t.Error("unconfigured authentication must not allow requests")
 	}
 }
 
@@ -608,8 +614,161 @@ func TestNewServerMemoryOnlyStore(t *testing.T) {
 	if s.events == nil {
 		t.Fatal("NewServer should create a memory-only events store")
 	}
-	if s.auth.Enabled {
-		t.Error("auth should be disabled with empty token")
+	if !s.auth.Enabled {
+		t.Error("authentication must remain enabled with empty token")
+	}
+}
+
+func TestValidateConfig(t *testing.T) {
+	tests := []struct {
+		name, addr, token, cert, key string
+		wantErr                      bool
+	}{
+		{name: "local HTTP", addr: "127.0.0.1:8080", token: "secret"},
+		{name: "IPv6 loopback", addr: "[::1]:8080", token: "secret"},
+		{name: "missing token", addr: "127.0.0.1:8080", wantErr: true},
+		{name: "whitespace token", addr: "127.0.0.1:8080", token: "  ", wantErr: true},
+		{name: "old default token", addr: "127.0.0.1:8080", token: "kubedagger", wantErr: true},
+		{name: "wildcard HTTP", addr: ":8080", token: "secret", wantErr: true},
+		{name: "public HTTP", addr: "0.0.0.0:8080", token: "secret", wantErr: true},
+		{name: "hostname HTTP", addr: "localhost:8080", token: "secret", wantErr: true},
+		{name: "public HTTPS", addr: "0.0.0.0:8443", token: "secret", cert: "cert.pem", key: "key.pem"},
+		{name: "TLS without token", addr: "0.0.0.0:8443", cert: "cert.pem", key: "key.pem", wantErr: true},
+		{name: "missing key", addr: "127.0.0.1:8080", token: "secret", cert: "cert.pem", wantErr: true},
+		{name: "missing cert", addr: "127.0.0.1:8080", token: "secret", key: "key.pem", wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := NewServer(tt.addr, tt.token, WithTLSFiles(tt.cert, tt.key))
+			if err := s.ValidateConfig(); (err != nil) != tt.wantErr {
+				t.Fatalf("ValidateConfig() = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestMissingTokenRoutesFailClosed(t *testing.T) {
+	s := newTestServer("")
+	for _, path := range []string{"/", "/campaign", "/replay", "/api/agents", "/api/commands/new", "/login"} {
+		t.Run(path, func(t *testing.T) {
+			r := httptest.NewRequest(http.MethodPost, path, strings.NewReader(`{"token":""}`))
+			r.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+			s.mux.ServeHTTP(w, r)
+			if w.Code != http.StatusServiceUnavailable {
+				t.Fatalf("status = %d, want 503", w.Code)
+			}
+			if len(w.Result().Cookies()) != 0 {
+				t.Error("unconfigured authentication must not issue session cookies")
+			}
+		})
+	}
+}
+
+func TestSessionCookieSecurity(t *testing.T) {
+	tests := []struct {
+		name, url string
+		opts      []Option
+		forwarded bool
+		secure    bool
+	}{
+		{name: "local HTTP", url: "http://127.0.0.1/login"},
+		{name: "HTTPS", url: "https://localhost/login", secure: true},
+		{name: "configured TLS", url: "http://localhost/login", opts: []Option{WithTLSFiles("cert", "key")}, secure: true},
+		{name: "explicit proxy", url: "http://127.0.0.1/login", opts: []Option{WithSecureCookies()}, secure: true},
+		{name: "untrusted forwarded header", url: "http://127.0.0.1/login", forwarded: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := NewServer("127.0.0.1:0", "secret", tt.opts...)
+			r := httptest.NewRequest(http.MethodPost, tt.url, strings.NewReader(`{"token":"secret"}`))
+			r.Header.Set("Content-Type", "application/json")
+			if tt.forwarded {
+				r.Header.Set("X-Forwarded-Proto", "https")
+			}
+			w := httptest.NewRecorder()
+			s.handleLoginPost(w, r)
+			cookies := w.Result().Cookies()
+			if len(cookies) != 1 {
+				t.Fatalf("expected one session cookie, got %d", len(cookies))
+			}
+			cookie := cookies[0]
+			if cookie.Secure != tt.secure || !cookie.HttpOnly || cookie.SameSite != http.SameSiteStrictMode {
+				t.Errorf("unexpected session cookie flags: %+v", cookie)
+			}
+		})
+	}
+}
+
+func TestStartCancelledContext(t *testing.T) {
+	s := NewServer("127.0.0.1:0", "secret")
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if err := s.Start(ctx); err != http.ErrServerClosed {
+		t.Fatalf("cancelled server returned %v, want ErrServerClosed", err)
+	}
+}
+
+func TestStartInvalidTLSFiles(t *testing.T) {
+	s := NewServer("127.0.0.1:0", "secret", WithTLSFiles("missing-cert.pem", "missing-key.pem"))
+	if err := s.Start(context.Background()); err == nil {
+		t.Fatal("invalid TLS files must not fall back to HTTP")
+	}
+}
+
+func TestSubmissionBodyLimit(t *testing.T) {
+	s := newTestServer("secret")
+	s.agents.agents["a1"] = &AgentInfo{ID: "a1"}
+	body := `{"agent_id":"a1","module":"example","args":{"value":"` + strings.Repeat("x", 1<<16) + `"}}`
+	r := httptest.NewRequest(http.MethodPost, "/api/commands/new", strings.NewReader(body))
+	r.Header.Set("Authorization", "Bearer secret")
+	w := httptest.NewRecorder()
+	s.mux.ServeHTTP(w, r)
+	if w.Code != http.StatusBadRequest || len(s.commands.commands) != 0 {
+		t.Fatalf("oversized submission was accepted: %d", w.Code)
+	}
+}
+
+func TestCommandSubmissionPolicy(t *testing.T) {
+	tests := []struct {
+		name, body string
+		wantCode   int
+	}{
+		{name: "allowed", body: `{"agent_id":"a1","module":"example","args":{"namespace":"lab"}}`, wantCode: http.StatusOK},
+		{name: "out of scope", body: `{"agent_id":"a1","module":"example","args":{"namespace":"prod"}}`, wantCode: http.StatusBadRequest},
+		{name: "missing module", body: `{"agent_id":"a1"}`, wantCode: http.StatusBadRequest},
+		{name: "missing agent", body: `{"module":"example"}`, wantCode: http.StatusBadRequest},
+		{name: "unknown agent", body: `{"agent_id":"unknown","module":"example"}`, wantCode: http.StatusForbidden},
+		{name: "no implicit broadcast", body: `{"agent_id":"*","module":"example"}`, wantCode: http.StatusForbidden},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := NewServer("127.0.0.1:0", "secret", WithScope(&scope.Scope{Namespaces: []string{"lab"}}))
+			s.agents.agents["a1"] = &AgentInfo{ID: "a1"}
+			r := httptest.NewRequest(http.MethodPost, "/api/commands/new", strings.NewReader(tt.body))
+			r.Header.Set("Authorization", "Bearer secret")
+			w := httptest.NewRecorder()
+			s.mux.ServeHTTP(w, r)
+			if w.Code != tt.wantCode {
+				t.Fatalf("status = %d, want %d: %s", w.Code, tt.wantCode, w.Body.String())
+			}
+			if tt.wantCode != http.StatusOK {
+				if len(s.commands.commands) != 0 || len(s.commands.pending) != 0 {
+					t.Fatal("rejected command entered a queue")
+				}
+				if tt.wantCode == http.StatusBadRequest {
+					evs := s.events.List(0, 0)
+					if len(evs) != 1 || evs[0].Type != events.TypeTaskRejected {
+						t.Fatalf("expected rejection audit event, got %+v", evs)
+					}
+				}
+				return
+			}
+			evs := s.events.List(0, 0)
+			if len(evs) != 1 || evs[0].Type != events.TypeTaskSubmitted || evs[0].Technique != "example" {
+				t.Fatalf("unexpected submission events: %+v", evs)
+			}
+		})
 	}
 }
 

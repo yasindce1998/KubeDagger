@@ -14,7 +14,8 @@ import (
 
 // AuthConfig holds token-based authentication settings for the web UI.
 type AuthConfig struct {
-	Token   string
+	Token string
+	// Enabled is retained for compatibility; authentication is always required.
 	Enabled bool
 }
 
@@ -67,8 +68,8 @@ func generateSessionID() string {
 
 func (s *Server) authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if !s.auth.Enabled {
-			next(w, r)
+		if strings.TrimSpace(s.auth.Token) == "" {
+			http.Error(w, "web UI authentication is not configured", http.StatusServiceUnavailable)
 			return
 		}
 
@@ -99,8 +100,8 @@ func (s *Server) authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 func (s *Server) dashboardAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if !s.auth.Enabled {
-			next(w, r)
+		if strings.TrimSpace(s.auth.Token) == "" {
+			http.Error(w, "web UI authentication is not configured", http.StatusServiceUnavailable)
 			return
 		}
 
@@ -130,10 +131,11 @@ func (s *Server) handleLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !s.auth.Enabled {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+	if strings.TrimSpace(s.auth.Token) == "" {
+		http.Error(w, "web UI authentication is not configured", http.StatusServiceUnavailable)
 		return
 	}
+	r.Body = http.MaxBytesReader(w, r.Body, 4096)
 
 	var payload struct {
 		Token string `json:"token"`
@@ -166,6 +168,7 @@ func (s *Server) handleLoginPost(w http.ResponseWriter, r *http.Request) {
 		Value:    sessionID,
 		Path:     "/",
 		HttpOnly: true,
+		Secure:   s.secureCookies || s.tlsCert != "" || r.TLS != nil,
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   86400,
 	})
@@ -189,6 +192,8 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
+		Secure:   s.secureCookies || s.tlsCert != "" || r.TLS != nil,
+		SameSite: http.SameSiteStrictMode,
 		MaxAge:   -1,
 	})
 

@@ -78,10 +78,11 @@ Demonstrates 110+ offensive techniques including network discovery, file system 
 - Linux kernel 5.4+ with eBPF support (BTF-enabled for CO-RE portability)
 - Kernel headers installed in `/lib/modules/$(uname -r)`
 - clang & llvm 11+
+- bpftool (for BTF header generation)
 - Root privileges
 
 **C2 components (cross-platform):**
-- Go 1.25+
+- Go 1.26.0+ (see `go.mod`)
 - No kernel dependencies
 
 ## Build
@@ -125,11 +126,11 @@ kubedagger-client -h
 # Generate encryption key for management port
 KEY=$(kubedagger-client c2 genkey)
 
-# Start the C2 server
-./bin/kubedagger-server -key $KEY -plaintext
+# Start a localhost-only development server (no TLS)
+./bin/kubedagger-server -key "$KEY" -listen 127.0.0.1:8443 -plaintext
 
-# Deploy agent on target (use --plaintext for dev, mTLS for production)
-./bin/kubedagger-agent-linux -server http://10.0.2.5:443 -plaintext
+# Run an agent locally (use mTLS for remote authorized testing)
+./bin/kubedagger-agent-linux -server http://127.0.0.1:8443 -plaintext
 
 # Interact via operator CLI
 ./bin/kubedagger-operator -key $KEY agents
@@ -138,6 +139,27 @@ KEY=$(kubedagger-client c2 genkey)
 ```
 
 > **For full usage instructions, see [USAGE.md](USAGE.md)**
+
+The optional web UI requires an explicit token (`-webui-token` or
+`KUBEDAGGER_WEBUI_TOKEN`); empty tokens and the old `kubedagger` default are
+rejected. HTTP listeners must use a literal loopback address. For remote UI
+access, configure `-webui-cert` and `-webui-key`, or use an HTTPS reverse proxy
+forwarding to loopback with `-webui-secure-cookies`. See
+[the campaign UI guide](USAGE.md#campaign-web-ui).
+
+### Docker build (Linux)
+
+Install `bpftool`, then generate the BTF header on the host before building:
+
+```shell
+make generate-vmlinux
+docker build -t kubedagger .
+```
+
+The Docker build uses the generated `ebpf/include/vmlinux.h`; it does not need
+privileged access to the host's `/sys`. To refresh that header after a kernel
+change, run `make generate-vmlinux` again. Building the image does not load any
+eBPF programs.
 
 ### Advanced Engine Packages
 

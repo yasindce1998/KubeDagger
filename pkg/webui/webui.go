@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"maps"
 	"net/http"
 	"sort"
 	"strconv"
@@ -13,7 +14,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/yasindce1998/KubeDagger/internal/listenpolicy"
 	"github.com/yasindce1998/KubeDagger/pkg/events"
+	"github.com/yasindce1998/KubeDagger/pkg/scope"
+	"github.com/yasindce1998/KubeDagger/pkg/taskpolicy"
 )
 
 //go:embed templates/*.html
@@ -21,14 +25,37 @@ var templateFS embed.FS
 
 // Server is the web-based C2 dashboard that manages agent registration and command dispatch.
 type Server struct {
-	addr     string
-	agents   *AgentStore
-	commands *CommandQueue
-	events   *events.Store
-	mux      *http.ServeMux
-	server   *http.Server
-	auth     AuthConfig
-	sessions *sessionStore
+	addr          string
+	agents        *AgentStore
+	commands      *CommandQueue
+	events        *events.Store
+	mux           *http.ServeMux
+	server        *http.Server
+	auth          AuthConfig
+	sessions      *sessionStore
+	scope         *scope.Scope
+	tlsCert       string
+	tlsKey        string
+	secureCookies bool
+}
+
+// Option configures the web UI before it starts serving requests.
+type Option func(*Server)
+
+// WithScope applies the same submission policy used by the operator APIs.
+func WithScope(policy *scope.Scope) Option {
+	return func(s *Server) { s.scope = policy }
+}
+
+// WithTLSFiles enables HTTPS and Secure session cookies.
+func WithTLSFiles(cert, key string) Option {
+	return func(s *Server) { s.tlsCert, s.tlsKey = cert, key }
+}
+
+// WithSecureCookies supports an HTTPS reverse proxy forwarding to loopback.
+// Forwarded headers are deliberately not trusted to enable this setting.
+func WithSecureCookies() Option {
+	return func(s *Server) { s.secureCookies = true }
 }
 
 // AgentInfo represents a connected agent's identity and environment metadata.
@@ -72,27 +99,27 @@ type CommandQueue struct {
 }
 
 // NewServer creates a web UI server listening on the given address.
-// If token is non-empty, all routes require authentication. Events are kept
+// A non-empty token is required to serve requests. Events are kept
 // in a private memory-only store; use NewServerWithEvents to share a store
 // (and its optional JSONL persistence) with the rest of the server.
-func NewServer(addr, token string) *Server {
+func NewServer(addr, token string, opts ...Option) *Server {
 	// A memory-only store never fails to initialize.
 	store, _ := events.NewStore("")
-	return newServer(addr, token, store)
+	return newServer(addr, token, store, opts...)
 }
 
 // NewServerWithEvents creates a web UI server that renders campaign and
 // replay views from the given events store. If store is nil, a memory-only
 // store is used.
-func NewServerWithEvents(addr, token string, store *events.Store) *Server {
+func NewServerWithEvents(addr, token string, store *events.Store, opts ...Option) *Server {
 	if store == nil {
 		// A memory-only store never fails to initialize.
 		store, _ = events.NewStore("")
 	}
-	return newServer(addr, token, store)
+	return newServer(addr, token, store, opts...)
 }
 
-func newServer(addr, token string, store *events.Store) *Server {
+func newServer(addr, token string, store *events.Store, opts ...Option) *Server {
 	s := &Server{
 		addr: addr,
 		agents: &AgentStore{
@@ -107,28 +134,62 @@ func newServer(addr, token string, store *events.Store) *Server {
 		sessions: newSessionStore(),
 		auth: AuthConfig{
 			Token:   token,
-			Enabled: token != "",
+			Enabled: true,
 		},
+	}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(s)
+		}
 	}
 	s.registerRoutes()
 	return s
 }
 
+// ValidateConfig fails closed before a listener is opened. Plain HTTP is only
+// permitted on an explicitly loopback-bound address, even with authentication.
+func (s *Server) ValidateConfig() error {
+	if strings.TrimSpace(s.auth.Token) == "" || s.auth.Token == "kubedagger" {
+		return fmt.Errorf("web UI requires an explicit authentication token (the old default is not allowed)")
+	}
+	if (s.tlsCert == "") != (s.tlsKey == "") {
+		return fmt.Errorf("web UI TLS requires both certificate and key files")
+	}
+	if s.tlsCert == "" && !listenpolicy.IsLoopback(s.addr) {
+		return fmt.Errorf("web UI HTTP must bind to a literal loopback address; configure TLS for non-loopback listeners")
+	}
+	return nil
+}
+
 // Start begins serving HTTP requests and blocks until the context is cancelled.
 func (s *Server) Start(ctx context.Context) error {
+	if err := s.ValidateConfig(); err != nil {
+		return err
+	}
 	s.server = &http.Server{
 		Addr:              s.addr,
 		Handler:           s.mux,
 		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 
+	done := make(chan struct{})
+	defer close(done)
 	go func() {
-		<-ctx.Done()
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		_ = s.server.Shutdown(shutdownCtx)
+		select {
+		case <-ctx.Done():
+			shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_ = s.server.Shutdown(shutdownCtx)
+		case <-done:
+		}
 	}()
 
+	if s.tlsCert != "" {
+		return s.server.ListenAndServeTLS(s.tlsCert, s.tlsKey)
+	}
 	return s.server.ListenAndServe()
 }
 
@@ -232,8 +293,27 @@ func (s *Server) handleNewCommand(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var cmd Command
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<16)
 	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	payload := maps.Clone(cmd.Args)
+	if payload == nil {
+		payload = make(map[string]string)
+	}
+	payload["name"] = cmd.Module
+	policy := taskpolicy.Policy{Scope: s.scope, Events: s.events}
+	if err := policy.Check(cmd.AgentID, cmd.Module, payload); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	s.agents.mu.RLock()
+	_, known := s.agents.agents[cmd.AgentID]
+	s.agents.mu.RUnlock()
+	if !known {
+		http.Error(w, "unknown agent", http.StatusForbidden)
 		return
 	}
 
@@ -245,6 +325,7 @@ func (s *Server) handleNewCommand(w http.ResponseWriter, r *http.Request) {
 	s.commands.commands[cmd.ID] = &cmd
 	s.commands.pending[cmd.AgentID] = append(s.commands.pending[cmd.AgentID], &cmd)
 	s.commands.mu.Unlock()
+	policy.RecordSubmitted(cmd.AgentID, cmd.Module, payload)
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(cmd)
@@ -348,6 +429,7 @@ type selectOption struct {
 func campaignTypeOptions(selected string) []selectOption {
 	opts := []selectOption{
 		{Value: "all", Label: "all"},
+		{Value: events.TypeTaskRejected, Label: events.TypeTaskRejected},
 		{Value: events.TypeAgentCheckin, Label: events.TypeAgentCheckin},
 		{Value: events.TypeTaskSubmitted, Label: events.TypeTaskSubmitted},
 		{Value: events.TypeTaskResult, Label: events.TypeTaskResult},

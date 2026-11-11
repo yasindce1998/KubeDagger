@@ -1,5 +1,34 @@
 # Changelog
 
+## Unreleased
+
+### Safety and compatibility
+
+- Web UI startup requires an explicit token; empty tokens no longer disable
+  authentication and the old `kubedagger` default is rejected. Tokens can be
+  supplied via `KUBEDAGGER_WEBUI_TOKEN`.
+- Plaintext development listeners must bind to literal loopback addresses.
+  Non-loopback web UI listeners require `-webui-cert` and `-webui-key`;
+  `-webui-secure-cookies` supports a TLS reverse proxy forwarding to loopback.
+- HTTP, management, and web UI submissions share scope validation and audit
+  logic. Policy rejections emit `task_rejected` events; rejected submissions
+  never enter their queue. UI commands now require a registered UI agent.
+- Scope YAML rejects unknown/duplicate fields. IP literals in host aliases
+  are checked against CIDRs, and URL targets must include a scheme and host.
+- Escape untrusted agent metadata during dashboard refreshes and show command
+  submission errors rather than silently reloading the page.
+
+### Build and documentation
+
+- Align Docker and documentation with the Go 1.26.0 module requirement; pin
+  the bpftool v7.8.1 source revision used by Docker and CI, including upstream
+  C23 compatibility fixes and its OpenSSL build dependency.
+- Docker builds consume a host-generated BTF header and are checked in CI.
+- Include agents in `make all` and use the same 20% coverage gate locally and
+  in CI. Prerequisite checks read the Go requirement from `go.mod` and no longer
+  overwrite an installed toolchain automatically.
+- Document scope-filter limitations and the separate UI/server queues.
+
 ## v0.5.0
 
 Purple-team platform release: safety guardrails, structured telemetry, and a full

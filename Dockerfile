@@ -1,26 +1,31 @@
-FROM ubuntu:jammy AS builder
+FROM golang:1.26.0-bookworm AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV GOTOOLCHAIN=local
 
 RUN apt-get update && apt-get install -y \
     build-essential \
     clang \
     llvm \
-    linux-headers-generic \
+    libelf-dev \
+    libssl-dev \
+    zlib1g-dev \
     pkg-config \
     curl \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-ARG GO_VERSION=1.22.5
-RUN curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" | tar -C /usr/local -xz
-ENV PATH="/usr/local/go/bin:$PATH"
-
 WORKDIR /src
+COPY scripts/install-bpftool.sh scripts/install-bpftool.sh
+RUN bash scripts/install-bpftool.sh
 COPY go.mod go.sum ./
 RUN go mod download
+ENV CGO_ENABLED=0
 COPY . .
 
+# Generate this header on the Linux host with `make generate-vmlinux` first.
+# Docker builds normally cannot read the host's /sys/kernel/btf/vmlinux.
+RUN test -s ebpf/include/vmlinux.h || (echo 'Run make generate-vmlinux on the host before docker build' >&2; exit 1)
 RUN make build-ebpf
 RUN make build-rootkit build-client build-webapp
 

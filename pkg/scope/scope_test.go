@@ -95,6 +95,33 @@ cidrs:
 	}
 }
 
+func TestLoad_RejectsUnknownAndDuplicateFields(t *testing.T) {
+	for _, content := range []string{
+		"namesapces: [lab]\n",
+		"namespaces: [lab]\nnamespaces: [prod]\n",
+	} {
+		if _, err := Load(writeScopeFile(t, content)); err == nil {
+			t.Errorf("Load must reject ambiguous policy %q", content)
+		}
+	}
+}
+
+func TestCheckTask_IPAliasesAndMalformedURLs(t *testing.T) {
+	s := &Scope{CIDRs: []string{"10.0.0.0/8"}}
+	for _, key := range []string{"host", "target", "domain", "ip", "addr"} {
+		for value, allowed := range map[string]bool{"10.1.2.3": true, "203.0.113.1": false} {
+			if err := s.CheckTask("module", map[string]string{key: value}); (err == nil) != allowed {
+				t.Errorf("%s=%s: err=%v, want allowed=%v", key, value, err, allowed)
+			}
+		}
+	}
+	for _, value := range []string{"/relative", "example.com/path", "https:///missing-host", "//example.com/path"} {
+		if err := s.CheckTask("module", map[string]string{"url": value}); err == nil {
+			t.Errorf("must reject malformed target URL %q", value)
+		}
+	}
+}
+
 func TestLoad_WildcardCIDR(t *testing.T) {
 	path := writeScopeFile(t, `
 cidrs:

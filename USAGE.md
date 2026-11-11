@@ -95,9 +95,10 @@
 ## Prerequisites
 
 - Linux kernel 5.4+ with eBPF support (BTF-enabled for CO-RE portability)
-- Go 1.25+
+- Go 1.26.0+ (see `go.mod`)
 - Kernel headers installed (`/lib/modules/$(uname -r)`)
 - clang & llvm 11+
+- bpftool (for generating `ebpf/include/vmlinux.h`)
 - Root privileges (for loading eBPF programs)
 - [Graphviz](https://graphviz.org/) (optional, for network graph generation)
 
@@ -1713,8 +1714,8 @@ The HTTP/2 C2 framework provides a cross-platform command-and-control infrastruc
 The server (`kubedagger-server`) listens for agent check-ins over HTTP/2 and exposes a management port for operator interaction.
 
 ```shell
-# Development mode (no TLS)
-./bin/kubedagger-server -key mypassphrase -plaintext
+# Development mode (no TLS, localhost only)
+./bin/kubedagger-server -key "$KEY" -listen 127.0.0.1:8443 -plaintext
 
 # Production mode (mTLS with auto-generated certs)
 ./bin/kubedagger-server -key $KEY
@@ -1733,7 +1734,10 @@ The server (`kubedagger-server`) listens for agent check-ins over HTTP/2 and exp
 | `-ca` | (auto-generate) | Path to CA cert PEM |
 | `-cert` | (auto-generate) | Path to server cert PEM |
 | `-key-file` | (auto-generate) | Path to server key PEM |
-| `-plaintext` | `false` | Disable TLS (development only) |
+| `-plaintext` | `false` | Disable TLS (development only; requires a literal loopback `-listen` address) |
+| `-webui-token` | (required if UI enabled) | UI token; falls back to `KUBEDAGGER_WEBUI_TOKEN` |
+| `-webui-cert` / `-webui-key` | (none) | UI HTTPS certificate/key; required for non-loopback UI listeners |
+| `-webui-secure-cookies` | `false` | Require HTTPS session cookies behind a TLS reverse proxy |
 | `-log-level` | `info` | Log level (debug, info, warn, error) |
 
 **Protocol endpoints:**
@@ -1750,7 +1754,7 @@ The agent (`kubedagger-agent`) is a cross-platform implant that beacons to the C
 
 ```shell
 # Development mode
-./bin/kubedagger-agent-linux -server http://10.0.2.5:443 -plaintext
+./bin/kubedagger-agent-linux -server http://127.0.0.1:8443 -plaintext
 
 # Production mode (mTLS)
 ./bin/kubedagger-agent-linux -server https://c2.example.com:443 \
@@ -2204,7 +2208,11 @@ Each line is a self-contained JSON object. The event log powers the campaign web
 
 ### Scope Enforcement
 
-`-scope <scope.yaml>` installs a task allow-list policy on the server. Any task whose payload targets a namespace, domain, IP, or URL outside the scope is rejected with an error listing every violation — out-of-scope tasking never reaches an agent.
+`-scope <scope.yaml>` installs a submission-time allow-list policy. Recognized
+payload target fields outside the configured scope are rejected before entering
+the HTTP API, management API, or web UI queue. All three interfaces use the same
+validation logic. Unknown or duplicate scope YAML fields are rejected at load
+time rather than silently ignored.
 
 ```shell
 ./bin/kubedagger-server -key $KEY -scope scope.yaml
@@ -2228,6 +2236,16 @@ cidrs: ["10.0.0.0/8"]
 | `*` | Allows everything in a category (e.g. `domains: ["*"]`) |
 
 Payload keys checked: `namespace`/`ns`, `host`/`target`/`domain`, `ip`/`addr`, and `url`.
+IP literals in host aliases are also checked against CIDRs, and URL targets
+must be absolute with a scheme and host. When both domain and CIDR restrictions
+are configured, IP literals in host aliases must satisfy both checks.
+
+**Limitations:** This is an input filter, not a sandbox. A missing scope or empty
+list leaves that dimension unrestricted. Unrecognized payload fields and omitted
+targets are not validated; arbitrary shell commands, module-internal actions,
+DNS resolution, and redirects are not contained by this policy. Use isolated lab
+networks and least-privilege credentials as independent boundaries. Policy
+rejections emit `task_rejected` events when event recording is enabled.
 
 ### Malleable C2 Profiles
 
@@ -2261,11 +2279,28 @@ headers:
 
 ### Campaign Web UI
 
-`-webui <addr>` starts the campaign web UI alongside the C2 listener; `-webui-token <token>` sets the access token:
+`-webui <addr>` starts the campaign web UI alongside the C2 listener. An explicit
+token is mandatory; neither an empty token nor the old `kubedagger` default is
+accepted. Prefer the environment variable to avoid exposing the token in process
+arguments:
 
 ```shell
-./bin/kubedagger-server -key $KEY -events events.jsonl -webui 127.0.0.1:8080 -webui-token <token>
+export KUBEDAGGER_WEBUI_TOKEN="$(openssl rand -hex 32)"
+./bin/kubedagger-server -key "$KEY" -events events.jsonl -webui 127.0.0.1:8080
 ```
+
+Plain HTTP is allowed only on literal loopback addresses (`127.0.0.1` or `::1`),
+not wildcards or hostnames. For a non-loopback UI listener, supply both
+`-webui-cert ui-cert.pem` and `-webui-key ui-key.pem`. HTTPS sessions use `Secure`,
+`HttpOnly`, and `SameSite=Strict` cookies. A TLS reverse proxy can instead forward
+to a loopback HTTP listener; enable `-webui-secure-cookies` in that configuration.
+Forwarded headers are not trusted to select cookie security automatically.
+
+**Current integration boundary:** campaign/replay share the C2 event store, but
+the UI's agent registration and command queue remain separate from the HTTP/2
+agent registry and operator queue. UI commands require a registered UI agent;
+implicit broadcast commands are not supported. Both queues apply the same
+submission policy, but UI agent/task views do not mirror operator state.
 
 **Views:**
 

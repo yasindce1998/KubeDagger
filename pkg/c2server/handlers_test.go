@@ -367,7 +367,8 @@ func TestHandleSubmit_ScopeRejected(t *testing.T) {
 	scp := &scope.Scope{Namespaces: []string{"allowed-ns"}}
 	agents := NewAgentRegistry()
 	tasks := NewTaskQueue()
-	h := NewHandlers(agents, tasks, WithScope(scp))
+	store := newTestStore(t)
+	h := NewHandlers(agents, tasks, WithScope(scp), WithEvents(store))
 	h.agents.Checkin(CheckinRequest{AgentID: "agent-1", Hostname: "h1", OS: OSLinux, Arch: "amd64"})
 
 	w := postJSON(t, h.HandleSubmit, SubmitAPIPath, SubmitRequest{
@@ -388,6 +389,10 @@ func TestHandleSubmit_ScopeRejected(t *testing.T) {
 	}
 	if tasks.HasPending("agent-1") {
 		t.Error("rejected task must not be queued")
+	}
+	evs := store.List(0, 0)
+	if len(evs) != 1 || evs[0].Type != events.TypeTaskRejected {
+		t.Fatalf("expected rejection audit event, got %+v", evs)
 	}
 }
 
