@@ -21,7 +21,8 @@
 ### Build and documentation
 
 - Align Docker and documentation with the Go 1.26.0 module requirement; pin
-  the bpftool source revision used by Docker and CI.
+  the bpftool v7.8.1 source revision used by Docker and CI, including upstream
+  C23 compatibility fixes and its OpenSSL build dependency.
 - Docker builds consume a host-generated BTF header and are checked in CI.
 - Include agents in `make all` and use the same 20% coverage gate locally and
   in CI. Prerequisite checks read the Go requirement from `go.mod` and no longer

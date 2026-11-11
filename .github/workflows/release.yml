@@ -18,7 +18,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang llvm build-essential libelf-dev zlib1g-dev
+          sudo apt-get install -y clang llvm build-essential libelf-dev libssl-dev zlib1g-dev
           sudo bash scripts/install-bpftool.sh
 
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5

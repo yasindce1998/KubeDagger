@@ -2,7 +2,8 @@
 # Install a fixed bpftool revision; its libbpf submodule is pinned by Git too.
 set -euo pipefail
 
-revision=d844a27fc175aeae3bcb29b052813ef210c97004 # v7.5.0
+# v7.8.1 includes libbpf's C23 const-correctness fixes for GCC 15+/glibc 2.42+.
+revision=0711105b503c2fd37ac7a219163fb488b3b59d88 # v7.8.1
 build_dir=$(mktemp -d)
 trap 'rm -rf "$build_dir"' EXIT
 git init "$build_dir"
